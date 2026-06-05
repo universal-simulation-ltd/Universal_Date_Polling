@@ -1,0 +1,30 @@
+# Cloudflare Pages rewrites — Universal Polling is served under /polling/ but the
+# built files in dist/ are flat (Vite's `base` only rewrites URLs INSIDE the HTML;
+# it does not place files in dist/polling/).
+#
+# 200 status = transparent rewrite (URL bar unchanged). Specific rules first,
+# broad SPA fallback last.
+
+# Service-worker + PWA artefacts.
+/polling/sw.js                /sw.js                200
+/polling/registerSW.js        /registerSW.js        200
+/polling/manifest.webmanifest /manifest.webmanifest 200
+/polling/workbox-*            /workbox-:splat       200
+
+# Hashed asset bundles.
+/polling/assets/*             /assets/:splat        200
+
+# Static files referenced from index.html / app code (BASE_URL-prefixed).
+/polling/favicon.svg          /favicon.svg          200
+/polling/unisim-icon.png      /unisim-icon.png      200
+/polling/og-image.png         /og-image.png         200
+/polling/icon-180.png         /icon-180.png         200
+/polling/icon-192.png         /icon-192.png         200
+/polling/icon-512.png         /icon-512.png         200
+
+# SEO crawler files.
+/polling/robots.txt           /robots.txt           200
+/polling/sitemap.xml          /sitemap.xml          200
+
+# SPA fallback — everything else under /polling/ (incl. /polling/p/<id>) serves the shell.
+/polling/*                    /index.html           200
