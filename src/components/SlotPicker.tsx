@@ -4,6 +4,15 @@ import { shortId } from '../lib/api'
 
 const DURATIONS = [15, 30, 45, 60, 90, 120]
 
+/** Local (not UTC) YYYY-MM-DD for a Date — keeps the date input's `min` and the
+ *  rollforward comparison on the user's own calendar day. */
+function localDate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function fmtDay(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
   return new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(d)
@@ -18,14 +27,29 @@ function durationLabel(mins: number): string {
 /** Builds the candidate-times list for a poll. Slots are stored as wall-clock
  *  times in the poll's timezone; this picker only deals in date + time strings. */
 export default function SlotPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localDate(new Date())
   const [date, setDate] = useState('')
   const [time, setTime] = useState('09:00')
   const [duration, setDuration] = useState(60)
+  const [warning, setWarning] = useState<string | null>(null)
 
   function add() {
     if (!date || !time) return
-    const start = `${date}T${time}`
+    setWarning(null)
+
+    // Roll a past selection forward to the next future occurrence of that time.
+    // Slots are wall-clock; compare against the user's local clock — close
+    // enough for picking candidate times, and never proposes a slot in the past.
+    let start = `${date}T${time}`
+    let d = new Date(start)
+    const now = new Date()
+    if (d.getTime() <= now.getTime()) {
+      d = new Date(`${today}T${time}`)
+      while (d.getTime() <= now.getTime()) d.setDate(d.getDate() + 1)
+      start = `${localDate(d)}T${time}`
+      setWarning(`You can't pick a time in the past — moved it forward to ${fmtDay(localDate(d))}, ${time}.`)
+    }
+
     if (slots.some((s) => s.start === start)) return
     const next = [...slots, { id: shortId(6), start, durationMins: duration }]
     next.sort((a, b) => a.start.localeCompare(b.start))
@@ -86,6 +110,10 @@ export default function SlotPicker({ slots, onChange }: { slots: Slot[]; onChang
           Add time
         </button>
       </div>
+
+      {warning && (
+        <p className="mt-2 text-sm font-medium text-amber-600">{warning}</p>
+      )}
 
       {slots.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">
