@@ -10,6 +10,8 @@ export default defineConfig(({ mode }) => {
   const BASE_PATH = mode === 'production' ? '/polling/' : '/'
   return {
     base: BASE_PATH,
+    // Honour an externally-assigned PORT (e.g. preview tooling) when provided.
+    server: process.env.PORT ? { port: Number(process.env.PORT), strictPort: true } : undefined,
     define: {
       __APP_VERSION__: JSON.stringify(pkg.version)
     },

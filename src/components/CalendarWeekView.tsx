@@ -63,6 +63,15 @@ interface DragState {
   moved: boolean
 }
 
+interface MoveState {
+  id: string
+  dayIdx: number
+  startMin: number // live preview start (snapped)
+  durationMins: number
+  grabOffset: number // raw minutes between the pointer and the slot's start at grab
+  moved: boolean
+}
+
 export default function CalendarWeekView({
   slots,
   onChange,
@@ -77,12 +86,24 @@ export default function CalendarWeekView({
   // pointerdown + pointerup before a state update would land).
   const [drag, setDrag] = useState<DragState | null>(null)
   const dragRef = useRef<DragState | null>(null)
+  // `move` drives the live preview while an existing slot is being dragged to a
+  // new time; `moveRef` mirrors it for synchronous reads in pointer handlers.
+  const [move, setMove] = useState<MoveState | null>(null)
+  const moveRef = useRef<MoveState | null>(null)
+  // After a move gesture the browser still fires a click on the slot button;
+  // this flag swallows that one click so a drag doesn't also delete the slot.
+  const suppressClickRef = useRef(false)
   const [warning, setWarning] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   function setDragBoth(d: DragState | null) {
     dragRef.current = d
     setDrag(d)
+  }
+
+  function setMoveBoth(m: MoveState | null) {
+    moveRef.current = m
+    setMove(m)
   }
 
   // Open the grid scrolled to ~8am rather than the 6am top edge.
@@ -96,11 +117,13 @@ export default function CalendarWeekView({
   const nowMin = now.getHours() * 60 + now.getMinutes()
   const todayStr = localDate(now)
 
-  function yToMin(clientY: number, colEl: HTMLElement): number {
+  function yToRawMin(clientY: number, colEl: HTMLElement): number {
     const rect = colEl.getBoundingClientRect()
-    const y = clientY - rect.top
-    const raw = DAY_MIN + (y / HOUR_PX) * 60
-    const snapped = Math.round(raw / SNAP) * SNAP
+    return DAY_MIN + ((clientY - rect.top) / HOUR_PX) * 60
+  }
+
+  function yToMin(clientY: number, colEl: HTMLElement): number {
+    const snapped = Math.round(yToRawMin(clientY, colEl) / SNAP) * SNAP
     return Math.max(DAY_MIN, Math.min(END_MIN, snapped))
   }
 
@@ -134,6 +157,26 @@ export default function CalendarWeekView({
 
   function remove(id: string) {
     onChange(slots.filter((s) => s.id !== id))
+  }
+
+  // Reposition an existing slot to a new start time on the same day, keeping its
+  // duration. Rejects past times and collisions with other slots (ignoring the
+  // slot itself); a no-op move silently does nothing.
+  function commitMove(id: string, dayIdx: number, startMin: number) {
+    const start = `${localDate(days[dayIdx])}T${minToHHMM(startMin)}`
+    if (slots.some((s) => s.id === id && s.start === start)) return
+    if (new Date(start).getTime() <= Date.now()) {
+      setWarning("That time has already passed — pick a future slot.")
+      return
+    }
+    if (slots.some((s) => s.id !== id && s.start === start)) {
+      setWarning('You already proposed that time.')
+      return
+    }
+    setWarning(null)
+    const next = slots.map((s) => (s.id === id ? { ...s, start } : s))
+    next.sort((a, b) => a.start.localeCompare(b.start))
+    onChange(next)
   }
 
   return (
@@ -172,7 +215,7 @@ export default function CalendarWeekView({
       </div>
 
       <p className="mt-2 text-xs text-slate-500">
-        Click a day to drop a 1-hour slot, or drag down a column to set the length. Click a slot to remove it.
+        Click a day to drop a 1-hour slot, or drag down a column to set the length. Drag a slot to move it within the day; click it to remove.
       </p>
 
       {/* Day headers */}
@@ -278,7 +321,9 @@ export default function CalendarWeekView({
 
                 {/* Existing slots */}
                 {daySlots.map((s) => {
-                  const sMin = Number(s.start.slice(11, 13)) * 60 + Number(s.start.slice(14, 16))
+                  const storedMin = Number(s.start.slice(11, 13)) * 60 + Number(s.start.slice(14, 16))
+                  const isMoving = move?.id === s.id
+                  const sMin = isMoving ? move!.startMin : storedMin
                   const top = ((sMin - DAY_MIN) / 60) * HOUR_PX
                   const height = Math.max(HOUR_PX / 2, (s.durationMins / 60) * HOUR_PX)
                   return (
@@ -286,14 +331,52 @@ export default function CalendarWeekView({
                       key={s.id}
                       type="button"
                       data-slot
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={() => remove(s.id)}
-                      title={`Remove ${s.start.slice(11)} · ${durationLabel(s.durationMins)}`}
-                      className="group absolute inset-x-0.5 overflow-hidden rounded-md bg-[var(--accent)] px-1.5 py-0.5 text-left text-[11px] font-medium text-white shadow-sm ring-1 ring-[var(--accent-strong)] hover:bg-[var(--accent-strong)]"
+                      onPointerDown={(e) => {
+                        e.stopPropagation()
+                        suppressClickRef.current = false
+                        try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* synthetic */ }
+                        const col = e.currentTarget.parentElement as HTMLElement
+                        const raw = yToRawMin(e.clientY, col)
+                        setMoveBoth({
+                          id: s.id,
+                          dayIdx,
+                          startMin: storedMin,
+                          durationMins: s.durationMins,
+                          grabOffset: raw - storedMin,
+                          moved: false,
+                        })
+                      }}
+                      onPointerMove={(e) => {
+                        const prev = moveRef.current
+                        if (!prev || prev.id !== s.id) return
+                        const col = e.currentTarget.parentElement as HTMLElement
+                        const raw = yToRawMin(e.clientY, col)
+                        const snapped = Math.round((raw - prev.grabOffset) / SNAP) * SNAP
+                        const start = Math.max(DAY_MIN, Math.min(END_MIN - prev.durationMins, snapped))
+                        if (start === prev.startMin && prev.moved) return
+                        setMoveBoth({ ...prev, startMin: start, moved: prev.moved || start !== storedMin })
+                      }}
+                      onPointerUp={() => {
+                        const g = moveRef.current
+                        setMoveBoth(null)
+                        if (!g || g.id !== s.id || !g.moved) return
+                        suppressClickRef.current = true
+                        if (g.startMin !== storedMin) commitMove(s.id, dayIdx, g.startMin)
+                      }}
+                      onPointerCancel={() => setMoveBoth(null)}
+                      onClick={() => {
+                        if (suppressClickRef.current) { suppressClickRef.current = false; return }
+                        remove(s.id)
+                      }}
+                      title={`Drag to move · click to remove ${s.start.slice(11)} · ${durationLabel(s.durationMins)}`}
+                      className={
+                        'group absolute inset-x-0.5 overflow-hidden rounded-md bg-[var(--accent)] px-1.5 py-0.5 text-left text-[11px] font-medium text-white shadow-sm ring-1 ring-[var(--accent-strong)] hover:bg-[var(--accent-strong)] ' +
+                        (isMoving ? 'cursor-grabbing ring-2 z-10' : 'cursor-grab')
+                      }
                       style={{ top, height }}
                     >
                       <span className="flex items-center justify-between gap-1">
-                        <span className="truncate">{s.start.slice(11)}</span>
+                        <span className="truncate">{minToHHMM(sMin)}</span>
                         <span aria-hidden className="opacity-0 group-hover:opacity-100">✕</span>
                       </span>
                       <span className="block text-[10px] opacity-80">{durationLabel(s.durationMins)}</span>
