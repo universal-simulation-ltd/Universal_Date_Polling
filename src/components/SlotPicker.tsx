@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Slot } from '../lib/types'
 import { shortId } from '../lib/api'
+import CalendarWeekView from './CalendarWeekView'
 
 const DURATIONS = [15, 30, 45, 60, 90, 120]
 
@@ -28,6 +29,7 @@ function durationLabel(mins: number): string {
  *  times in the poll's timezone; this picker only deals in date + time strings. */
 export default function SlotPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
   const today = localDate(new Date())
+  const [view, setView] = useState<'form' | 'calendar'>('form')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('09:00')
   const [duration, setDuration] = useState(60)
@@ -69,6 +71,37 @@ export default function SlotPicker({ slots, onChange }: { slots: Slot[]; onChang
 
   return (
     <div>
+      {/* View toggle: the quick date/time form, or a Google-Calendar-style week
+          grid you drag on to propose times. Both edit the same slot list. */}
+      <div className="mb-3 inline-flex rounded-lg border border-slate-300 p-0.5 text-xs font-medium">
+        <button
+          type="button"
+          onClick={() => setView('form')}
+          aria-pressed={view === 'form'}
+          className={
+            'rounded-md px-3 py-1.5 transition-colors ' +
+            (view === 'form' ? 'bg-[var(--accent)] text-white' : 'text-slate-600 hover:bg-slate-100')
+          }
+        >
+          Date &amp; time
+        </button>
+        <button
+          type="button"
+          onClick={() => setView('calendar')}
+          aria-pressed={view === 'calendar'}
+          className={
+            'rounded-md px-3 py-1.5 transition-colors ' +
+            (view === 'calendar' ? 'bg-[var(--accent)] text-white' : 'text-slate-600 hover:bg-slate-100')
+          }
+        >
+          Calendar
+        </button>
+      </div>
+
+      {view === 'calendar' ? (
+        <CalendarWeekView slots={slots} onChange={onChange} />
+      ) : (
+      <>
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex flex-col text-xs font-medium text-slate-600">
           Date
@@ -145,6 +178,8 @@ export default function SlotPicker({ slots, onChange }: { slots: Slot[]; onChang
             </div>
           ))}
         </div>
+      )}
+      </>
       )}
     </div>
   )
