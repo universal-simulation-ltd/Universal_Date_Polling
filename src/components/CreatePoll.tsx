@@ -64,6 +64,30 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   // Temporary diagnostic: visit the create page with ?diag=1 to see exactly
   // where enterprise detection stops (session → org → subscription tier).
   const diag = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('diag')
+  const [diagRaw, setDiagRaw] = useState<Record<string, unknown> | null>(null)
+  useEffect(() => {
+    if (!diag || !suiteUser) return
+    let live = true
+    ;(async () => {
+      const out: Record<string, unknown> = {}
+      const { data: sess } = await suiteClient.auth.getSession()
+      out.session = sess.session
+        ? { hasAccessToken: !!sess.session.access_token, expiresAt: sess.session.expires_at, userId: sess.session.user?.id }
+        : null
+      const om = await suiteClient
+        .from('org_members')
+        .select('org_id, role, organisations(id, name)')
+        .eq('user_id', suiteUser.id)
+      out.orgMembers = {
+        count: om.data?.length ?? 0,
+        errorMessage: om.error?.message ?? null,
+        errorCode: (om.error as { code?: string } | null)?.code ?? null,
+        rows: om.data ?? null,
+      }
+      if (live) setDiagRaw(out)
+    })()
+    return () => { live = false }
+  }, [diag, suiteUser, suiteClient])
 
   // An enterprise poll defaults to the org's brand colour (the host can still
   // change it). Run once when enterprise status resolves.
@@ -215,6 +239,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             subTier: subscription?.tier ?? null,
             subStatus: subscription?.status ?? null,
             enterprise,
+            rawProbe: diagRaw,
           }, null, 2)}
         </pre>
       )}
