@@ -48,6 +48,14 @@ export default defineConfig(({ mode }) => {
         workbox: {
           // SPA navigations under the base path fall back to the prefixed shell.
           navigateFallback: `${BASE_PATH}index.html`,
+          // A freshly fetched worker takes control immediately instead of
+          // sitting in "waiting" until every tab closes, and stale precaches
+          // are purged. With `autoUpdate` the page then reloads once the new
+          // worker activates — so a deploy lands on the next visit, not after
+          // the user hunts down and closes every open tab.
+          skipWaiting: true,
+          clientsClaim: true,
+          cleanupOutdatedCaches: true,
         },
         devOptions: { enabled: false }
       })

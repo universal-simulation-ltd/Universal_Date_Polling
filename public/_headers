@@ -3,3 +3,30 @@
 # "Always Use HTTPS" setting.
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+# --- Cache-Control ---------------------------------------------------------
+# Cloudflare applies the MOST specific matching rule per header, so the broad
+# shell rule below does not override the asset rules above it.
+#
+# Content-hashed bundles change name on every build, so they can be cached
+# forever and immutably.
+/polling/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/polling/workbox-*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The service worker, its registration shim and the manifest must always be
+# revalidated — if the edge or browser serves a stale sw.js, update checks can
+# lag up to 24h and a new deploy never lands.
+/polling/sw.js
+  Cache-Control: no-cache
+/polling/registerSW.js
+  Cache-Control: no-cache
+/polling/manifest.webmanifest
+  Cache-Control: no-cache
+
+# The HTML shell points at the latest hashed bundles, so it must revalidate on
+# every navigation. `no-cache` = may store but must check freshness first; this
+# is what stops a fresh browser (no service worker yet) getting a stale page.
+/polling/*
+  Cache-Control: no-cache
