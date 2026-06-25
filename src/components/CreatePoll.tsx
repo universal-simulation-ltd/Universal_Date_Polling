@@ -7,6 +7,7 @@ import { createPoll, currentUser, sendHostCode, shortId, uploadPollLogo, verifyH
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { listTimezones, localTimezone, tzAbbrev } from '../lib/time'
 import SlotPicker from './SlotPicker'
+import type { SlotView } from './SlotPicker'
 
 const VALIDITY = [
   { label: '7 days', days: 7 },
@@ -24,7 +25,10 @@ type Phase = 'edit' | 'sending' | 'code' | 'creating' | 'done'
 
 export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [title, setTitle] = useState('')
-  const [mode, setMode] = useState<PollMode>('times')
+  // `view` drives the slot picker's segmented selector; the stored poll `mode`
+  // is derived from it (only "Whole days" is a days poll).
+  const [view, setView] = useState<SlotView>('form')
+  const mode: PollMode = view === 'days' ? 'days' : 'times'
   const [slots, setSlots] = useState<Slot[]>([])
   const [theme, setTheme] = useState<Theme>('orange')
   const [timezone, setTimezone] = useState(localTimezone())
@@ -87,10 +91,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     setLogoFile(file)
   }
 
-  function changeMode(next: PollMode) {
-    if (next === mode) return
-    setMode(next)
-    setSlots([]) // timed and whole-day slots aren't interchangeable
+  function changeView(next: SlotView) {
+    if (next === view) return
+    // Clear only when crossing the timed↔days boundary — those slot shapes
+    // aren't interchangeable. Switching form↔calendar keeps the same slots.
+    if ((next === 'days') !== (view === 'days')) setSlots([])
+    setView(next)
   }
 
   function validateDraft(): string | null {
@@ -217,10 +223,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
         {/* Availability (slots) */}
         <div className="mt-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-slate-800">Availability</span>
-            <ModeToggle mode={mode} onChange={changeMode} />
-          </div>
+          <span className="text-sm font-semibold text-slate-800">Availability</span>
           <p className="text-xs text-slate-500 mt-0.5">
             {mode === 'days' ? (
               <>Respondents tick whole days they're free — good for trips and multi-day plans.</>
@@ -229,7 +232,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             )}
           </p>
           <div className="mt-3">
-            <SlotPicker mode={mode} slots={slots} onChange={setSlots} />
+            <SlotPicker view={view} onViewChange={changeView} slots={slots} onChange={setSlots} />
           </div>
         </div>
 
@@ -437,29 +440,6 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           </button>
         </div>
       </div>
-    </div>
-  )
-}
-
-function ModeToggle({ mode, onChange }: { mode: PollMode; onChange: (m: PollMode) => void }) {
-  return (
-    <div className="inline-flex rounded-lg border border-slate-300 p-0.5 text-xs font-medium">
-      <button
-        type="button"
-        onClick={() => onChange('times')}
-        aria-pressed={mode === 'times'}
-        className={'rounded-md px-3 py-1.5 transition-colors ' + (mode === 'times' ? 'bg-[var(--accent)] text-white' : 'text-slate-600 hover:bg-slate-100')}
-      >
-        Specific times
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('days')}
-        aria-pressed={mode === 'days'}
-        className={'rounded-md px-3 py-1.5 transition-colors ' + (mode === 'days' ? 'bg-[var(--accent)] text-white' : 'text-slate-600 hover:bg-slate-100')}
-      >
-        Whole days
-      </button>
     </div>
   )
 }

@@ -1,10 +1,14 @@
 import { useState } from 'react'
-import type { PollMode, Slot } from '../lib/types'
+import type { Slot } from '../lib/types'
 import { shortId } from '../lib/api'
 import CalendarWeekView from './CalendarWeekView'
 
 const DURATIONS = [15, 30, 45, 60, 90, 120]
 const ALL_DAY_MINS = 1440
+
+/** The three ways to propose availability — the first two are timed, the last
+ *  switches the whole poll to whole-day mode. Drives the segmented selector. */
+export type SlotView = 'form' | 'calendar' | 'days'
 
 /** Local (not UTC) YYYY-MM-DD for a Date — keeps the date input's `min` and the
  *  rollforward comparison on the user's own calendar day. */
@@ -26,11 +30,60 @@ function durationLabel(mins: number): string {
   return Number.isInteger(h) ? `${h}h` : `${Math.floor(mins / 60)}h${mins % 60}m`
 }
 
-/** Builds the candidate list for a poll. In 'times' mode slots are wall-clock
- *  times in the poll's timezone; in 'days' mode each slot is a whole day. */
-export default function SlotPicker({ mode, slots, onChange }: { mode: PollMode; slots: Slot[]; onChange: (s: Slot[]) => void }) {
-  if (mode === 'days') return <DayPicker slots={slots} onChange={onChange} />
-  return <TimePicker slots={slots} onChange={onChange} />
+/** Builds the candidate list for a poll. The segmented selector chooses between
+ *  two timed views (quick form / drag calendar) and whole-day mode; `view` is
+ *  owned by the parent so it can derive the poll mode and clear incompatible
+ *  slots when crossing the timed↔days boundary. */
+export default function SlotPicker({
+  view, onViewChange, slots, onChange,
+}: {
+  view: SlotView
+  onViewChange: (v: SlotView) => void
+  slots: Slot[]
+  onChange: (s: Slot[]) => void
+}) {
+  return (
+    <div>
+      {/* Date & time / Calendar both edit timed slots; Whole days switches the
+          poll to whole-day availability. */}
+      <div className="mb-3 inline-flex rounded-lg border border-slate-300 p-0.5 text-xs font-medium">
+        <SelectorTab view={view} value="form" onSelect={onViewChange}>Date &amp; time</SelectorTab>
+        <SelectorTab view={view} value="calendar" onSelect={onViewChange}>Calendar</SelectorTab>
+        <SelectorTab view={view} value="days" onSelect={onViewChange}>Whole days</SelectorTab>
+      </div>
+
+      {view === 'days' ? (
+        <DayPicker slots={slots} onChange={onChange} />
+      ) : view === 'calendar' ? (
+        <CalendarWeekView slots={slots} onChange={onChange} />
+      ) : (
+        <FormPicker slots={slots} onChange={onChange} />
+      )}
+    </div>
+  )
+}
+
+function SelectorTab({
+  view, value, onSelect, children,
+}: {
+  view: SlotView
+  value: SlotView
+  onSelect: (v: SlotView) => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(value)}
+      aria-pressed={view === value}
+      className={
+        'rounded-md px-3 py-1.5 transition-colors ' +
+        (view === value ? 'bg-[var(--accent)] text-white' : 'text-slate-600 hover:bg-slate-100')
+      }
+    >
+      {children}
+    </button>
+  )
 }
 
 /** Whole-day availability — the host picks days, respondents tick whole days. */
@@ -105,10 +158,9 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
   )
 }
 
-/** Timed slots — the original date + time + length picker, with a calendar. */
-function TimePicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
+/** Timed slots — the original quick date + time + length form. */
+function FormPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
   const today = localDate(new Date())
-  const [view, setView] = useState<'form' | 'calendar'>('form')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('09:00')
   const [duration, setDuration] = useState(60)
@@ -149,38 +201,7 @@ function TimePicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) 
   }
 
   return (
-    <div>
-      {/* View toggle: the quick date/time form, or a Google-Calendar-style week
-          grid you drag on to propose times. Both edit the same slot list. */}
-      <div className="mb-3 inline-flex rounded-lg border border-slate-300 p-0.5 text-xs font-medium">
-        <button
-          type="button"
-          onClick={() => setView('form')}
-          aria-pressed={view === 'form'}
-          className={
-            'rounded-md px-3 py-1.5 transition-colors ' +
-            (view === 'form' ? 'bg-[var(--accent)] text-white' : 'text-slate-600 hover:bg-slate-100')
-          }
-        >
-          Date &amp; time
-        </button>
-        <button
-          type="button"
-          onClick={() => setView('calendar')}
-          aria-pressed={view === 'calendar'}
-          className={
-            'rounded-md px-3 py-1.5 transition-colors ' +
-            (view === 'calendar' ? 'bg-[var(--accent)] text-white' : 'text-slate-600 hover:bg-slate-100')
-          }
-        >
-          Calendar
-        </button>
-      </div>
-
-      {view === 'calendar' ? (
-        <CalendarWeekView slots={slots} onChange={onChange} />
-      ) : (
-      <>
+    <>
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex flex-col text-xs font-medium text-slate-600">
           Date
@@ -258,8 +279,6 @@ function TimePicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) 
           ))}
         </div>
       )}
-      </>
-      )}
-    </div>
+    </>
   )
 }
