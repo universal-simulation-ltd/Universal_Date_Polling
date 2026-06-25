@@ -44,12 +44,16 @@ export default function SlotPicker({
 }) {
   return (
     <div>
-      {/* Date & time / Calendar both edit timed slots; Whole days switches the
-          poll to whole-day availability. */}
-      <div className="mb-3 inline-flex rounded-lg border border-slate-300 p-0.5 text-xs font-medium">
-        <SelectorTab view={view} value="form" onSelect={onViewChange}>Date &amp; time</SelectorTab>
-        <SelectorTab view={view} value="calendar" onSelect={onViewChange}>Calendar</SelectorTab>
-        <SelectorTab view={view} value="days" onSelect={onViewChange}>Whole days</SelectorTab>
+      {/* Date & time / Calendar both edit timed slots, so they sit in one group;
+          Whole days is a separate mode, set apart with a gap. */}
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium">
+        <div className="inline-flex rounded-lg border border-slate-300 p-0.5">
+          <SelectorTab view={view} value="form" onSelect={onViewChange}>Date &amp; time</SelectorTab>
+          <SelectorTab view={view} value="calendar" onSelect={onViewChange}>Calendar</SelectorTab>
+        </div>
+        <div className="inline-flex rounded-lg border border-slate-300 p-0.5">
+          <SelectorTab view={view} value="days" onSelect={onViewChange}>Whole days</SelectorTab>
+        </div>
       </div>
 
       {view === 'days' ? (
@@ -86,72 +90,123 @@ function SelectorTab({
   )
 }
 
-/** Whole-day availability — the host picks days, respondents tick whole days. */
-function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
-  const today = localDate(new Date())
-  const [date, setDate] = useState('')
-  const [warning, setWarning] = useState<string | null>(null)
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const MONTH_YEAR = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' })
 
-  function add() {
-    if (!date) return
-    setWarning(null)
-    if (date < today) { setWarning("You can't pick a day in the past."); return }
-    if (slots.some((s) => s.start.slice(0, 10) === date)) return
-    const next = [...slots, { id: shortId(6), start: `${date}T00:00`, durationMins: ALL_DAY_MINS }]
-    next.sort((a, b) => a.start.localeCompare(b.start))
-    onChange(next)
-    setDate('')
+/** Whole-day availability — a month calendar you click to highlight days.
+ *  Days are pure calendar dates ('YYYY-MM-DD'), never converted through a
+ *  timezone, so they read the same for the host and every responder. */
+function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
+  const now = new Date()
+  const todayStr = localDate(now)
+  const [cursor, setCursor] = useState(() => ({ y: now.getFullYear(), m: now.getMonth() }))
+
+  const selected = new Set(slots.map((s) => s.start.slice(0, 10)))
+
+  function toggle(dateStr: string) {
+    if (dateStr < todayStr) return
+    if (selected.has(dateStr)) {
+      onChange(slots.filter((s) => s.start.slice(0, 10) !== dateStr))
+    } else {
+      const next = [...slots, { id: shortId(6), start: `${dateStr}T00:00`, durationMins: ALL_DAY_MINS }]
+      next.sort((a, b) => a.start.localeCompare(b.start))
+      onChange(next)
+    }
   }
 
-  const days = [...slots].sort((a, b) => a.start.localeCompare(b.start))
+  const first = new Date(cursor.y, cursor.m, 1)
+  const lead = (first.getDay() + 6) % 7 // days before the 1st, Monday-first
+  const daysInMonth = new Date(cursor.y, cursor.m + 1, 0).getDate()
+  // Don't let the host page back into fully-past months.
+  const canPrev = cursor.y > now.getFullYear() || (cursor.y === now.getFullYear() && cursor.m > now.getMonth())
+
+  const cells: (string | null)[] = []
+  for (let i = 0; i < lead; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push(`${cursor.y}-${String(cursor.m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
+  }
+
+  const chosen = [...selected].sort()
 
   return (
     <div>
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col text-xs font-medium text-slate-600">
-          Day
-          <input
-            type="date"
-            min={today}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="mt-1 h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
-          />
-        </label>
+      {/* Month navigation */}
+      <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={add}
-          disabled={!date}
-          className="h-10 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={() => setCursor(({ y, m }) => (m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }))}
+          disabled={!canPrev}
+          aria-label="Previous month"
+          className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
         >
-          Add day
+          ‹
+        </button>
+        <span className="text-sm font-semibold text-slate-800">{MONTH_YEAR.format(first)}</span>
+        <button
+          type="button"
+          onClick={() => setCursor(({ y, m }) => (m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 }))}
+          aria-label="Next month"
+          className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
+        >
+          ›
         </button>
       </div>
 
-      {warning && <p className="mt-2 text-sm font-medium text-amber-600">{warning}</p>}
-
-      {days.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">
-          No days yet — pick a date above and press <span className="font-medium">Add day</span>.
-        </p>
-      ) : (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {days.map((s) => (
-            <span
-              key={s.id}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text)]"
+      {/* Day grid — click a day to highlight it */}
+      <div className="mt-2 grid grid-cols-7 gap-1 text-center">
+        {WEEKDAYS.map((w) => (
+          <div key={w} className="py-1 text-[11px] font-medium text-slate-400">{w}</div>
+        ))}
+        {cells.map((dateStr, i) => {
+          if (dateStr === null) return <div key={`b${i}`} />
+          const past = dateStr < todayStr
+          const sel = selected.has(dateStr)
+          return (
+            <button
+              key={dateStr}
+              type="button"
+              onClick={() => toggle(dateStr)}
+              disabled={past}
+              aria-pressed={sel}
+              aria-label={fmtDay(dateStr)}
+              className={
+                'h-9 rounded-md text-sm transition-colors ' +
+                (sel
+                  ? 'bg-[var(--accent)] text-white font-semibold'
+                  : past
+                    ? 'text-slate-300 cursor-not-allowed'
+                    : 'text-slate-700 hover:bg-[var(--accent-soft)]')
+              }
             >
-              {fmtDay(s.start.slice(0, 10))}
-              <button
-                type="button"
-                onClick={() => onChange(slots.filter((x) => x.id !== s.id))}
-                aria-label={`Remove ${fmtDay(s.start.slice(0, 10))}`}
-                className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 hover:text-[var(--accent-strong)]"
+              {Number(dateStr.slice(8, 10))}
+            </button>
+          )
+        })}
+      </div>
+
+      {chosen.length === 0 ? (
+        <p className="mt-3 text-sm text-slate-500">No days yet — click the days you want to propose.</p>
+      ) : (
+        <div className="mt-3">
+          <div className="text-xs font-medium text-slate-500">{chosen.length} day{chosen.length > 1 ? 's' : ''} selected</div>
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            {chosen.map((dateStr) => (
+              <span
+                key={dateStr}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text)]"
               >
-                ✕
-              </button>
-            </span>
-          ))}
+                {fmtDay(dateStr)}
+                <button
+                  type="button"
+                  onClick={() => toggle(dateStr)}
+                  aria-label={`Remove ${fmtDay(dateStr)}`}
+                  className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 hover:text-[var(--accent-strong)]"
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </div>

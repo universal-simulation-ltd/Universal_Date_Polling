@@ -65,6 +65,19 @@ export function slotInstant(start: string, pollTz: string): Date {
   return zonedWallClockToInstant(start, pollTz)
 }
 
+/** "Mon 2 Jun 2026" for a WHOLE-DAY slot — a pure calendar date with no
+ *  timezone conversion at all. A whole-day poll's date carries no time-of-day,
+ *  so it must read identically for every viewer regardless of their zone:
+ *  2 June is 2 June in London and Paris alike. Building the Date from numeric
+ *  parts (local midnight) and formatting without a `timeZone` keeps construction
+ *  and formatting in the same (local) frame, so the day can never roll over. */
+export function formatCalendarDay(dateStr: string): string {
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+  }).format(new Date(y, m - 1, d))
+}
+
 /** "Tue 10 Jun" for the date heading of a slot, in the given display tz. */
 export function formatDateHeading(instant: Date, displayTz: string): string {
   return new Intl.DateTimeFormat('en-GB', {

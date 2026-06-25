@@ -4,7 +4,7 @@ import { getPoll, getResponses, submitResponse } from '../lib/api'
 import { SUPABASE_CONFIGURED } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import {
-  formatDateHeading, formatRange, formatTime, localTimezone, slotInstant, tzAbbrev,
+  formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, slotInstant, tzAbbrev,
 } from '../lib/time'
 
 type Load = 'loading' | 'ready' | 'notfound' | 'error'
@@ -126,7 +126,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
             {groupByDay(slots).map(([day, list]) => (
               <div key={day}>
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {formatDateHeading(slotInstant(list[0].start, poll.timezone), poll.timezone)}
+                  {dayMode ? formatCalendarDay(day) : formatDateHeading(slotInstant(list[0].start, poll.timezone), poll.timezone)}
                 </div>
                 <div className="mt-2 space-y-2">
                   {list.map((s) => {
@@ -211,7 +211,7 @@ function Results({ poll, slots, responses, viewerTz }: {
           {groupByDay(slots).map(([day, list]) => (
             <div key={day} className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
               <div className="bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {formatDateHeading(slotInstant(list[0].start, poll.timezone), poll.timezone)}
+                {dayMode ? formatCalendarDay(day) : formatDateHeading(slotInstant(list[0].start, poll.timezone), poll.timezone)}
               </div>
               <div className="divide-y divide-slate-100">
                 {list.map((s) => {
