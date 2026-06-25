@@ -70,20 +70,31 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     let live = true
     ;(async () => {
       const out: Record<string, unknown> = {}
+      // Which backend is each client actually pointed at?
+      out.envUrlHost = (import.meta.env.VITE_SUPABASE_URL as string | undefined ?? 'UNSET').replace(/^https?:\/\//, '')
+
       const { data: sess } = await suiteClient.auth.getSession()
       out.session = sess.session
         ? { hasAccessToken: !!sess.session.access_token, expiresAt: sess.session.expires_at, userId: sess.session.user?.id }
         : null
-      const om = await suiteClient
-        .from('org_members')
-        .select('org_id, role, organisations(id, name)')
-        .eq('user_id', suiteUser.id)
-      out.orgMembers = {
-        count: om.data?.length ?? 0,
-        errorMessage: om.error?.message ?? null,
-        errorCode: (om.error as { code?: string } | null)?.code ?? null,
-        rows: om.data ?? null,
+
+      const probe = async (fn: () => PromiseLike<{ error: { message?: string; code?: string } | null; data?: unknown }>) => {
+        try {
+          const r = await fn()
+          return { ok: !r.error, error: r.error?.message ?? null, code: r.error?.code ?? null }
+        } catch (e) {
+          return { ok: false, error: e instanceof Error ? `${e.name}: ${e.message}` : String(e), code: 'THROWN' }
+        }
       }
+
+      // SDK client (suite SSO) — the org query that's failing, plus a trivial one.
+      out.sdk_orgMembers = await probe(() =>
+        suiteClient.from('org_members').select('org_id, organisations(id, name)').eq('user_id', suiteUser.id))
+      out.sdk_subscriptions = await probe(() =>
+        suiteClient.from('subscriptions').select('org_id').limit(1))
+      // App's OWN client (anon, same project) — does ANY request from this page work?
+      out.app_polls = await probe(() => supabase.from('polls').select('id').limit(1))
+
       if (live) setDiagRaw(out)
     })()
     return () => { live = false }
