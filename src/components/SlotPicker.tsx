@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import type { Slot } from '../lib/types'
+import type { PollMode, Slot } from '../lib/types'
 import { shortId } from '../lib/api'
 import CalendarWeekView from './CalendarWeekView'
 
 const DURATIONS = [15, 30, 45, 60, 90, 120]
+const ALL_DAY_MINS = 1440
 
 /** Local (not UTC) YYYY-MM-DD for a Date — keeps the date input's `min` and the
  *  rollforward comparison on the user's own calendar day. */
@@ -25,9 +26,87 @@ function durationLabel(mins: number): string {
   return Number.isInteger(h) ? `${h}h` : `${Math.floor(mins / 60)}h${mins % 60}m`
 }
 
-/** Builds the candidate-times list for a poll. Slots are stored as wall-clock
- *  times in the poll's timezone; this picker only deals in date + time strings. */
-export default function SlotPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
+/** Builds the candidate list for a poll. In 'times' mode slots are wall-clock
+ *  times in the poll's timezone; in 'days' mode each slot is a whole day. */
+export default function SlotPicker({ mode, slots, onChange }: { mode: PollMode; slots: Slot[]; onChange: (s: Slot[]) => void }) {
+  if (mode === 'days') return <DayPicker slots={slots} onChange={onChange} />
+  return <TimePicker slots={slots} onChange={onChange} />
+}
+
+/** Whole-day availability — the host picks days, respondents tick whole days. */
+function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
+  const today = localDate(new Date())
+  const [date, setDate] = useState('')
+  const [warning, setWarning] = useState<string | null>(null)
+
+  function add() {
+    if (!date) return
+    setWarning(null)
+    if (date < today) { setWarning("You can't pick a day in the past."); return }
+    if (slots.some((s) => s.start.slice(0, 10) === date)) return
+    const next = [...slots, { id: shortId(6), start: `${date}T00:00`, durationMins: ALL_DAY_MINS }]
+    next.sort((a, b) => a.start.localeCompare(b.start))
+    onChange(next)
+    setDate('')
+  }
+
+  const days = [...slots].sort((a, b) => a.start.localeCompare(b.start))
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex flex-col text-xs font-medium text-slate-600">
+          Day
+          <input
+            type="date"
+            min={today}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="mt-1 h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={add}
+          disabled={!date}
+          className="h-10 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Add day
+        </button>
+      </div>
+
+      {warning && <p className="mt-2 text-sm font-medium text-amber-600">{warning}</p>}
+
+      {days.length === 0 ? (
+        <p className="mt-4 text-sm text-slate-500">
+          No days yet — pick a date above and press <span className="font-medium">Add day</span>.
+        </p>
+      ) : (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {days.map((s) => (
+            <span
+              key={s.id}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text)]"
+            >
+              {fmtDay(s.start.slice(0, 10))}
+              <button
+                type="button"
+                onClick={() => onChange(slots.filter((x) => x.id !== s.id))}
+                aria-label={`Remove ${fmtDay(s.start.slice(0, 10))}`}
+                className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 hover:text-[var(--accent-strong)]"
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Timed slots — the original date + time + length picker, with a calendar. */
+function TimePicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
   const today = localDate(new Date())
   const [view, setView] = useState<'form' | 'calendar'>('form')
   const [date, setDate] = useState('')

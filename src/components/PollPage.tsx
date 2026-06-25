@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Availability, Poll, PollResponse, Slot } from '../lib/types'
+import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
 import { getPoll, getResponses, submitResponse } from '../lib/api'
 import { SUPABASE_CONFIGURED } from '../lib/supabase'
+import { themeAttr, themeVars } from '../lib/theme'
 import {
   formatDateHeading, formatRange, formatTime, localTimezone, slotInstant, tzAbbrev,
 } from '../lib/time'
@@ -80,16 +81,22 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   if (state === 'error' || !poll) return <Centered>{error ?? 'Something went wrong.'}</Centered>
 
   const slots = [...poll.slots].sort((a, b) => a.start.localeCompare(b.start))
-  const tzNote = poll.timezone !== viewerTz
+  const dayMode = poll.mode === 'days'
+  const tzNote = !dayMode && poll.timezone !== viewerTz
 
   return (
-    <div data-theme={poll.theme} className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-8 sm:py-10">
+    <div data-theme={themeAttr(poll.theme)} style={themeVars(poll.theme)} className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-8 sm:py-10">
+      {poll.branding && <BrandingHeader branding={poll.branding} />}
       <header className="text-center">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 break-words">{poll.title}</h1>
         <p className="mt-2 text-sm text-slate-600">
           {responses.length === 0 ? 'Be the first to respond.' : `${responses.length} ${responses.length === 1 ? 'person has' : 'people have'} responded.`}
-          {' · '}Times in <span className="font-medium">{tzAbbrev(poll.timezone)}</span>
-          {tzNote && <span className="text-slate-500"> (your timezone: {tzAbbrev(viewerTz)})</span>}
+          {!dayMode && (
+            <>
+              {' · '}Times in <span className="font-medium">{tzAbbrev(poll.timezone)}</span>
+              {tzNote && <span className="text-slate-500"> (your timezone: {tzAbbrev(viewerTz)})</span>}
+            </>
+          )}
         </p>
       </header>
 
@@ -128,7 +135,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                     return (
                       <div key={s.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2">
                         <div className="min-w-0">
-                          <div className="text-sm font-medium text-slate-900">{formatRange(inst, s.durationMins, poll.timezone)}</div>
+                          <div className="text-sm font-medium text-slate-900">{dayMode ? 'All day' : formatRange(inst, s.durationMins, poll.timezone)}</div>
                           {tzNote && <div className="text-xs text-slate-500">{formatTime(inst, viewerTz)} your time</div>}
                         </div>
                         <div className="flex shrink-0 gap-1.5">
@@ -191,7 +198,8 @@ function Results({ poll, slots, responses, viewerTz }: {
 
   const maxYes = Math.max(0, ...tally.map((t) => t.yes.length))
   const total = responses.length
-  const tzNote = poll.timezone !== viewerTz
+  const dayMode = poll.mode === 'days'
+  const tzNote = !dayMode && poll.timezone !== viewerTz
 
   return (
     <section className="mt-7">
@@ -215,7 +223,7 @@ function Results({ poll, slots, responses, viewerTz }: {
                     <div key={s.id} className="px-4 py-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <span className="text-sm font-semibold text-slate-900">{formatRange(inst, s.durationMins, poll.timezone)}</span>
+                          <span className="text-sm font-semibold text-slate-900">{dayMode ? 'All day' : formatRange(inst, s.durationMins, poll.timezone)}</span>
                           {tzNote && <span className="ml-2 text-xs text-slate-500">{formatTime(inst, viewerTz)} your time</span>}
                           {best && (
                             <span className="ml-2 inline-block rounded-full bg-[var(--accent)] px-2 py-0.5 text-[11px] font-bold text-white align-middle">Best</span>
@@ -244,6 +252,19 @@ function Results({ poll, slots, responses, viewerTz }: {
         </div>
       )}
     </section>
+  )
+}
+
+function BrandingHeader({ branding }: { branding: PollBranding }) {
+  const img = branding.logo_url ?? branding.icon_url
+  if (!img && !branding.name) return null
+  return (
+    <div className="mb-5 flex items-center justify-center gap-2.5">
+      {img && <img src={img} alt={branding.name ?? 'Brand'} className="h-9 max-w-[200px] object-contain" />}
+      {branding.name && (
+        <span className={`font-semibold ${img ? 'text-sm text-slate-700' : 'text-lg text-[var(--accent-text)]'}`}>{branding.name}</span>
+      )}
+    </div>
   )
 }
 

@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
-import type { NewPoll, Slot, ThemeName } from '../lib/types'
-import { THEMES } from '../lib/types'
-import { createPoll, currentUser, sendHostCode, shortId, verifyHostCode } from '../lib/api'
-import { SUPABASE_CONFIGURED } from '../lib/supabase'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
+import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
+import { isHexTheme, THEMES } from '../lib/types'
+import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
+import { createPoll, currentUser, sendHostCode, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
+import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { listTimezones, localTimezone, tzAbbrev } from '../lib/time'
 import SlotPicker from './SlotPicker'
 
@@ -10,21 +12,30 @@ const VALIDITY = [
   { label: '7 days', days: 7 },
   { label: '30 days', days: 30 },
   { label: '90 days', days: 90 },
-  { label: 'Never expires', days: null as number | null },
+  // No "never expires": polls are public, link-shared, and we don't want
+  // respondent data living on the server forever. 180 days is the long option.
+  { label: '180 days', days: 180 },
 ]
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 
 type Phase = 'edit' | 'sending' | 'code' | 'creating' | 'done'
 
 export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [title, setTitle] = useState('')
+  const [mode, setMode] = useState<PollMode>('times')
   const [slots, setSlots] = useState<Slot[]>([])
-  const [theme, setTheme] = useState<ThemeName>('orange')
+  const [theme, setTheme] = useState<Theme>('orange')
   const [timezone, setTimezone] = useState(localTimezone())
   const [validityDays, setValidityDays] = useState<number | null>(30)
   const [email, setEmail] = useState('')
   const [verified, setVerified] = useState(false)
+
+  // Guest branding (More options); ignored for enterprise hosts.
+  const [brandName, setBrandName] = useState('')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoErr, setLogoErr] = useState<string | null>(null)
 
   const [showMore, setShowMore] = useState(false)
   const [phase, setPhase] = useState<Phase>('edit')
@@ -32,9 +43,29 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [error, setError] = useState<string | null>(null)
   const [createdId, setCreatedId] = useState<string | null>(null)
 
+  const colorRef = useRef<HTMLInputElement>(null)
   const zones = listTimezones()
 
-  // A returning host already has a session — skip the email step.
+  // --- Enterprise detection via the suite SDK (cookie SSO in production) ------
+  const { user: suiteUser } = useUser()
+  const { subscription } = useSubscription()
+  const { org } = useOrg()
+  const orgBranding = useOrgBranding()
+  const { supabase: suiteClient } = useUniversal()
+  const enterprise =
+    !!suiteUser &&
+    subscription?.tier === 'enterprise' &&
+    (subscription.status === 'active' || subscription.status === 'trialing')
+
+  // An enterprise poll defaults to the org's brand colour (the host can still
+  // change it). Run once when enterprise status resolves.
+  useEffect(() => {
+    if (enterprise && orgBranding.brand_color && isHexTheme(orgBranding.brand_color)) {
+      setTheme(orgBranding.brand_color)
+    }
+  }, [enterprise, orgBranding.brand_color])
+
+  // A returning guest host already has an OTP session — skip the email step.
   useEffect(() => {
     if (!SUPABASE_CONFIGURED) return
     currentUser().then((u) => {
@@ -45,23 +76,59 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     })
   }, [])
 
+  const logoPreview = useMemo(() => (logoFile ? URL.createObjectURL(logoFile) : null), [logoFile])
+  useEffect(() => () => { if (logoPreview) URL.revokeObjectURL(logoPreview) }, [logoPreview])
+
+  function onPickLogo(file: File | null) {
+    setLogoErr(null)
+    if (!file) { setLogoFile(null); return }
+    if (!LOGO_TYPES.includes(file.type)) { setLogoErr('Logo must be a PNG, JPG or WebP image.'); return }
+    if (file.size > 2 * 1024 * 1024) { setLogoErr('Logo must be 2 MB or smaller.'); return }
+    setLogoFile(file)
+  }
+
+  function changeMode(next: PollMode) {
+    if (next === mode) return
+    setMode(next)
+    setSlots([]) // timed and whole-day slots aren't interchangeable
+  }
+
   function validateDraft(): string | null {
     if (!title.trim()) return 'Give your poll a title.'
-    if (slots.length === 0) return 'Add at least one date and time.'
-    if (!EMAIL_RE.test(email)) return 'Enter a valid email address.'
+    if (slots.length === 0) return mode === 'days' ? 'Add at least one day.' : 'Add at least one date and time.'
+    if (!enterprise && !EMAIL_RE.test(email)) return 'Enter a valid email address.'
     return null
   }
 
-  function draft(): NewPoll {
-    const expires_at =
-      validityDays == null ? null : new Date(Date.now() + validityDays * 86_400_000).toISOString()
-    return { id: shortId(), title, timezone, slots, theme, expires_at }
+  function buildBranding(uploadedLogoUrl: string | null): PollBranding | null {
+    if (enterprise) {
+      return {
+        source: 'org',
+        name: org?.name ?? null,
+        logo_url: orgBranding.logo_url,
+        icon_url: orgBranding.icon_url,
+        brand_color: orgBranding.brand_color,
+      }
+    }
+    const name = brandName.trim() || null
+    if (!name && !uploadedLogoUrl) return null
+    return { source: 'guest', name, logo_url: uploadedLogoUrl, icon_url: null, brand_color: hexOfTheme(theme) }
   }
 
-  async function doCreate(hostUserId: string, hostEmail: string) {
+  function draft(branding: PollBranding | null): NewPoll {
+    const expires_at =
+      validityDays == null ? null : new Date(Date.now() + validityDays * 86_400_000).toISOString()
+    return { id: shortId(), title, timezone, mode, slots, theme, branding, expires_at }
+  }
+
+  // `client` must be signed in as `hostUserId` (suite client for enterprise,
+  // app OTP client for guests) — RLS gates the insert and the logo upload.
+  async function doCreate(client: typeof suiteClient, hostUserId: string, hostEmail: string) {
     setPhase('creating')
     try {
-      const poll = await createPoll(draft(), hostUserId, hostEmail)
+      let logoUrl: string | null = null
+      if (!enterprise && logoFile) logoUrl = await uploadPollLogo(client, hostUserId, logoFile)
+      const poll = await createPoll(client, draft(buildBranding(logoUrl)), hostUserId, hostEmail)
       setCreatedId(poll.id)
       setPhase('done')
     } catch (e) {
@@ -73,18 +140,22 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   async function onPrimary() {
     setError(null)
     const v = validateDraft()
-    if (v) {
-      setError(v)
+    if (v) { setError(v); return }
+
+    // Enterprise host: no email step — create straight away as the suite user.
+    if (enterprise && suiteUser) {
+      await doCreate(suiteClient, suiteUser.id, suiteUser.email ?? '')
       return
     }
+
     if (!SUPABASE_CONFIGURED) {
       setError('Polling needs its Supabase backend configured to create polls.')
       return
     }
-    // Already verified (session present) → create straight away.
+    // Returning guest with a live session → create straight away.
     const u = await currentUser()
     if (u && (verified || u.email === email)) {
-      await doCreate(u.id, u.email ?? email)
+      await doCreate(supabase, u.id, u.email ?? email)
       return
     }
     // Otherwise send a one-time code to the host's email.
@@ -100,14 +171,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
   async function onVerify() {
     setError(null)
-    if (!code.trim()) {
-      setError('Enter the code from your email.')
-      return
-    }
+    if (!code.trim()) { setError('Enter the code from your email.'); return }
     setPhase('creating')
     try {
       const uid = await verifyHostCode(email, code)
-      await doCreate(uid, email)
+      await doCreate(supabase, uid, email)
     } catch (e) {
       setError(messageOf(e))
       setPhase('code')
@@ -119,11 +187,17 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   }
 
   return (
-    <div data-theme={theme} className="mx-auto w-full max-w-2xl px-4 sm:px-6 py-8 sm:py-12">
+    <div
+      data-theme={themeAttr(theme)}
+      style={themeVars(theme)}
+      className="mx-auto w-full max-w-2xl px-4 sm:px-6 py-8 sm:py-12"
+    >
+      {enterprise && <BrandingBanner name={org?.name ?? null} logo={orgBranding.logo_url} icon={orgBranding.icon_url} />}
+
       <div className="text-center">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Find a time that works for everyone</h1>
         <p className="mt-2 text-slate-600">
-          Pick some dates and times, share the link, and watch the best slot rise to the top. No sign-up needed to vote.
+          Pick some {mode === 'days' ? 'days' : 'dates and times'}, share the link, and watch the best option rise to the top. No sign-up needed to vote.
         </p>
       </div>
 
@@ -141,14 +215,21 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           />
         </label>
 
-        {/* Slots */}
+        {/* Availability (slots) */}
         <div className="mt-6">
-          <span className="text-sm font-semibold text-slate-800">Candidate times</span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm font-semibold text-slate-800">Availability</span>
+            <ModeToggle mode={mode} onChange={changeMode} />
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Times are in <span className="font-medium">{tzAbbrev(timezone)}</span> ({timezone}). Change the timezone under More options.
+            {mode === 'days' ? (
+              <>Respondents tick whole days they're free — good for trips and multi-day plans.</>
+            ) : (
+              <>Times are in <span className="font-medium">{tzAbbrev(timezone)}</span> ({timezone}). Change the timezone under More options.</>
+            )}
           </p>
           <div className="mt-3">
-            <SlotPicker slots={slots} onChange={setSlots} />
+            <SlotPicker mode={mode} slots={slots} onChange={setSlots} />
           </div>
         </div>
 
@@ -168,10 +249,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
           {showMore && (
             <div className="mt-4 grid gap-5 sm:grid-cols-2">
-              {/* Theme */}
+              {/* Theme + custom colour */}
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Booking-page colour</span>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex items-center gap-2">
                   {THEMES.map((t) => (
                     <button
                       key={t.name}
@@ -184,6 +265,31 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                       style={{ backgroundColor: t.swatch }}
                     />
                   ))}
+                  {/* Custom colour: shows the chosen hex when active, else a + */}
+                  <button
+                    type="button"
+                    onClick={() => colorRef.current?.click()}
+                    aria-label="Custom colour"
+                    aria-pressed={isHexTheme(theme)}
+                    title="Custom colour"
+                    className={`grid h-8 w-8 place-items-center rounded-full transition ${isHexTheme(theme) ? 'ring-2 ring-offset-2 ring-slate-900 text-white' : 'border-2 border-dashed border-slate-300 text-slate-400 hover:border-slate-400'}`}
+                    style={isHexTheme(theme) ? { backgroundColor: theme } : undefined}
+                  >
+                    {!isHexTheme(theme) && (
+                      <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M8 3 V13 M3 8 H13" />
+                      </svg>
+                    )}
+                  </button>
+                  <input
+                    ref={colorRef}
+                    type="color"
+                    value={isHexTheme(theme) ? theme : '#7c3aed'}
+                    onChange={(e) => setTheme(e.target.value)}
+                    className="sr-only"
+                    aria-hidden="true"
+                    tabIndex={-1}
+                  />
                 </div>
               </div>
 
@@ -201,26 +307,78 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 </select>
               </div>
 
-              {/* Timezone */}
-              <div className="sm:col-span-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Timezone</span>
-                <select
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                  className="mt-2 w-full h-10 rounded-lg border border-slate-300 px-2 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
-                >
-                  {zones.map((z) => (
-                    <option key={z} value={z}>{z}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Timezone (timed polls only) */}
+              {mode === 'times' && (
+                <div className="sm:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Timezone</span>
+                  <select
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    className="mt-2 w-full h-10 rounded-lg border border-slate-300 px-2 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
+                  >
+                    {zones.map((z) => (
+                      <option key={z} value={z}>{z}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Guest branding (enterprise hosts use their org branding instead) */}
+              {!enterprise && (
+                <div className="sm:col-span-2 rounded-lg bg-slate-50 ring-1 ring-slate-200 p-4">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Add your branding</span>
+                  <p className="text-xs text-slate-500 mt-0.5">Shown on the poll's create and share pages.</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="text-xs font-medium text-slate-600">Brand name</span>
+                      <input
+                        type="text"
+                        value={brandName}
+                        maxLength={80}
+                        onChange={(e) => setBrandName(e.target.value)}
+                        placeholder="e.g. Acme Adventures"
+                        className="mt-1 w-full h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
+                      />
+                    </label>
+                    <div>
+                      <span className="text-xs font-medium text-slate-600">Logo</span>
+                      <div className="mt-1 flex items-center gap-3">
+                        {logoPreview && (
+                          <img src={logoPreview} alt="Logo preview" className="h-10 w-10 rounded object-contain ring-1 ring-slate-200 bg-white" />
+                        )}
+                        <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                          {logoFile ? 'Change…' : 'Upload…'}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={(e) => onPickLogo(e.target.files?.[0] ?? null)}
+                            className="sr-only"
+                          />
+                        </label>
+                        {logoFile && (
+                          <button type="button" onClick={() => onPickLogo(null)} className="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2">
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <p className="mt-1 text-[11px] text-slate-400">PNG, JPG or WebP · up to 2 MB.</p>
+                      {logoErr && <p className="mt-1 text-xs text-red-600">{logoErr}</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Email + create */}
+        {/* Identity + create */}
         <div className="mt-6 border-t border-slate-100 pt-5">
-          {verified ? (
+          {enterprise ? (
+            <p className="text-sm text-slate-600">
+              Creating as <span className="font-medium text-slate-900">{org?.name ?? suiteUser?.email}</span>
+              {org?.name && suiteUser?.email && <span className="text-slate-500"> ({suiteUser.email})</span>} — no email verification needed.
+            </p>
+          ) : verified ? (
             <p className="text-sm text-slate-600">
               Creating as <span className="font-medium text-slate-900">{email}</span> (verified).
             </p>
@@ -275,7 +433,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             {phase === 'sending' && 'Sending code…'}
             {phase === 'creating' && 'Creating poll…'}
             {phase === 'code' && 'Verify & create poll'}
-            {(phase === 'edit') && (verified ? 'Create poll' : 'Verify email & create poll')}
+            {phase === 'edit' && (enterprise || verified ? 'Create poll' : 'Verify email & create poll')}
           </button>
         </div>
       </div>
@@ -283,7 +441,41 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   )
 }
 
-function CreatedPanel({ pollBase, id, theme }: { pollBase: string; id: string; theme: ThemeName }) {
+function ModeToggle({ mode, onChange }: { mode: PollMode; onChange: (m: PollMode) => void }) {
+  return (
+    <div className="inline-flex rounded-lg border border-slate-300 p-0.5 text-xs font-medium">
+      <button
+        type="button"
+        onClick={() => onChange('times')}
+        aria-pressed={mode === 'times'}
+        className={'rounded-md px-3 py-1.5 transition-colors ' + (mode === 'times' ? 'bg-[var(--accent)] text-white' : 'text-slate-600 hover:bg-slate-100')}
+      >
+        Specific times
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('days')}
+        aria-pressed={mode === 'days'}
+        className={'rounded-md px-3 py-1.5 transition-colors ' + (mode === 'days' ? 'bg-[var(--accent)] text-white' : 'text-slate-600 hover:bg-slate-100')}
+      >
+        Whole days
+      </button>
+    </div>
+  )
+}
+
+function BrandingBanner({ name, logo, icon }: { name: string | null; logo: string | null; icon: string | null }) {
+  const img = logo ?? icon
+  if (!img && !name) return null
+  return (
+    <div className="mb-6 flex items-center justify-center gap-3">
+      {img && <img src={img} alt={name ?? 'Brand'} className="h-9 max-w-[180px] object-contain" />}
+      {!img && name && <span className="text-lg font-bold text-[var(--accent-text)]">{name}</span>}
+    </div>
+  )
+}
+
+function CreatedPanel({ pollBase, id, theme }: { pollBase: string; id: string; theme: Theme }) {
   const url = `${window.location.origin}${pollBase}p/${id}`
   const [copied, setCopied] = useState(false)
   async function copy() {
@@ -296,7 +488,7 @@ function CreatedPanel({ pollBase, id, theme }: { pollBase: string; id: string; t
     }
   }
   return (
-    <div data-theme={theme} className="mx-auto w-full max-w-2xl px-4 sm:px-6 py-12">
+    <div data-theme={themeAttr(theme)} style={themeVars(theme)} className="mx-auto w-full max-w-2xl px-4 sm:px-6 py-12">
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-7 text-center pop-in">
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
