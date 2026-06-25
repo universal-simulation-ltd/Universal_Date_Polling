@@ -51,15 +51,19 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const zones = listTimezones()
 
   // --- Enterprise detection via the suite SDK (cookie SSO in production) ------
-  const { user: suiteUser } = useUser()
-  const { subscription } = useSubscription()
-  const { org } = useOrg()
+  const { user: suiteUser, loading: userLoading } = useUser()
+  const { subscription, loading: subLoading } = useSubscription()
+  const { org, orgs, loading: orgLoading } = useOrg()
   const orgBranding = useOrgBranding()
   const { supabase: suiteClient } = useUniversal()
   const enterprise =
     !!suiteUser &&
     subscription?.tier === 'enterprise' &&
     (subscription.status === 'active' || subscription.status === 'trialing')
+
+  // Temporary diagnostic: visit the create page with ?diag=1 to see exactly
+  // where enterprise detection stops (session → org → subscription tier).
+  const diag = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('diag')
 
   // An enterprise poll defaults to the org's brand colour (the host can still
   // change it). Run once when enterprise status resolves.
@@ -198,6 +202,23 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       style={themeVars(theme)}
       className="mx-auto w-full max-w-2xl px-4 sm:px-6 py-8 sm:py-12"
     >
+      {diag && (
+        <pre className="mb-4 overflow-auto rounded-lg bg-slate-900 p-3 text-left text-[11px] leading-relaxed text-green-300">
+          {JSON.stringify({
+            prod_cookieSSO: import.meta.env.PROD,
+            userLoading,
+            suiteUser: suiteUser?.email ?? null,
+            orgLoading,
+            orgsCount: orgs.length,
+            activeOrg: org ? { id: org.id, name: org.name } : null,
+            subLoading,
+            subTier: subscription?.tier ?? null,
+            subStatus: subscription?.status ?? null,
+            enterprise,
+          }, null, 2)}
+        </pre>
+      )}
+
       {enterprise && <BrandingBanner name={org?.name ?? null} logo={orgBranding.logo_url} icon={orgBranding.icon_url} />}
 
       <div className="text-center">
