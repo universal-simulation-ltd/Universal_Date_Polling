@@ -445,7 +445,6 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           ) : (
             <label className="block">
               <span className="text-sm font-semibold text-slate-800">Your email</span>
-              <span className="text-xs text-slate-500 ml-2">— we send a one-time code to confirm it's you</span>
               <input
                 type="email"
                 value={email}
@@ -493,7 +492,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             {phase === 'sending' && 'Sending code…'}
             {phase === 'creating' && 'Creating poll…'}
             {phase === 'code' && 'Verify & create poll'}
-            {phase === 'edit' && (enterprise || verified ? 'Create poll' : 'Verify email & create poll')}
+            {phase === 'edit' && 'Create poll'}
           </button>
         </div>
       </div>
