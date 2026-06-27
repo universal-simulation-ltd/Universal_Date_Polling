@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import pkg from './package.json' with { type: 'json' }
 
-// Universal Polling is served at opensource.unisim.co.uk/polling in production.
+// Universal Date Polling is served at opensource.unisim.co.uk/polling in production.
 // `base` + PWA scope derive from Vite's `mode`; local dev stays `/`.
 export default defineConfig(({ mode }) => {
   const BASE_PATH = mode === 'production' ? '/polling/' : '/'
@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'og-image.png'],
         manifest: {
-          name: 'Universal Polling',
+          name: 'Universal Date Polling',
           short_name: 'UniPoll',
           description: 'Create a poll, share a link, find a time that works for everyone.',
           theme_color: '#0f172a',

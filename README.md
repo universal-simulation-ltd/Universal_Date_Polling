@@ -1,4 +1,4 @@
-# Universal Polling
+# Universal Date Polling
 
 A free, open-source group scheduler — the simple "find a time that works for
 everyone" tool. Create a poll, propose some dates and times, share a link, and

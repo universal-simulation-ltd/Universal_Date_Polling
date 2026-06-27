@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "description": "Universal Polling — a free group scheduler. Create a poll, share a link, find the time that works for everyone.",
+  "description": "Universal Date Polling — a free group scheduler. Create a poll, share a link, find the time that works for everyone.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

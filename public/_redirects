@@ -1,4 +1,4 @@
-# Cloudflare Pages rewrites — Universal Polling is served under /polling/ but the
+# Cloudflare Pages rewrites — Universal Date Polling is served under /polling/ but the
 # built files in dist/ are flat (Vite's `base` only rewrites URLs INSIDE the HTML;
 # it does not place files in dist/polling/).
 #

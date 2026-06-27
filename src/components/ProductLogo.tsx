@@ -1,4 +1,4 @@
-// Universal Polling brand icon — icon-only by design. The SDK's
+// Universal Date Polling brand icon — icon-only by design. The SDK's
 // UniversalAppsNavBar renders the product name from its catalogue beside this
 // slot, so a wordmark here would duplicate it.
 export default function ProductLogo() {

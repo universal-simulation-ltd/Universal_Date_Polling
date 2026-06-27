@@ -4,7 +4,7 @@ import ProductLogo from './components/ProductLogo'
 import CreatePoll from './components/CreatePoll'
 import PollPage from './components/PollPage'
 
-const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_Polling'
+const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_Date_Polling'
 const BASE = import.meta.env.BASE_URL // '/' in dev, '/polling/' in production
 
 type Route = { view: 'create' } | { view: 'poll'; id: string }
@@ -59,7 +59,7 @@ export default function App() {
             href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            aria-label="Universal Polling on GitHub"
+            aria-label="Universal Date Polling on GitHub"
             title="View source on GitHub"
             className="ml-auto shrink-0 inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-900 transition-colors"
           >
