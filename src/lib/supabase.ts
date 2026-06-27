@@ -1,24 +1,34 @@
 import { createClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+// The shared suite Supabase project. The anon key below is a PUBLISHABLE key —
+// it's designed to ship in the browser bundle (every Supabase web app exposes
+// it); Row-Level Security is the real security boundary, and migration 0025/0040
+// only lets an email-verified host write their own polls (never the service_role
+// key, which must never be committed). Baking these public values in as a
+// fallback means the deployed site works even if the Cloudflare Pages build has
+// no VITE_SUPABASE_* env vars set — which is why the live site was showing
+// "Polling needs its Supabase backend configured". An env var still overrides
+// them, so local dev / self-hosting can point at a different project via
+// .env.local.
+const FALLBACK_URL = 'https://rygfxgalojojppxmhddo.supabase.co'
+const FALLBACK_ANON =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Z2Z4Z2Fsb2pvanBweG1oZGRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NTY4MjUsImV4cCI6MjA5NDMzMjgyNX0.hLy_vt9vY_rdPKF3nL32yAuMCD604E3CH5VM7D7CaNE'
 
-/** False when env vars are missing — the UI shows a friendly notice instead of
- *  throwing, so the app still builds and renders without a backend configured. */
+const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || FALLBACK_URL
+const anon = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || FALLBACK_ANON
+
+/** Always true now that public production defaults are baked in; kept as a flag
+ *  so the UI degrades gracefully if a build ever ships without a URL/key. */
 export const SUPABASE_CONFIGURED = Boolean(url && anon)
 
 // One client. The host's email-OTP session is persisted in localStorage under a
 // Polling-specific storage key, so it can't be clobbered by (or clobber) the
 // SDK provider's own Supabase client. Polling does not use the suite's
 // cross-subdomain cookie SSO — its session stays scoped to this origin.
-export const supabase = createClient(
-  url ?? 'https://placeholder.supabase.co',
-  anon ?? 'public-anon-placeholder',
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      storageKey: 'unipoll-auth',
-    },
-  }
-)
+export const supabase = createClient(url, anon, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storageKey: 'unipoll-auth',
+  },
+})
