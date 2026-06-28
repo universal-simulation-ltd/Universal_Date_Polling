@@ -3,26 +3,30 @@ import ReactDOM from 'react-dom/client'
 import { UniversalProvider } from '@unisim/sdk'
 import type { ProductCode } from '@unisim/sdk'
 import App from './App'
+import { SUITE_SUPABASE_URL, SUITE_SUPABASE_ANON } from './lib/supabase'
 import './index.css'
 
 // Polling keeps its OWN client (src/lib/supabase.ts) on an isolated storage key
 // for the guest host email-OTP flow. Separately, <UniversalProvider> is now
 // wired to the REAL shared suite project so the SDK hooks (useUser /
-// useSubscription / useOrgBranding) can recognise an enterprise visitor who is
-// already signed into the suite and personalise the poll for them.
+// useSubscription / useOrgBranding / useProfile) can recognise a visitor who is
+// already signed into the suite and personalise the poll for them — including
+// showing their profile avatar + tier badge in the navbar.
 //
 // In production we set cookieDomain so the SDK session is read from the
 // `.unisim.co.uk` suite cookie (cross-subdomain SSO). Locally there's no such
 // cookie, so the SDK falls back to localStorage and enterprise mode is simply
 // inert — the guest OTP flow is unaffected either way.
-const SUITE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const SUITE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
-
+//
+// IMPORTANT: use the SAME baked public fallback as the app's own client. Before
+// this, the provider read VITE_SUPABASE_* directly and fell back to a placeholder
+// project when those env vars were absent at build time — so on the deployed
+// site the SDK couldn't reach the real project, the suite session never resolved,
+// and the navbar showed no profile/avatar. (PDF was fine because its provider
+// reads VITE_PLATFORM_SUPABASE_*, which are set in that build.)
 const universalConfig = {
-  // Placeholders keep the provider happy when env vars are absent (the SDK
-  // hooks then just report "logged out"); real creds enable enterprise SSO.
-  supabaseUrl: SUITE_URL ?? 'https://placeholder.supabase.co',
-  supabaseAnonKey: SUITE_ANON ?? 'public-anon-placeholder',
+  supabaseUrl: SUITE_SUPABASE_URL,
+  supabaseAnonKey: SUITE_SUPABASE_ANON,
   // 'polling' isn't in the SDK's ProductCode union yet; the value only scopes
   // changelog/usage, neither of which this navbar path uses.
   product: 'polling' as unknown as ProductCode,

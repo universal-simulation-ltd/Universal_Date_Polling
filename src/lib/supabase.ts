@@ -21,6 +21,15 @@ const anon = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || F
  *  so the UI degrades gracefully if a build ever ships without a URL/key. */
 export const SUPABASE_CONFIGURED = Boolean(url && anon)
 
+// Re-exported so <UniversalProvider> (in main.tsx) shares the same baked public
+// fallback. Without this, a build with no VITE_SUPABASE_* env vars left the SDK
+// provider on placeholder creds — so it couldn't read the suite SSO session and
+// the navbar showed no profile/avatar (or name/email/tier) even when the user
+// was signed into the suite. PDF works because its provider reads its own
+// VITE_PLATFORM_SUPABASE_* vars, which are set in that build.
+export const SUITE_SUPABASE_URL = url
+export const SUITE_SUPABASE_ANON = anon
+
 // One client. The host's email-OTP session is persisted in localStorage under a
 // Polling-specific storage key, so it can't be clobbered by (or clobber) the
 // SDK provider's own Supabase client. Polling does not use the suite's
