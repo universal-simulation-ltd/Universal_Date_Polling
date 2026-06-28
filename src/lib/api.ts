@@ -70,6 +70,29 @@ export async function createPoll(
   return data as Poll
 }
 
+/** Gated version for free-tier Universal ID users: enforces 1-poll limit and
+ *  spends 1 credit from the caller's org. Uses the `create_poll_gated` RPC
+ *  (SECURITY DEFINER) so the credit wallet can be updated server-side. */
+export async function createPollGated(
+  client: SupabaseClient,
+  p: NewPoll,
+  hostEmail: string,
+): Promise<Poll> {
+  const { data, error } = await client.rpc('create_poll_gated', {
+    p_id:         p.id,
+    p_title:      p.title.trim(),
+    p_host_email: hostEmail.trim(),
+    p_timezone:   p.timezone,
+    p_mode:       p.mode,
+    p_slots:      p.slots,
+    p_theme:      p.theme,
+    p_branding:   p.branding,
+    p_expires_at: p.expires_at,
+  })
+  if (error) throw error
+  return data as Poll
+}
+
 const LOGO_EXT: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',

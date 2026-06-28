@@ -3,7 +3,7 @@ import { useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
-import { createPoll, currentUser, sendHostCode, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
+import { createPoll, createPollGated, currentUser, sendHostCode, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { listTimezones, localTimezone, tzAbbrev } from '../lib/time'
 import SlotPicker from './SlotPicker'
@@ -60,6 +60,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     !!suiteUser &&
     subscription?.tier === 'enterprise' &&
     (subscription.status === 'active' || subscription.status === 'trialing')
+
+  // Any verified Universal ID session (free, pro, or enterprise) — these users
+  // skip the email OTP step since they're already authenticated via the suite.
+  const suiteLoggedIn = !!suiteUser
+  // Free-tier suite users are subject to the 1-poll token gate.
+  const freeGated = suiteLoggedIn && !!subscription && subscription.tier === 'free'
 
   // Temporary diagnostic: visit the create page with ?diag=1 to see exactly
   // where enterprise detection stops (session → org → subscription tier).
@@ -141,7 +147,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   function validateDraft(): string | null {
     if (!title.trim()) return 'Give your poll a title.'
     if (slots.length === 0) return mode === 'days' ? 'Add at least one day.' : 'Add at least one date and time.'
-    if (!enterprise && !EMAIL_RE.test(email)) return 'Enter a valid email address.'
+    if (!suiteLoggedIn && !EMAIL_RE.test(email)) return 'Enter a valid email address.'
     return null
   }
 
@@ -166,14 +172,17 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     return { id: shortId(), title, timezone, mode, slots, theme, branding, expires_at }
   }
 
-  // `client` must be signed in as `hostUserId` (suite client for enterprise,
-  // app OTP client for guests) — RLS gates the insert and the logo upload.
+  // `client` must be signed in as `hostUserId` (suite client for any Universal
+  // ID user, app OTP client for guests) — RLS gates the insert and logo upload.
   async function doCreate(client: typeof suiteClient, hostUserId: string, hostEmail: string) {
     setPhase('creating')
     try {
       let logoUrl: string | null = null
       if (!enterprise && logoFile) logoUrl = await uploadPollLogo(client, hostUserId, logoFile)
-      const poll = await createPoll(client, draft(buildBranding(logoUrl)), hostUserId, hostEmail)
+      const pollDraft = draft(buildBranding(logoUrl))
+      const poll = freeGated
+        ? await createPollGated(client, pollDraft, hostEmail)
+        : await createPoll(client, pollDraft, hostUserId, hostEmail)
       setCreatedId(poll.id)
       setPhase('done')
     } catch (e) {
@@ -187,8 +196,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     const v = validateDraft()
     if (v) { setError(v); return }
 
-    // Enterprise host: no email step — create straight away as the suite user.
-    if (enterprise && suiteUser) {
+    // Any Universal ID session (free, pro, enterprise): skip OTP — the suite
+    // session is already authenticated.
+    if (suiteLoggedIn && suiteUser) {
       await doCreate(suiteClient, suiteUser.id, suiteUser.email ?? '')
       return
     }
@@ -433,10 +443,25 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
         {/* Identity + create */}
         <div className="mt-6 border-t border-slate-100 pt-5">
+          {freeGated && (
+            <div className="mb-4 rounded-lg bg-amber-50 ring-1 ring-amber-200 px-4 py-3 text-sm text-amber-800">
+              <strong>1 token per poll.</strong> Free accounts can run one active poll at a time — your token is returned automatically when the poll expires or you delete it.
+              {subscription && (
+                <span className="ml-1 text-amber-700">
+                  ({subscription.credits} token{subscription.credits !== 1 ? 's' : ''} available)
+                </span>
+              )}
+            </div>
+          )}
+
           {enterprise ? (
             <p className="text-sm text-slate-600">
               Creating as <span className="font-medium text-slate-900">{org?.name ?? suiteUser?.email}</span>
               {org?.name && suiteUser?.email && <span className="text-slate-500"> ({suiteUser.email})</span>} — no email verification needed.
+            </p>
+          ) : suiteLoggedIn ? (
+            <p className="text-sm text-slate-600">
+              Creating as <span className="font-medium text-slate-900">{suiteUser?.email}</span> — no email verification needed.
             </p>
           ) : verified ? (
             <p className="text-sm text-slate-600">
@@ -560,6 +585,13 @@ function CreatedPanel({ pollBase, id, theme }: { pollBase: string; id: string; t
 }
 
 function messageOf(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message)
+  if (e && typeof e === 'object' && 'message' in e) {
+    const msg = String((e as { message: unknown }).message)
+    if (msg.includes('free_poll_limit'))
+      return 'You already have an active poll. Delete it first to create a new one, or upgrade to Pro for unlimited polls.'
+    if (msg.includes('no_credits'))
+      return 'No tokens available — purchase tokens at unisim.co.uk to create a poll.'
+    return msg
+  }
   return 'Something went wrong. Please try again.'
 }
