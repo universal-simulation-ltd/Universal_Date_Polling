@@ -43,7 +43,6 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [logoErr, setLogoErr] = useState<string | null>(null)
 
   const [showMore, setShowMore] = useState(false)
-  const [showBranding, setShowBranding] = useState(false)
   const [phase, setPhase] = useState<Phase>('edit')
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -367,116 +366,6 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           )}
         </div>
 
-        {/* Branding — its own collapsible below More options. Anonymous hosts
-            only: a logged-in host's branding comes from their account ("My
-            Company") automatically and is shown in the banner above. */}
-        {!suiteLoggedIn && (
-          <div className="mt-4 border-t border-slate-100 pt-4">
-            <button
-              type="button"
-              onClick={() => setShowBranding((s) => !s)}
-              aria-expanded={showBranding}
-              className="flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-[var(--accent-strong)]"
-            >
-              <svg viewBox="0 0 12 12" className={`w-3 h-3 transition-transform ${showBranding ? 'rotate-90' : ''}`} aria-hidden="true">
-                <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Branding
-            </button>
-
-            {showBranding && (
-              <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                {/* Booking-page colour */}
-                <div className="sm:col-span-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Booking-page colour</span>
-                  <div className="mt-2 flex items-center gap-2">
-                    {THEMES.map((t) => (
-                      <button
-                        key={t.name}
-                        type="button"
-                        onClick={() => setTheme(t.name)}
-                        aria-label={t.label}
-                        aria-pressed={theme === t.name}
-                        title={t.label}
-                        className={`h-8 w-8 rounded-full ring-2 ring-offset-2 transition ${theme === t.name ? 'ring-slate-900' : 'ring-transparent hover:ring-slate-300'}`}
-                        style={{ backgroundColor: t.swatch }}
-                      />
-                    ))}
-                    {/* Custom colour: shows the chosen hex when active, else a + */}
-                    <button
-                      type="button"
-                      onClick={() => colorRef.current?.click()}
-                      aria-label="Custom colour"
-                      aria-pressed={isHexTheme(theme)}
-                      title="Custom colour"
-                      className={`grid h-8 w-8 place-items-center rounded-full transition ${isHexTheme(theme) ? 'ring-2 ring-offset-2 ring-slate-900 text-white' : 'border-2 border-dashed border-slate-300 text-slate-400 hover:border-slate-400'}`}
-                      style={isHexTheme(theme) ? { backgroundColor: theme } : undefined}
-                    >
-                      {!isHexTheme(theme) && (
-                        <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                          <path d="M8 3 V13 M3 8 H13" />
-                        </svg>
-                      )}
-                    </button>
-                    <input
-                      ref={colorRef}
-                      type="color"
-                      value={isHexTheme(theme) ? theme : '#7c3aed'}
-                      onChange={(e) => setTheme(e.target.value)}
-                      className="sr-only"
-                      aria-hidden="true"
-                      tabIndex={-1}
-                    />
-                  </div>
-                </div>
-
-                {/* Brand name + logo */}
-                <div className="sm:col-span-2 rounded-lg bg-slate-50 ring-1 ring-slate-200 p-4">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Add your branding</span>
-                  <p className="text-xs text-slate-500 mt-0.5">Shown on the poll's create and share pages.</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <label className="block">
-                      <span className="text-xs font-medium text-slate-600">Brand name</span>
-                      <input
-                        type="text"
-                        value={brandName}
-                        maxLength={80}
-                        onChange={(e) => setBrandName(e.target.value)}
-                        placeholder="e.g. Acme Adventures"
-                        className="mt-1 w-full h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
-                      />
-                    </label>
-                    <div>
-                      <span className="text-xs font-medium text-slate-600">Logo</span>
-                      <div className="mt-1 flex items-center gap-3">
-                        {logoPreview && (
-                          <img src={logoPreview} alt="Logo preview" className="h-10 w-10 rounded object-contain ring-1 ring-slate-200 bg-white" />
-                        )}
-                        <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                          {logoFile ? 'Change…' : 'Upload…'}
-                          <input
-                            type="file"
-                            accept="image/png,image/jpeg,image/webp"
-                            onChange={(e) => onPickLogo(e.target.files?.[0] ?? null)}
-                            className="sr-only"
-                          />
-                        </label>
-                        {logoFile && (
-                          <button type="button" onClick={() => onPickLogo(null)} className="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2">
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                      <p className="mt-1 text-[11px] text-slate-400">PNG, JPG or WebP · up to 2 MB.</p>
-                      {logoErr && <p className="mt-1 text-xs text-red-600">{logoErr}</p>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Identity + create */}
         <div className="mt-6 border-t border-slate-100 pt-5">
           {freeGated && (
@@ -557,6 +446,108 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           </button>
         </div>
       </div>
+
+      {/* Branding box — a separate card beneath the create-poll form. Anonymous
+          hosts only: a logged-in host's branding auto-imports from their account
+          ("My Company") and shows in the banner above the form, so no box. */}
+      {!suiteLoggedIn && (
+        <div className="mt-4 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800">Branding</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Add your colour and logo to the poll's create and share pages.</p>
+            </div>
+            <a href="https://app.unisim.co.uk/login" className="text-xs font-medium text-[var(--accent-strong)] hover:underline whitespace-nowrap">
+              Sign in to import your branding →
+            </a>
+          </div>
+
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            {/* Booking-page colour */}
+            <div className="sm:col-span-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Booking-page colour</span>
+              <div className="mt-2 flex items-center gap-2">
+                {THEMES.map((t) => (
+                  <button
+                    key={t.name}
+                    type="button"
+                    onClick={() => setTheme(t.name)}
+                    aria-label={t.label}
+                    aria-pressed={theme === t.name}
+                    title={t.label}
+                    className={`h-8 w-8 rounded-full ring-2 ring-offset-2 transition ${theme === t.name ? 'ring-slate-900' : 'ring-transparent hover:ring-slate-300'}`}
+                    style={{ backgroundColor: t.swatch }}
+                  />
+                ))}
+                {/* Custom colour: shows the chosen hex when active, else a + */}
+                <button
+                  type="button"
+                  onClick={() => colorRef.current?.click()}
+                  aria-label="Custom colour"
+                  aria-pressed={isHexTheme(theme)}
+                  title="Custom colour"
+                  className={`grid h-8 w-8 place-items-center rounded-full transition ${isHexTheme(theme) ? 'ring-2 ring-offset-2 ring-slate-900 text-white' : 'border-2 border-dashed border-slate-300 text-slate-400 hover:border-slate-400'}`}
+                  style={isHexTheme(theme) ? { backgroundColor: theme } : undefined}
+                >
+                  {!isHexTheme(theme) && (
+                    <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M8 3 V13 M3 8 H13" />
+                    </svg>
+                  )}
+                </button>
+                <input
+                  ref={colorRef}
+                  type="color"
+                  value={isHexTheme(theme) ? theme : '#7c3aed'}
+                  onChange={(e) => setTheme(e.target.value)}
+                  className="sr-only"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                />
+              </div>
+            </div>
+
+            {/* Brand name */}
+            <label className="block">
+              <span className="text-xs font-medium text-slate-600">Brand name</span>
+              <input
+                type="text"
+                value={brandName}
+                maxLength={80}
+                onChange={(e) => setBrandName(e.target.value)}
+                placeholder="e.g. Acme Adventures"
+                className="mt-1 w-full h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
+              />
+            </label>
+
+            {/* Logo */}
+            <div>
+              <span className="text-xs font-medium text-slate-600">Logo</span>
+              <div className="mt-1 flex items-center gap-3">
+                {logoPreview && (
+                  <img src={logoPreview} alt="Logo preview" className="h-10 w-10 rounded object-contain ring-1 ring-slate-200 bg-white" />
+                )}
+                <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                  {logoFile ? 'Change…' : 'Upload…'}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(e) => onPickLogo(e.target.files?.[0] ?? null)}
+                    className="sr-only"
+                  />
+                </label>
+                {logoFile && (
+                  <button type="button" onClick={() => onPickLogo(null)} className="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2">
+                    Remove
+                  </button>
+                )}
+              </div>
+              <p className="mt-1 text-[11px] text-slate-400">PNG, JPG or WebP · up to 2 MB.</p>
+              {logoErr && <p className="mt-1 text-xs text-red-600">{logoErr}</p>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
