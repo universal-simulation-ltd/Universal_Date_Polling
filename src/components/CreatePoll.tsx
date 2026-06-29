@@ -43,6 +43,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [logoErr, setLogoErr] = useState<string | null>(null)
 
   const [showMore, setShowMore] = useState(false)
+  const [showBranding, setShowBranding] = useState(false)
   const [phase, setPhase] = useState<Phase>('edit')
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -453,15 +454,26 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       {!suiteLoggedIn && (
         <div className="mt-4 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-semibold text-slate-800">Branding</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Add your colour and logo to the poll's create and share pages.</p>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowBranding((s) => !s)}
+              aria-expanded={showBranding}
+              className="group flex items-start gap-2 text-left"
+            >
+              <svg viewBox="0 0 12 12" className={`mt-1 w-3 h-3 shrink-0 text-slate-400 transition-transform ${showBranding ? 'rotate-90' : ''}`} aria-hidden="true">
+                <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span>
+                <span className="block text-sm font-semibold text-slate-800 group-hover:text-[var(--accent-strong)]">Branding</span>
+                <span className="block text-xs text-slate-500 mt-0.5">Add your colour and logo to the poll's create and share pages.</span>
+              </span>
+            </button>
             <a href="https://app.unisim.co.uk/login" className="text-xs font-medium text-[var(--accent-strong)] hover:underline whitespace-nowrap">
               Sign in to import your branding →
             </a>
           </div>
 
+          {showBranding && (
           <div className="mt-4 grid gap-5 sm:grid-cols-2">
             {/* Booking-page colour */}
             <div className="sm:col-span-2">
@@ -546,6 +558,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               {logoErr && <p className="mt-1 text-xs text-red-600">{logoErr}</p>}
             </div>
           </div>
+          )}
         </div>
       )}
     </div>
