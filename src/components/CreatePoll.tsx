@@ -36,12 +36,14 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [email, setEmail] = useState('')
   const [verified, setVerified] = useState(false)
 
-  // Guest branding (More options); ignored for enterprise hosts.
+  // Guest branding (its own collapsible); only for anonymous hosts. Logged-in
+  // hosts brand from their account automatically, so these inputs are hidden.
   const [brandName, setBrandName] = useState('')
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoErr, setLogoErr] = useState<string | null>(null)
 
   const [showMore, setShowMore] = useState(false)
+  const [showBranding, setShowBranding] = useState(false)
   const [phase, setPhase] = useState<Phase>('edit')
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -106,13 +108,14 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     return () => { live = false }
   }, [diag, suiteUser, suiteClient])
 
-  // An enterprise poll defaults to the org's brand colour (the host can still
-  // change it). Run once when enterprise status resolves.
+  // A logged-in host's poll defaults to their account ("My Company") brand
+  // colour — the branding controls are hidden for them, so this is the colour
+  // their poll uses. Runs once the signed-in branding resolves.
   useEffect(() => {
-    if (enterprise && orgBranding.brand_color && isHexTheme(orgBranding.brand_color)) {
+    if (suiteLoggedIn && orgBranding.brand_color && isHexTheme(orgBranding.brand_color)) {
       setTheme(orgBranding.brand_color)
     }
-  }, [enterprise, orgBranding.brand_color])
+  }, [suiteLoggedIn, orgBranding.brand_color])
 
   // A returning guest host already has an OTP session — skip the email step.
   useEffect(() => {
@@ -152,7 +155,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   }
 
   function buildBranding(uploadedLogoUrl: string | null): PollBranding | null {
-    if (enterprise) {
+    // Signed in → brand from the account ("My Company") automatically; the
+    // manual branding controls are hidden for logged-in hosts. If the account
+    // has no branding set, the poll simply carries none.
+    if (suiteLoggedIn) {
+      const hasOrgBranding = !!(org?.name || orgBranding.logo_url || orgBranding.icon_url || orgBranding.brand_color)
+      if (!hasOrgBranding) return null
       return {
         source: 'org',
         name: org?.name ?? null,
@@ -178,7 +186,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     setPhase('creating')
     try {
       let logoUrl: string | null = null
-      if (!enterprise && logoFile) logoUrl = await uploadPollLogo(client, hostUserId, logoFile)
+      // Only anonymous hosts upload a logo file; logged-in hosts use their
+      // account logo URL (no per-poll upload).
+      if (!suiteLoggedIn && logoFile) logoUrl = await uploadPollLogo(client, hostUserId, logoFile)
       const pollDraft = draft(buildBranding(logoUrl))
       const poll = freeGated
         ? await createPollGated(client, pollDraft, hostEmail)
@@ -265,7 +275,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         </pre>
       )}
 
-      {enterprise && <BrandingBanner name={org?.name ?? null} logo={orgBranding.logo_url} icon={orgBranding.icon_url} />}
+      {/* Logged-in hosts: show the account branding that's being applied
+          automatically (in place of the hidden manual branding controls). */}
+      {suiteLoggedIn && (org?.name || orgBranding.logo_url || orgBranding.icon_url) && (
+        <BrandingBanner name={org?.name ?? null} logo={orgBranding.logo_url} icon={orgBranding.icon_url} />
+      )}
 
       <div className="text-center">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Find a time that works for everyone</h1>
@@ -319,50 +333,6 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
           {showMore && (
             <div className="mt-4 grid gap-5 sm:grid-cols-2">
-              {/* Theme + custom colour */}
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Booking-page colour</span>
-                <div className="mt-2 flex items-center gap-2">
-                  {THEMES.map((t) => (
-                    <button
-                      key={t.name}
-                      type="button"
-                      onClick={() => setTheme(t.name)}
-                      aria-label={t.label}
-                      aria-pressed={theme === t.name}
-                      title={t.label}
-                      className={`h-8 w-8 rounded-full ring-2 ring-offset-2 transition ${theme === t.name ? 'ring-slate-900' : 'ring-transparent hover:ring-slate-300'}`}
-                      style={{ backgroundColor: t.swatch }}
-                    />
-                  ))}
-                  {/* Custom colour: shows the chosen hex when active, else a + */}
-                  <button
-                    type="button"
-                    onClick={() => colorRef.current?.click()}
-                    aria-label="Custom colour"
-                    aria-pressed={isHexTheme(theme)}
-                    title="Custom colour"
-                    className={`grid h-8 w-8 place-items-center rounded-full transition ${isHexTheme(theme) ? 'ring-2 ring-offset-2 ring-slate-900 text-white' : 'border-2 border-dashed border-slate-300 text-slate-400 hover:border-slate-400'}`}
-                    style={isHexTheme(theme) ? { backgroundColor: theme } : undefined}
-                  >
-                    {!isHexTheme(theme) && (
-                      <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                        <path d="M8 3 V13 M3 8 H13" />
-                      </svg>
-                    )}
-                  </button>
-                  <input
-                    ref={colorRef}
-                    type="color"
-                    value={isHexTheme(theme) ? theme : '#7c3aed'}
-                    onChange={(e) => setTheme(e.target.value)}
-                    className="sr-only"
-                    aria-hidden="true"
-                    tabIndex={-1}
-                  />
-                </div>
-              </div>
-
               {/* Validity */}
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Link stays valid for</span>
@@ -393,8 +363,74 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 </div>
               )}
 
-              {/* Guest branding (enterprise hosts use their org branding instead) */}
-              {!enterprise && (
+            </div>
+          )}
+        </div>
+
+        {/* Branding — its own collapsible below More options. Anonymous hosts
+            only: a logged-in host's branding comes from their account ("My
+            Company") automatically and is shown in the banner above. */}
+        {!suiteLoggedIn && (
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowBranding((s) => !s)}
+              aria-expanded={showBranding}
+              className="flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-[var(--accent-strong)]"
+            >
+              <svg viewBox="0 0 12 12" className={`w-3 h-3 transition-transform ${showBranding ? 'rotate-90' : ''}`} aria-hidden="true">
+                <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Branding
+            </button>
+
+            {showBranding && (
+              <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                {/* Booking-page colour */}
+                <div className="sm:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Booking-page colour</span>
+                  <div className="mt-2 flex items-center gap-2">
+                    {THEMES.map((t) => (
+                      <button
+                        key={t.name}
+                        type="button"
+                        onClick={() => setTheme(t.name)}
+                        aria-label={t.label}
+                        aria-pressed={theme === t.name}
+                        title={t.label}
+                        className={`h-8 w-8 rounded-full ring-2 ring-offset-2 transition ${theme === t.name ? 'ring-slate-900' : 'ring-transparent hover:ring-slate-300'}`}
+                        style={{ backgroundColor: t.swatch }}
+                      />
+                    ))}
+                    {/* Custom colour: shows the chosen hex when active, else a + */}
+                    <button
+                      type="button"
+                      onClick={() => colorRef.current?.click()}
+                      aria-label="Custom colour"
+                      aria-pressed={isHexTheme(theme)}
+                      title="Custom colour"
+                      className={`grid h-8 w-8 place-items-center rounded-full transition ${isHexTheme(theme) ? 'ring-2 ring-offset-2 ring-slate-900 text-white' : 'border-2 border-dashed border-slate-300 text-slate-400 hover:border-slate-400'}`}
+                      style={isHexTheme(theme) ? { backgroundColor: theme } : undefined}
+                    >
+                      {!isHexTheme(theme) && (
+                        <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                          <path d="M8 3 V13 M3 8 H13" />
+                        </svg>
+                      )}
+                    </button>
+                    <input
+                      ref={colorRef}
+                      type="color"
+                      value={isHexTheme(theme) ? theme : '#7c3aed'}
+                      onChange={(e) => setTheme(e.target.value)}
+                      className="sr-only"
+                      aria-hidden="true"
+                      tabIndex={-1}
+                    />
+                  </div>
+                </div>
+
+                {/* Brand name + logo */}
                 <div className="sm:col-span-2 rounded-lg bg-slate-50 ring-1 ring-slate-200 p-4">
                   <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Add your branding</span>
                   <p className="text-xs text-slate-500 mt-0.5">Shown on the poll's create and share pages.</p>
@@ -436,10 +472,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Identity + create */}
         <div className="mt-6 border-t border-slate-100 pt-5">
