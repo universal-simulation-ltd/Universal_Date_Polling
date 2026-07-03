@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
+import { useAppFreeToken, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
@@ -68,6 +68,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const suiteLoggedIn = !!suiteUser
   // Free-tier suite users are subject to the 1-poll token gate.
   const freeGated = suiteLoggedIn && !!subscription && subscription.tier === 'free'
+  // Every org has one free returnable Polling token (migration 0045) —
+  // create_poll_gated spends it before the purchased wallet, so the banner
+  // shouldn't read "0 tokens" while the free one is still available.
+  const { status: pollFreeToken } = useAppFreeToken('polling')
 
   // Temporary diagnostic: visit the create page with ?diag=1 to see exactly
   // where enterprise detection stops (session → org → subscription tier).
@@ -374,7 +378,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               <strong>1 token per poll.</strong> Free accounts can run one active poll at a time — your token is returned automatically when the poll expires or you delete it.
               {subscription && (
                 <span className="ml-1 text-amber-700">
-                  ({subscription.credits} token{subscription.credits !== 1 ? 's' : ''} available)
+                  {pollFreeToken === 'available'
+                    ? `(free token available${subscription.credits > 0 ? ` + ${subscription.credits} purchased` : ''})`
+                    : `(${subscription.credits} token${subscription.credits !== 1 ? 's' : ''} available)`}
                 </span>
               )}
             </div>
@@ -629,6 +635,10 @@ function messageOf(e: unknown): string {
     const msg = String((e as { message: unknown }).message)
     if (msg.includes('free_poll_limit'))
       return 'You already have an active poll. Delete it first to create a new one, or upgrade to Pro for unlimited polls.'
+    if (msg.includes('token_in_use:')) {
+      const what = msg.split('token_in_use:')[1]?.trim() || 'an active poll'
+      return `Your free Polling token is in use (${what}). Delete that poll to get it back, or purchase tokens at unisim.co.uk.`
+    }
     if (msg.includes('no_credits'))
       return 'No tokens available — purchase tokens at unisim.co.uk to create a poll.'
     return msg
