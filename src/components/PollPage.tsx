@@ -155,6 +155,14 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                           >
                             If need be
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => cycle(s.id, 'no')}
+                            aria-pressed={v === 'no'}
+                            className={`h-9 px-3 rounded-md text-sm font-medium ring-1 transition ${v === 'no' ? 'bg-rose-600 text-white ring-rose-600' : 'bg-white text-slate-500 ring-slate-300 hover:ring-rose-400'}`}
+                          >
+                            Not free 🙅‍♀️
+                          </button>
                         </div>
                       </div>
                     )
@@ -192,7 +200,8 @@ function Results({ poll, slots, responses, viewerTz }: {
     return slots.map((s) => {
       const yes = responses.filter((r) => r.availability[s.id] === 'yes').map((r) => r.name)
       const maybe = responses.filter((r) => r.availability[s.id] === 'maybe').map((r) => r.name)
-      return { slot: s, yes, maybe }
+      const no = responses.filter((r) => r.availability[s.id] === 'no').map((r) => r.name)
+      return { slot: s, yes, maybe, no }
     })
   }, [slots, responses])
 
@@ -232,15 +241,17 @@ function Results({ poll, slots, responses, viewerTz }: {
                         <div className="shrink-0 text-sm text-slate-600">
                           <span className="font-semibold text-slate-900">{t.yes.length}</span>
                           {t.maybe.length > 0 && <span className="text-slate-400"> · {t.maybe.length} maybe</span>}
+                          {t.no.length > 0 && <span className="text-slate-400"> · {t.no.length} not free</span>}
                         </div>
                       </div>
                       <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
                         <div className="heat-cell h-2 rounded-full" style={{ width: `${Math.max(heat * 100, t.yes.length ? 6 : 0)}%`, ['--heat' as string]: '1' }} />
                       </div>
-                      {(t.yes.length > 0 || t.maybe.length > 0) && (
+                      {(t.yes.length > 0 || t.maybe.length > 0 || t.no.length > 0) && (
                         <p className="mt-1.5 text-xs text-slate-500">
                           {t.yes.length > 0 && <span className="text-[var(--accent-text)] font-medium">{t.yes.join(', ')}</span>}
                           {t.maybe.length > 0 && <span> {t.yes.length > 0 ? '· ' : ''}maybe: {t.maybe.join(', ')}</span>}
+                          {t.no.length > 0 && <span> {t.yes.length > 0 || t.maybe.length > 0 ? '· ' : ''}not free: {t.no.join(', ')}</span>}
                         </p>
                       )}
                     </div>
