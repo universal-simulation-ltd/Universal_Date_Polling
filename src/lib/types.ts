@@ -52,8 +52,9 @@ export interface Poll {
   expires_at: string | null
 }
 
-/** Availability for a single slot. Absence of a slot key means "unavailable". */
-export type Availability = 'yes' | 'maybe'
+/** Availability for a single slot. Absence of a slot key means "no answer";
+ *  an explicit 'no' means the respondent marked themselves not free. */
+export type Availability = 'yes' | 'maybe' | 'no'
 
 export interface PollResponse {
   id: string
