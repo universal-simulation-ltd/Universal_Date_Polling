@@ -3,6 +3,7 @@ import { UniversalAppsNavBar } from '@unisim/sdk'
 import ProductLogo from './components/ProductLogo'
 import CreatePoll from './components/CreatePoll'
 import PollPage from './components/PollPage'
+import { CONTAINER_CREATE, CONTAINER_POLL } from './lib/layout'
 
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_Date_Polling'
 const BASE = import.meta.env.BASE_URL // '/' in dev, '/polling/' in production
@@ -29,6 +30,11 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
+  // The create form is deliberately narrower than a poll's results view, so the
+  // page width is per-view. Navbar + main + footer all take this one value, so
+  // whichever view is up, they share an edge.
+  const container = loc.view === 'poll' ? CONTAINER_POLL : CONTAINER_CREATE
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-100">
       <UniversalAppsNavBar
@@ -36,6 +42,7 @@ export default function App() {
         productLogo={<ProductLogo />}
         productHomeHref={BASE}
         suiteSwitcherIconSrc={`${BASE}unisim-icon.png`}
+        contentClassName={container}
       />
 
       <main className="flex-1">
@@ -43,7 +50,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-4 flex flex-row items-center gap-3 sm:gap-4 text-xs text-slate-500">
+        <div className={`${container} py-4 flex flex-row items-center gap-3 sm:gap-4 text-xs text-slate-500`}>
           <span>
             100% free — every feature, no paywalls. Open source, hosted by{' '}
             <a

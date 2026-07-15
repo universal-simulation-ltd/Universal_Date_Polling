@@ -6,6 +6,7 @@ import { themeAttr, themeVars } from '../lib/theme'
 import {
   formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, slotInstant, tzAbbrev,
 } from '../lib/time'
+import { CONTAINER_POLL } from '../lib/layout'
 
 type Load = 'loading' | 'ready' | 'notfound' | 'error'
 
@@ -85,7 +86,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const tzNote = !dayMode && poll.timezone !== viewerTz
 
   return (
-    <div data-theme={themeAttr(poll.theme)} style={themeVars(poll.theme)} className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-8 sm:py-10">
+    <div data-theme={themeAttr(poll.theme)} style={themeVars(poll.theme)} className={`${CONTAINER_POLL} py-8 sm:py-10`}>
       {poll.branding && <BrandingHeader branding={poll.branding} />}
       <header className="text-center">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 break-words">{poll.title}</h1>

@@ -8,6 +8,7 @@ import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { listTimezones, localTimezone, tzAbbrev } from '../lib/time'
 import SlotPicker from './SlotPicker'
 import type { SlotView } from './SlotPicker'
+import { CONTAINER_CREATE } from '../lib/layout'
 
 const VALIDITY = [
   { label: '7 days', days: 7 },
@@ -259,7 +260,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     <div
       data-theme={themeAttr(theme)}
       style={themeVars(theme)}
-      className="mx-auto w-full max-w-2xl px-4 sm:px-6 py-8 sm:py-12"
+      className={`${CONTAINER_CREATE} py-8 sm:py-12`}
     >
       {diag && (
         <pre className="mb-4 overflow-auto rounded-lg bg-slate-900 p-3 text-left text-[11px] leading-relaxed text-green-300">
@@ -595,7 +596,7 @@ function CreatedPanel({ pollBase, id, theme }: { pollBase: string; id: string; t
     }
   }
   return (
-    <div data-theme={themeAttr(theme)} style={themeVars(theme)} className="mx-auto w-full max-w-2xl px-4 sm:px-6 py-12">
+    <div data-theme={themeAttr(theme)} style={themeVars(theme)} className={`${CONTAINER_CREATE} py-12`}>
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-7 text-center pop-in">
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
