@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useUser, useUniversal } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { currentUser, getPoll, getResponses, setFinalSlot, submitResponse } from '../lib/api'
+import { currentUser, getPoll, getResponses, notifyPollHost, setFinalSlot, submitResponse } from '../lib/api'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import {
@@ -78,10 +78,14 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     if (!name.trim()) { setError('Add your name so people know who you are.'); return }
     const availability: Record<string, Availability> = {}
     for (const [k, v] of Object.entries(mine)) if (v) availability[k] = v
+    // A brand-new responder (not this browser editing an existing entry) — used
+    // to notify the host once per new person, not on every re-save.
+    const isNewResponder = !responses.some((r) => r.name.trim().toLowerCase() === name.trim().toLowerCase())
     setSaving(true)
     try {
       await submitResponse(poll.id, name, availability)
       localStorage.setItem(NAME_KEY, name.trim())
+      if (isNewResponder) void notifyPollHost(poll.id, name.trim())
       setResponses(await getResponses(poll.id))
       setSavedAt(Date.now())
     } catch (e) {

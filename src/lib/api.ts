@@ -130,6 +130,30 @@ export async function setFinalSlot(
   if (error) throw error
 }
 
+/** Host-only: turn per-response email alerts on/off for a poll. `client` must be
+ *  signed in as the host — RLS (`polls_owner_update`) gates it. */
+export async function setNotifyOnResponse(
+  client: SupabaseClient,
+  pollId: string,
+  on: boolean,
+): Promise<void> {
+  const { error } = await client.from('polls').update({ notify_on_response: on }).eq('id', pollId)
+  if (error) throw error
+}
+
+/** Best-effort: ask the edge function to email the host that `respondentName`
+ *  just responded. Fire-and-forget — the response is already saved, so a failure
+ *  here (offline, provider down, host not opted in) must never surface as an
+ *  error to the respondent. The function itself no-ops unless the host opted in
+ *  and a matching response row exists. */
+export async function notifyPollHost(pollId: string, respondentName: string): Promise<void> {
+  try {
+    await supabase.functions.invoke('notify-poll-host', { body: { pollId, respondentName } })
+  } catch {
+    /* ignore — notification is best-effort */
+  }
+}
+
 export async function getPoll(id: string): Promise<Poll | null> {
   const { data, error } = await supabase.from('polls').select('*').eq('id', id).maybeSingle()
   if (error) throw error

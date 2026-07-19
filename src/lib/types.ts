@@ -51,6 +51,8 @@ export interface Poll {
   /** The slot the host has confirmed as the final chosen time (a `Slot.id`), or
    *  null while undecided. Only the host can set it. */
   final_slot_id: string | null
+  /** When true, the host is emailed each time a new person responds. */
+  notify_on_response: boolean
   created_at: string
   expires_at: string | null
 }

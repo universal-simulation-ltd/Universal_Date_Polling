@@ -3,7 +3,7 @@ import { useAppFreeToken, useOrg, useOrgBranding, useSubscription, useUniversal,
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
-import { createPoll, createPollGated, currentUser, sendHostCode, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
+import { createPoll, createPollGated, currentUser, sendHostCode, setNotifyOnResponse as apiSetNotify, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { listTimezones, localTimezone, tzAbbrev } from '../lib/time'
 import SlotPicker from './SlotPicker'
@@ -34,6 +34,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [theme, setTheme] = useState<Theme>('orange')
   const [timezone, setTimezone] = useState(localTimezone())
   const [validityDays, setValidityDays] = useState<number | null>(30)
+  const [notifyOnResponse, setNotifyOnResponse] = useState(false)
   const [email, setEmail] = useState('')
   const [verified, setVerified] = useState(false)
 
@@ -198,6 +199,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       const poll = freeGated
         ? await createPollGated(client, pollDraft, hostEmail)
         : await createPoll(client, pollDraft, hostUserId, hostEmail)
+      // Response alerts are a follow-up update (keeps the create RPC/insert
+      // untouched); non-fatal, since the poll itself is already created.
+      if (notifyOnResponse) {
+        try { await apiSetNotify(client, poll.id, true) } catch { /* poll still created */ }
+      }
       setCreatedId(poll.id)
       setPhase('done')
     } catch (e) {
@@ -350,6 +356,27 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     <option key={v.label} value={String(v.days)}>{v.label}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Response alerts */}
+              <div className="sm:col-span-2">
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={notifyOnResponse}
+                    onChange={(e) => setNotifyOnResponse(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[var(--accent)] focus:ring-[var(--accent)]"
+                  />
+                  <span className="text-sm text-slate-700">
+                    Email me when someone responds
+                    {(() => {
+                      const to = suiteLoggedIn ? (suiteUser?.email ?? '') : email.trim()
+                      return to
+                        ? <span className="block text-xs text-slate-500">We'll email <span className="font-medium">{to}</span> each time a new person responds.</span>
+                        : <span className="block text-xs text-slate-500">We'll email you (at the address you verify below) each time a new person responds.</span>
+                    })()}
+                  </span>
+                </label>
               </div>
 
               {/* Timezone (timed polls only) */}
