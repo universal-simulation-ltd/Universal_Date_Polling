@@ -157,20 +157,29 @@ function escapeIcs(text: string): string {
     .replace(/\r?\n/g, '\\n')
 }
 
-/** Fold a content line to the RFC 5545 75-octet limit (CRLF + a leading space
- *  on continuations). Kept simple: folds on character count, which is safe for
- *  the ASCII content these events produce. */
+const utf8 = new TextEncoder()
+
+/** Fold a content line to the RFC 5545 75-OCTET limit (CRLF + a leading space
+ *  on continuations, the space counting toward that line's 75). Measures UTF-8
+ *  octets and iterates by code point, so a fold can never split a multi-byte
+ *  character or an emoji's surrogate pair — SUMMARY/DESCRIPTION carry the
+ *  user's poll title, which is unconstrained Unicode. */
 function foldIcsLine(line: string): string {
-  if (line.length <= 75) return line
+  if (utf8.encode(line).length <= 75) return line
   const chunks: string[] = []
-  let rest = line
-  chunks.push(rest.slice(0, 75))
-  rest = rest.slice(75)
-  while (rest.length > 74) {
-    chunks.push(' ' + rest.slice(0, 74))
-    rest = rest.slice(74)
+  let current = ''
+  let octets = 0
+  for (const ch of line) { // for..of iterates code points, not UTF-16 units
+    const w = utf8.encode(ch).length
+    if (octets + w > 75) {
+      chunks.push(current)
+      current = ' '
+      octets = 1
+    }
+    current += ch
+    octets += w
   }
-  if (rest.length) chunks.push(' ' + rest)
+  chunks.push(current)
   return chunks.join('\r\n')
 }
 

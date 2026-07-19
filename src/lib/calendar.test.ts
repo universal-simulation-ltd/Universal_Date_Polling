@@ -77,6 +77,35 @@ describe('buildIcs', () => {
     const ics = buildIcs(timedPoll({ title: 'Lunch, drinks; then talk' }), timedSlot, POLL_URL, NOW)
     expect(ics).toContain('SUMMARY:Lunch\\, drinks\\; then talk')
   })
+
+  // RFC 5545 folding is a 75-OCTET limit and must never split a code point.
+  // The poll title is unconstrained Unicode, so emoji/CJK have to survive.
+  it('folds long lines at 75 octets without splitting surrogate pairs', () => {
+    // 66 leading chars put the first emoji's surrogate pair exactly across the
+    // old char-count fold boundary (index 74–75 of "SUMMARY:" + title).
+    const title = 'x'.repeat(66) + '🎉🎉🎉🎉🎉 and then some more text to force several folds'
+    const ics = buildIcs(timedPoll({ title }), timedSlot, POLL_URL, NOW)
+
+    const encoder = new TextEncoder()
+    const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/
+    for (const line of ics.split('\r\n')) {
+      expect(loneSurrogate.test(line)).toBe(false)
+      expect(encoder.encode(line).length).toBeLessThanOrEqual(75)
+    }
+    // Unfolding (CRLF + space removal) must reproduce the escaped title intact.
+    const unfolded = ics.replace(/\r\n[ ]/g, '')
+    expect(unfolded).toContain(`SUMMARY:${title}`)
+  })
+
+  it('keeps every folded line within 75 octets for multi-byte (CJK) titles', () => {
+    const title = '会議の候補日について皆さんの都合を教えてください'.repeat(4) // 3 octets/char
+    const ics = buildIcs(timedPoll({ title }), timedSlot, POLL_URL, NOW)
+    const encoder = new TextEncoder()
+    for (const line of ics.split('\r\n')) {
+      expect(encoder.encode(line).length).toBeLessThanOrEqual(75)
+    }
+    expect(ics.replace(/\r\n[ ]/g, '')).toContain(`SUMMARY:${title}`)
+  })
 })
 
 describe('googleCalendarUrl', () => {

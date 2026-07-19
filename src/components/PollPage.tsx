@@ -5,7 +5,7 @@ import { currentUser, getPoll, getResponses, notifyPollHost, setFinalSlot, submi
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import {
-  formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, slotInstant, tzAbbrev,
+  formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, sameCalendarDay, slotInstant, tzAbbrev,
 } from '../lib/time'
 import { CONTAINER_POLL } from '../lib/layout'
 import AddToCalendar from './AddToCalendar'
@@ -142,8 +142,11 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           {responses.length === 0 ? 'Be the first to respond.' : `${responses.length} ${responses.length === 1 ? 'person has' : 'people have'} responded.`}
           {!dayMode && (
             <>
-              {' · '}Times in <span className="font-medium">{tzAbbrev(poll.timezone)}</span>
-              {tzNote && <span className="text-slate-500"> (your timezone: {tzAbbrev(viewerTz)})</span>}
+              {/* Anchor the abbreviation to the first slot's instant, not "now" —
+                  a summer page-view of a winter poll would otherwise label GMT
+                  times as BST (and vice versa). */}
+              {' · '}Times in <span className="font-medium">{tzAbbrev(poll.timezone, slots.length ? slotInstant(slots[0].start, poll.timezone) : undefined)}</span>
+              {tzNote && <span className="text-slate-500"> (your timezone: {tzAbbrev(viewerTz, slots.length ? slotInstant(slots[0].start, poll.timezone) : undefined)})</span>}
             </>
           )}
         </p>
@@ -200,7 +203,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                       <div key={s.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2">
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-slate-900">{dayMode ? 'All day' : formatRange(inst, s.durationMins, poll.timezone)}</div>
-                          {tzNote && <div className="text-xs text-slate-500">{formatTime(inst, viewerTz)} your time</div>}
+                          {tzNote && <div className="text-xs text-slate-500">{viewerTimeNote(formatTime(inst, viewerTz), inst, poll.timezone, viewerTz)}</div>}
                         </div>
                         <div className="flex shrink-0 gap-1.5">
                           <button
@@ -304,7 +307,7 @@ function Results({ poll, slots, responses, viewerTz, pollUrl, isHost, confirming
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <span className="text-sm font-semibold text-slate-900">{dayMode ? 'All day' : formatRange(inst, s.durationMins, poll.timezone)}</span>
-                          {tzNote && <span className="ml-2 text-xs text-slate-500">{formatTime(inst, viewerTz)} your time</span>}
+                          {tzNote && <span className="ml-2 text-xs text-slate-500">{viewerTimeNote(formatTime(inst, viewerTz), inst, poll.timezone, viewerTz)}</span>}
                           {isFinal && (
                             <span className="ml-2 inline-block rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white align-middle">✓ Confirmed</span>
                           )}
@@ -372,7 +375,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, dayMode, isHost, confi
   const inst = slotInstant(slot.start, poll.timezone)
   const when = dayMode
     ? formatCalendarDay(slot.start)
-    : `${formatDateHeading(inst, poll.timezone)} · ${formatRange(inst, slot.durationMins, poll.timezone)} ${tzAbbrev(poll.timezone)}`
+    : `${formatDateHeading(inst, poll.timezone)} · ${formatRange(inst, slot.durationMins, poll.timezone)} ${tzAbbrev(poll.timezone, inst)}`
   const tzNote = !dayMode && poll.timezone !== viewerTz
   return (
     <div className="mt-6 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4">
@@ -380,7 +383,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, dayMode, isHost, confi
         <div className="min-w-0">
           <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">✓ Confirmed time</div>
           <div className="mt-0.5 text-lg font-bold text-slate-900 break-words">{when}</div>
-          {tzNote && <div className="text-xs text-slate-500">{formatRange(inst, slot.durationMins, viewerTz)} your time</div>}
+          {tzNote && <div className="text-xs text-slate-500">{viewerTimeNote(formatRange(inst, slot.durationMins, viewerTz), inst, poll.timezone, viewerTz)}</div>}
         </div>
         <div className="flex items-center gap-2">
           {isHost && (
@@ -411,6 +414,16 @@ function BrandingHeader({ branding }: { branding: PollBranding }) {
       )}
     </div>
   )
+}
+
+/** "10:00 your time" — prefixed with the viewer-local DATE ("Thu 11 Jun,
+ *  10:00 your time") whenever the slot falls on a different calendar day in
+ *  the viewer's zone than in the poll's. Without the prefix, a slot late in
+ *  the poll's evening reads as the wrong day for a viewer further east — for
+ *  a confirmed meeting that's a missed-by-a-day bug. */
+function viewerTimeNote(timeText: string, inst: Date, pollTz: string, viewerTz: string): string {
+  const prefix = sameCalendarDay(inst, pollTz, viewerTz) ? '' : `${formatDateHeading(inst, viewerTz)}, `
+  return `${prefix}${timeText} your time`
 }
 
 function groupByDay(slots: Slot[]): [string, Slot[]][] {
