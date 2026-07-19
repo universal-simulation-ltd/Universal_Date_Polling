@@ -118,6 +118,18 @@ export async function uploadPollLogo(
   return client.storage.from('poll-logos').getPublicUrl(path).data.publicUrl
 }
 
+/** Host-only: set (or clear, with `null`) the poll's confirmed final slot.
+ *  `client` must be signed in as the poll's `host_user_id` — RLS
+ *  (`polls_owner_update`) rejects it otherwise. */
+export async function setFinalSlot(
+  client: SupabaseClient,
+  pollId: string,
+  slotId: string | null,
+): Promise<void> {
+  const { error } = await client.from('polls').update({ final_slot_id: slotId }).eq('id', pollId)
+  if (error) throw error
+}
+
 export async function getPoll(id: string): Promise<Poll | null> {
   const { data, error } = await supabase.from('polls').select('*').eq('id', id).maybeSingle()
   if (error) throw error

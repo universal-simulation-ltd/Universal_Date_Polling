@@ -48,6 +48,9 @@ export interface Poll {
   slots: Slot[]
   theme: Theme
   branding: PollBranding | null
+  /** The slot the host has confirmed as the final chosen time (a `Slot.id`), or
+   *  null while undecided. Only the host can set it. */
+  final_slot_id: string | null
   created_at: string
   expires_at: string | null
 }

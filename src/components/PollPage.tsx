@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useUser, useUniversal } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { getPoll, getResponses, submitResponse } from '../lib/api'
-import { SUPABASE_CONFIGURED } from '../lib/supabase'
+import { currentUser, getPoll, getResponses, setFinalSlot, submitResponse } from '../lib/api'
+import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import {
   formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, slotInstant, tzAbbrev,
@@ -22,8 +23,20 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState(false)
 
   const viewerTz = localTimezone()
+
+  // Host detection. A poll's host authenticated either through the suite (a
+  // Universal ID session, via the SDK client) or as a guest via email OTP (the
+  // app's own client). Whoever's uid matches host_user_id is the host, and
+  // their client is the one RLS will accept the "confirm slot" update on.
+  const { user: suiteUser } = useUser()
+  const { supabase: suiteClient } = useUniversal()
+  const [otpUserId, setOtpUserId] = useState<string | null>(null)
+  useEffect(() => {
+    currentUser().then((u) => setOtpUserId(u?.id ?? null)).catch(() => setOtpUserId(null))
+  }, [])
 
   useEffect(() => {
     let live = true
@@ -78,6 +91,30 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     }
   }
 
+  // The client to run a host-only write on: whichever session's uid matches the
+  // poll's host. null for everyone else (so non-hosts never see host controls).
+  function hostClientFor(p: Poll) {
+    if (suiteUser?.id === p.host_user_id) return suiteClient
+    if (otpUserId && otpUserId === p.host_user_id) return supabase
+    return null
+  }
+
+  async function confirmSlot(slotId: string | null) {
+    if (!poll) return
+    const client = hostClientFor(poll)
+    if (!client) return
+    setError(null)
+    setConfirming(true)
+    try {
+      await setFinalSlot(client, poll.id, slotId)
+      setPoll({ ...poll, final_slot_id: slotId })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not confirm the time.')
+    } finally {
+      setConfirming(false)
+    }
+  }
+
   if (state === 'loading') return <Centered>Loading poll…</Centered>
   if (state === 'notfound') return <NotFound pollBase={pollBase} />
   if (state === 'error' || !poll) return <Centered>{error ?? 'Something went wrong.'}</Centered>
@@ -88,6 +125,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // The page we're on IS the shareable poll link — reuse it verbatim for the
   // "view or update the poll" line stamped into each calendar event.
   const pollUrl = window.location.origin + window.location.pathname
+
+  const isHost = !!hostClientFor(poll)
+  const finalSlot = poll.final_slot_id ? slots.find((s) => s.id === poll.final_slot_id) ?? null : null
 
   return (
     <div data-theme={themeAttr(poll.theme)} style={themeVars(poll.theme)} className={`${CONTAINER_POLL} py-8 sm:py-10`}>
@@ -104,6 +144,19 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           )}
         </p>
       </header>
+
+      {finalSlot && (
+        <ConfirmedBanner
+          poll={poll} slot={finalSlot} pollUrl={pollUrl} viewerTz={viewerTz}
+          dayMode={dayMode} isHost={isHost} confirming={confirming}
+          onUnconfirm={() => confirmSlot(null)}
+        />
+      )}
+      {isHost && !finalSlot && responses.length > 0 && (
+        <p className="mt-5 text-center text-sm text-slate-500">
+          You're the host — pick the final time below with <span className="font-medium text-slate-700">Confirm this time</span>, and everyone with the link will see it.
+        </p>
+      )}
 
       {expired && (
         <div className="mt-6 rounded-lg bg-amber-50 text-amber-800 ring-1 ring-amber-200 px-4 py-3 text-sm">
@@ -195,13 +248,19 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       )}
 
       {/* Results */}
-      <Results poll={poll} slots={slots} responses={responses} viewerTz={viewerTz} pollUrl={pollUrl} />
+      <Results
+        poll={poll} slots={slots} responses={responses} viewerTz={viewerTz} pollUrl={pollUrl}
+        isHost={isHost} confirming={confirming} finalSlotId={poll.final_slot_id}
+        onConfirm={confirmSlot}
+      />
     </div>
   )
 }
 
-function Results({ poll, slots, responses, viewerTz, pollUrl }: {
+function Results({ poll, slots, responses, viewerTz, pollUrl, isHost, confirming, finalSlotId, onConfirm }: {
   poll: Poll; slots: Slot[]; responses: PollResponse[]; viewerTz: string; pollUrl: string
+  isHost: boolean; confirming: boolean; finalSlotId: string | null
+  onConfirm: (slotId: string | null) => void
 }) {
   const tally = useMemo(() => {
     return slots.map((s) => {
@@ -235,13 +294,17 @@ function Results({ poll, slots, responses, viewerTz, pollUrl }: {
                   const inst = slotInstant(s.start, poll.timezone)
                   const heat = total > 0 ? t.yes.length / total : 0
                   const best = t.yes.length > 0 && t.yes.length === maxYes
+                  const isFinal = finalSlotId === s.id
                   return (
-                    <div key={s.id} className="px-4 py-3">
+                    <div key={s.id} className={`px-4 py-3 ${isFinal ? 'bg-emerald-50/60' : ''}`}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <span className="text-sm font-semibold text-slate-900">{dayMode ? 'All day' : formatRange(inst, s.durationMins, poll.timezone)}</span>
                           {tzNote && <span className="ml-2 text-xs text-slate-500">{formatTime(inst, viewerTz)} your time</span>}
-                          {best && (
+                          {isFinal && (
+                            <span className="ml-2 inline-block rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white align-middle">✓ Confirmed</span>
+                          )}
+                          {best && !isFinal && (
                             <span className="ml-2 inline-block rounded-full bg-[var(--accent)] px-2 py-0.5 text-[11px] font-bold text-white align-middle">Best</span>
                           )}
                         </div>
@@ -261,7 +324,27 @@ function Results({ poll, slots, responses, viewerTz, pollUrl }: {
                           {t.no.length > 0 && <span> {t.yes.length > 0 || t.maybe.length > 0 ? '· ' : ''}not free: {t.no.join(', ')}</span>}
                         </p>
                       )}
-                      <div className="mt-2 flex justify-end">
+                      <div className="mt-2 flex items-center justify-end gap-2">
+                        {isHost && !isFinal && (
+                          <button
+                            type="button"
+                            onClick={() => onConfirm(s.id)}
+                            disabled={confirming}
+                            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 hover:ring-emerald-400 transition disabled:opacity-60"
+                          >
+                            ✓ Confirm this time
+                          </button>
+                        )}
+                        {isHost && isFinal && (
+                          <button
+                            type="button"
+                            onClick={() => onConfirm(null)}
+                            disabled={confirming}
+                            className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 hover:text-slate-700 transition disabled:opacity-60"
+                          >
+                            Unconfirm
+                          </button>
+                        )}
                         <AddToCalendar poll={poll} slot={s} pollUrl={pollUrl} />
                       </div>
                     </div>
@@ -273,6 +356,43 @@ function Results({ poll, slots, responses, viewerTz, pollUrl }: {
         </div>
       )}
     </section>
+  )
+}
+
+/** The prominent "Confirmed" banner shown to everyone once the host has picked
+ *  a final slot — the chosen date/time plus an "Add to calendar" for it. */
+function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, dayMode, isHost, confirming, onUnconfirm }: {
+  poll: Poll; slot: Slot; pollUrl: string; viewerTz: string; dayMode: boolean
+  isHost: boolean; confirming: boolean; onUnconfirm: () => void
+}) {
+  const inst = slotInstant(slot.start, poll.timezone)
+  const when = dayMode
+    ? formatCalendarDay(slot.start)
+    : `${formatDateHeading(inst, poll.timezone)} · ${formatRange(inst, slot.durationMins, poll.timezone)} ${tzAbbrev(poll.timezone)}`
+  const tzNote = !dayMode && poll.timezone !== viewerTz
+  return (
+    <div className="mt-6 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">✓ Confirmed time</div>
+          <div className="mt-0.5 text-lg font-bold text-slate-900 break-words">{when}</div>
+          {tzNote && <div className="text-xs text-slate-500">{formatRange(inst, slot.durationMins, viewerTz)} your time</div>}
+        </div>
+        <div className="flex items-center gap-2">
+          {isHost && (
+            <button
+              type="button"
+              onClick={onUnconfirm}
+              disabled={confirming}
+              className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200 hover:bg-white hover:text-slate-700 transition disabled:opacity-60"
+            >
+              Change
+            </button>
+          )}
+          <AddToCalendar poll={poll} slot={slot} pollUrl={pollUrl} />
+        </div>
+      </div>
+    </div>
   )
 }
 
