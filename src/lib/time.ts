@@ -98,6 +98,19 @@ export function formatRange(instant: Date, durationMins: number, displayTz: stri
   return `${formatTime(instant, displayTz)}–${formatTime(end, displayTz)}`
 }
 
+/** True when `instant` falls on the same calendar day in both zones. Decides
+ *  whether a viewer-local time needs its date spelled out — a slot late in the
+ *  poll's evening can be the NEXT day for a viewer further east, and a bare
+ *  "10:00 your time" under a poll-timezone date heading then points at the
+ *  wrong day. */
+export function sameCalendarDay(instant: Date, tzA: string, tzB: string): boolean {
+  const day = (tz: string) =>
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(instant)
+  return day(tzA) === day(tzB)
+}
+
 /** Short tz label, e.g. "GMT+1" appended to the IANA name where useful. */
 export function tzAbbrev(tz: string, at: Date = new Date()): string {
   try {
