@@ -8,6 +8,15 @@ candidate dates/times (verifying their email with a one-time code so polls
 can't be spammed anonymously), shares a link, and anyone can respond
 Free / If-need-be per slot with no account; a live tally badges the best slot.
 
+Once a poll has responses, each slot in the results carries an **"Add to
+calendar"** control — Google Calendar and Outlook deep-links plus an `.ics`
+download (Apple Calendar, Outlook desktop, everything else). The pure builders
+live in `src/lib/calendar.ts` (unit-tested in `calendar.test.ts` via
+`npm test`): timed slots become a UTC-anchored `VEVENT` so they land at the
+right wall-clock time in every attendee's zone, and whole-day (`days`-mode)
+polls become an all-day event with an exclusive end date. No server or
+account involved — it's all generated client-side.
+
 - **Live:** [opensource.unisim.co.uk/polling](https://opensource.unisim.co.uk/polling)
   — served by path via the `opensource-portal` Worker, which proxies `/polling`
   to the Git-connected `universal-polling` Cloudflare Pages project.
