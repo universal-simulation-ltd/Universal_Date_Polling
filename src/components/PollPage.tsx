@@ -7,6 +7,7 @@ import {
   formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, slotInstant, tzAbbrev,
 } from '../lib/time'
 import { CONTAINER_POLL } from '../lib/layout'
+import AddToCalendar from './AddToCalendar'
 
 type Load = 'loading' | 'ready' | 'notfound' | 'error'
 
@@ -84,6 +85,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const slots = [...poll.slots].sort((a, b) => a.start.localeCompare(b.start))
   const dayMode = poll.mode === 'days'
   const tzNote = !dayMode && poll.timezone !== viewerTz
+  // The page we're on IS the shareable poll link — reuse it verbatim for the
+  // "view or update the poll" line stamped into each calendar event.
+  const pollUrl = window.location.origin + window.location.pathname
 
   return (
     <div data-theme={themeAttr(poll.theme)} style={themeVars(poll.theme)} className={`${CONTAINER_POLL} py-8 sm:py-10`}>
@@ -191,13 +195,13 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       )}
 
       {/* Results */}
-      <Results poll={poll} slots={slots} responses={responses} viewerTz={viewerTz} />
+      <Results poll={poll} slots={slots} responses={responses} viewerTz={viewerTz} pollUrl={pollUrl} />
     </div>
   )
 }
 
-function Results({ poll, slots, responses, viewerTz }: {
-  poll: Poll; slots: Slot[]; responses: PollResponse[]; viewerTz: string
+function Results({ poll, slots, responses, viewerTz, pollUrl }: {
+  poll: Poll; slots: Slot[]; responses: PollResponse[]; viewerTz: string; pollUrl: string
 }) {
   const tally = useMemo(() => {
     return slots.map((s) => {
@@ -257,6 +261,9 @@ function Results({ poll, slots, responses, viewerTz }: {
                           {t.no.length > 0 && <span> {t.yes.length > 0 || t.maybe.length > 0 ? '· ' : ''}not free: {t.no.join(', ')}</span>}
                         </p>
                       )}
+                      <div className="mt-2 flex justify-end">
+                        <AddToCalendar poll={poll} slot={s} pollUrl={pollUrl} />
+                      </div>
                     </div>
                   )
                 })}

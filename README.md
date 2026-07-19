@@ -19,6 +19,9 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
   the poll's timezone, with your own local time alongside if they differ.
 - **Decide** — the results view tallies every slot, shades it by how many people
   are free, and badges the winner(s).
+- **Add to calendar** — each result slot has an "Add to calendar" button:
+  Google Calendar, Outlook, or an `.ics` download (Apple Calendar, Outlook
+  desktop). Generated entirely client-side, in the poll's timezone.
 
 ### More options
 
