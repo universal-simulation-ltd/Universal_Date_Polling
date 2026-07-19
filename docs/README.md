@@ -17,6 +17,16 @@ right wall-clock time in every attendee's zone, and whole-day (`days`-mode)
 polls become an all-day event with an exclusive end date. No server or
 account involved — it's all generated client-side.
 
+The **host can confirm a final time**: a "Confirm this time" control (shown
+only to the host — detected by matching the signed-in uid, suite or guest-OTP,
+against `polls.host_user_id`) writes `polls.final_slot_id` via the existing
+`polls_owner_update` RLS policy (migration `0059_polls_final_slot.sql` in
+`backoffice/universal-platform`). Once set, everyone with the link sees a
+prominent "Confirmed" banner with the chosen date + an "Add to calendar" for
+it. Clearing it (`final_slot_id = null`) is the "Change"/"Unconfirm" action.
+Emailing the confirmed date to respondents is a deliberate non-goal for now —
+respondents give only a name, no email (the app's no-sign-up stance).
+
 - **Live:** [opensource.unisim.co.uk/polling](https://opensource.unisim.co.uk/polling)
   — served by path via the `opensource-portal` Worker, which proxies `/polling`
   to the Git-connected `universal-polling` Cloudflare Pages project.

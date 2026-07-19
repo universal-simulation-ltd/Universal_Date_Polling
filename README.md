@@ -19,9 +19,13 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
   the poll's timezone, with your own local time alongside if they differ.
 - **Decide** — the results view tallies every slot, shades it by how many people
   are free, and badges the winner(s).
-- **Add to calendar** — each result slot has an "Add to calendar" button:
-  Google Calendar, Outlook, or an `.ics` download (Apple Calendar, Outlook
-  desktop). Generated entirely client-side, in the poll's timezone.
+- **Confirm** — the host (and only the host) can click **"Confirm this time"** on
+  a result slot. Everyone with the link then sees a prominent **"Confirmed"**
+  banner with the chosen date/time.
+- **Add to calendar** — each result slot (and the confirmed banner) has an "Add
+  to calendar" button: Google Calendar, Outlook, or an `.ics` download (Apple
+  Calendar, Outlook desktop). Generated entirely client-side, in the poll's
+  timezone.
 
 ### More options
 
