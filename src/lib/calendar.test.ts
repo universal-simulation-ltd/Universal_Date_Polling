@@ -32,6 +32,7 @@ describe('eventForSlot', () => {
     // 14:00 BST (UTC+1) => 13:00Z start, +60min => 14:00Z end.
     const ev = eventForSlot(timedPoll(), timedSlot, POLL_URL)
     expect(ev.allDay).toBe(false)
+    if (ev.allDay) throw new Error('expected a timed event')
     expect(ev.start.toISOString()).toBe('2026-06-10T13:00:00.000Z')
     expect(ev.end.toISOString()).toBe('2026-06-10T14:00:00.000Z')
     expect(ev.description).toContain(POLL_URL)
@@ -41,6 +42,7 @@ describe('eventForSlot', () => {
     const poll = timedPoll({ mode: 'days' })
     const ev = eventForSlot(poll, { id: 'd1', start: '2026-06-10T00:00', durationMins: 0 }, POLL_URL)
     expect(ev.allDay).toBe(true)
+    if (!ev.allDay) throw new Error('expected an all-day event')
     expect(ev.startDay).toBe('2026-06-10')
     expect(ev.endDay).toBe('2026-06-11')
   })
@@ -48,6 +50,8 @@ describe('eventForSlot', () => {
   it('rolls the exclusive end date over a month boundary', () => {
     const poll = timedPoll({ mode: 'days' })
     const ev = eventForSlot(poll, { id: 'd1', start: '2026-06-30T00:00', durationMins: 0 }, POLL_URL)
+    expect(ev.allDay).toBe(true)
+    if (!ev.allDay) throw new Error('expected an all-day event')
     expect(ev.endDay).toBe('2026-07-01')
   })
 })

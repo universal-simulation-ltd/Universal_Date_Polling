@@ -324,7 +324,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             )}
           </p>
           <div className="mt-3">
-            <SlotPicker view={view} onViewChange={changeView} slots={slots} onChange={setSlots} />
+            <SlotPicker view={view} onViewChange={changeView} slots={slots} onChange={setSlots} timezone={timezone} />
           </div>
         </div>
 

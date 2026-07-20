@@ -10,22 +10,34 @@
 // poll page renders it (2 June is 2 June everywhere).
 
 import type { Poll, Slot } from './types'
-import { slotInstant } from './time'
+import { addCalendarDays, slotDayKey, slotEnd, slotInstant } from './time'
 
-export interface CalendarEvent {
+interface CalendarEventBase {
   title: string
   /** Free-text body; the poll link is appended by the builders. */
   description: string
   /** Poll page URL, surfaced as the event URL / in the body. */
   url: string
-  allDay: boolean
-  /** Timed events: absolute start/end instants. */
-  start: Date
-  end: Date
-  /** All-day events: inclusive start date + exclusive end date, 'YYYY-MM-DD'. */
-  startDay: string
-  endDay: string
 }
+
+/** A calendar event is EITHER timed (absolute start/end instants) or all-day
+ *  (inclusive start + exclusive end calendar dates) — never both. Modelled as a
+ *  discriminated union on `allDay` so each variant only carries the fields it
+ *  actually has; no `Date(NaN)` / '' sentinels for the inapplicable half, and the
+ *  builders get compile-time narrowing when they branch on `allDay`. */
+export type CalendarEvent =
+  | (CalendarEventBase & {
+      allDay: false
+      /** Absolute start/end instants. */
+      start: Date
+      end: Date
+    })
+  | (CalendarEventBase & {
+      allDay: true
+      /** Inclusive start date + exclusive end date, 'YYYY-MM-DD'. */
+      startDay: string
+      endDay: string
+    })
 
 /** Build the calendar event for a single poll slot. `pollUrl` is the public
  *  poll page link, woven into the event body so an attendee can get back to it. */
@@ -34,17 +46,16 @@ export function eventForSlot(poll: Poll, slot: Slot, pollUrl: string): CalendarE
   const description = `Scheduled with Universal Date Polling.${pollUrl ? `\n\nView or update the poll: ${pollUrl}` : ''}`
 
   if (poll.mode === 'days') {
-    const startDay = slot.start.slice(0, 10)
+    const startDay = slotDayKey(slot)
     return {
       title, description, url: pollUrl, allDay: true,
-      startDay, endDay: addDays(startDay, 1),
-      start: new Date(NaN), end: new Date(NaN),
+      startDay, endDay: addCalendarDays(startDay, 1),
     }
   }
 
   const start = slotInstant(slot.start, poll.timezone)
-  const end = new Date(start.getTime() + slot.durationMins * 60_000)
-  return { title, description, url: pollUrl, allDay: false, start, end, startDay: '', endDay: '' }
+  const end = slotEnd(start, slot.durationMins)
+  return { title, description, url: pollUrl, allDay: false, start, end }
 }
 
 // ── ICS ─────────────────────────────────────────────────────────────────────
@@ -139,13 +150,6 @@ export function outlookCalendarUrl(poll: Poll, slot: Slot, pollUrl: string): str
 /** 'YYYYMMDDTHHMMSSZ' in UTC — the ICS/Google basic-format UTC stamp. */
 function icsStampUtc(d: Date): string {
   return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
-}
-
-/** Add whole days to a 'YYYY-MM-DD' string, staying in the calendar frame. */
-function addDays(day: string, n: number): string {
-  const [y, m, d] = day.split('-').map(Number)
-  const dt = new Date(Date.UTC(y, m - 1, d + n))
-  return dt.toISOString().slice(0, 10)
 }
 
 /** Escape a text value for ICS: backslash, semicolon, comma and newlines. */

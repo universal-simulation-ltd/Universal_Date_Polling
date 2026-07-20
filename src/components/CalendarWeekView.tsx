@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Slot } from '../lib/types'
 import { shortId } from '../lib/api'
+import { addLocalDays, slotDayKey } from '../lib/time'
 
 /* A Google-Calendar-style week view for proposing candidate times. The host
  * clicks-and-drags down a day column to draw a slot (snapped to 30 minutes), or
@@ -47,12 +48,6 @@ function startOfWeek(d: Date): Date {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
   const dow = (x.getDay() + 6) % 7 // 0 = Monday
   x.setDate(x.getDate() - dow)
-  return x
-}
-
-function addDays(d: Date, n: number): Date {
-  const x = new Date(d)
-  x.setDate(x.getDate() + n)
   return x
 }
 
@@ -111,7 +106,7 @@ export default function CalendarWeekView({
     if (scrollRef.current) scrollRef.current.scrollTop = (8 - START_HOUR) * HOUR_PX
   }, [])
 
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+  const days = Array.from({ length: 7 }, (_, i) => addLocalDays(weekStart, i))
   const atFirstWeek = weekStart.getTime() <= todayStart.getTime()
   const now = new Date()
   const nowMin = now.getHours() * 60 + now.getMinutes()
@@ -189,7 +184,7 @@ export default function CalendarWeekView({
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => setWeekStart(addDays(weekStart, -7))}
+            onClick={() => setWeekStart(addLocalDays(weekStart, -7))}
             disabled={atFirstWeek}
             aria-label="Previous week"
             className="grid h-8 w-8 place-items-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -205,7 +200,7 @@ export default function CalendarWeekView({
           </button>
           <button
             type="button"
-            onClick={() => setWeekStart(addDays(weekStart, 7))}
+            onClick={() => setWeekStart(addLocalDays(weekStart, 7))}
             aria-label="Next week"
             className="grid h-8 w-8 place-items-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
           >
@@ -265,7 +260,7 @@ export default function CalendarWeekView({
             const dayStr = localDate(day)
             const isToday = dayStr === todayStr
             const isPastDay = dayStr < todayStr
-            const daySlots = slots.filter((s) => s.start.slice(0, 10) === dayStr)
+            const daySlots = slots.filter((s) => slotDayKey(s) === dayStr)
             return (
               <div
                 key={day.toISOString()}

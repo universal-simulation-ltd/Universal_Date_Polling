@@ -5,7 +5,7 @@ import { currentUser, getPoll, getResponses, notifyPollHost, setFinalSlot, submi
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import {
-  formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, sameCalendarDay, slotInstant, tzAbbrev,
+  formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, needsTzNote, sameCalendarDay, slotDayKey, slotInstant, tzAbbrev,
 } from '../lib/time'
 import { CONTAINER_POLL } from '../lib/layout'
 import AddToCalendar from './AddToCalendar'
@@ -125,7 +125,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
 
   const slots = [...poll.slots].sort((a, b) => a.start.localeCompare(b.start))
   const dayMode = poll.mode === 'days'
-  const tzNote = !dayMode && poll.timezone !== viewerTz
+  const tzNote = needsTzNote(poll, viewerTz)
   // The page we're on IS the shareable poll link — reuse it verbatim for the
   // "view or update the poll" line stamped into each calendar event.
   const pollUrl = window.location.origin + window.location.pathname
@@ -281,7 +281,7 @@ function Results({ poll, slots, responses, viewerTz, pollUrl, isHost, confirming
   const maxYes = Math.max(0, ...tally.map((t) => t.yes.length))
   const total = responses.length
   const dayMode = poll.mode === 'days'
-  const tzNote = !dayMode && poll.timezone !== viewerTz
+  const tzNote = needsTzNote(poll, viewerTz)
 
   return (
     <section className="mt-7">
@@ -372,11 +372,18 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, dayMode, isHost, confi
   poll: Poll; slot: Slot; pollUrl: string; viewerTz: string; dayMode: boolean
   isHost: boolean; confirming: boolean; onUnconfirm: () => void
 }) {
-  const inst = slotInstant(slot.start, poll.timezone)
-  const when = dayMode
-    ? formatCalendarDay(slot.start)
-    : `${formatDateHeading(inst, poll.timezone)} · ${formatRange(inst, slot.durationMins, poll.timezone)} ${tzAbbrev(poll.timezone, inst)}`
-  const tzNote = !dayMode && poll.timezone !== viewerTz
+  // Memoize the formatter chain: `inst` and the `when` label each run several
+  // Intl.DateTimeFormat passes, and the banner re-renders on every poll refresh.
+  const { inst, when } = useMemo(() => {
+    const i = slotInstant(slot.start, poll.timezone)
+    return {
+      inst: i,
+      when: dayMode
+        ? formatCalendarDay(slot.start)
+        : `${formatDateHeading(i, poll.timezone)} · ${formatRange(i, slot.durationMins, poll.timezone)} ${tzAbbrev(poll.timezone, i)}`,
+    }
+  }, [slot.start, slot.durationMins, poll.timezone, dayMode])
+  const tzNote = needsTzNote(poll, viewerTz)
   return (
     <div className="mt-6 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -429,7 +436,7 @@ function viewerTimeNote(timeText: string, inst: Date, pollTz: string, viewerTz: 
 function groupByDay(slots: Slot[]): [string, Slot[]][] {
   const groups = new Map<string, Slot[]>()
   for (const s of slots) {
-    const day = s.start.slice(0, 10)
+    const day = slotDayKey(s)
     if (!groups.has(day)) groups.set(day, [])
     groups.get(day)!.push(s)
   }

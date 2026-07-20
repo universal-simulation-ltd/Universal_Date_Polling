@@ -1,5 +1,7 @@
 // Timezone helpers built on the platform Intl API — no date library needed.
 
+import type { Poll, Slot } from './types'
+
 /** The viewer's IANA timezone, or 'UTC' if it can't be resolved. */
 export function localTimezone(): string {
   try {
@@ -65,6 +67,63 @@ export function slotInstant(start: string, pollTz: string): Date {
   return zonedWallClockToInstant(start, pollTz)
 }
 
+/** The end instant of a slot, `durationMins` after its start. The single source
+ *  of slot end-instant math — both the on-page range label and the calendar
+ *  event builder derive their end from here so they can never drift apart. */
+export function slotEnd(start: Date, durationMins: number): Date {
+  return new Date(start.getTime() + durationMins * 60_000)
+}
+
+/** The calendar day ('YYYY-MM-DD') a slot sits on. A slot's `start` is a bare
+ *  'YYYY-MM-DDTHH:mm' wall-clock string (or 'YYYY-MM-DDT00:00' in days mode), so
+ *  the day is its leading 10 chars — the accessor for grouping and days-mode use
+ *  so the shape isn't re-sliced by hand across the app. */
+export function slotDayKey(slot: Pick<Slot, 'start'>): string {
+  return slot.start.slice(0, 10)
+}
+
+/** True when a slot's viewer-local time should be spelled out alongside the
+ *  poll-timezone time: only for timed polls whose timezone differs from the
+ *  viewer's. Whole-day polls carry no time-of-day, so there's nothing to note. */
+export function needsTzNote(poll: Pick<Poll, 'mode' | 'timezone'>, viewerTz: string): boolean {
+  return poll.mode !== 'days' && poll.timezone !== viewerTz
+}
+
+/** Add whole days to a 'YYYY-MM-DD' string, staying in the pure calendar frame
+ *  (UTC arithmetic, no local-DST drift) — for exclusive all-day end dates and
+ *  other date-string maths. Distinct from `addLocalDays`, which walks a `Date`
+ *  in the viewer's local frame; keep the two apart (different timezone frames). */
+export function addCalendarDays(day: string, n: number): string {
+  const [y, m, d] = day.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
+}
+
+/** Add whole days to a `Date` in the viewer's LOCAL frame — for stepping the
+ *  week grid, where "the next day" means the user's own next calendar day.
+ *  Distinct from `addCalendarDays` (pure date-string, UTC frame). */
+export function addLocalDays(d: Date, n: number): Date {
+  const x = new Date(d)
+  x.setDate(x.getDate() + n)
+  return x
+}
+
+/** Whether a wall-clock time actually exists in `tz`. On a spring-forward DST
+ *  night the clocks jump (e.g. London 01:00→02:00), so a time inside the gap
+ *  (01:30) is not a real instant — it silently resolves an hour later. Detect it
+ *  by round-tripping: convert to an instant, format that instant back in `tz`,
+ *  and check the wall-clock survived unchanged. */
+export function wallClockExists(local: string, tz: string): boolean {
+  const inst = zonedWallClockToInstant(local, tz)
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(inst).reduce<Record<string, string>>((a, p) => {
+    if (p.type !== 'literal') a[p.type] = p.value
+    return a
+  }, {})
+  const hh = parts.hour === '24' ? '00' : parts.hour
+  return `${hh}:${parts.minute}` === local.slice(11, 16)
+}
+
 /** "Mon 2 Jun 2026" for a WHOLE-DAY slot — a pure calendar date with no
  *  timezone conversion at all. A whole-day poll's date carries no time-of-day,
  *  so it must read identically for every viewer regardless of their zone:
@@ -94,7 +153,7 @@ export function formatTime(instant: Date, displayTz: string): string {
 
 /** "10:00–11:00" given a start instant + duration, in the display tz. */
 export function formatRange(instant: Date, durationMins: number, displayTz: string): string {
-  const end = new Date(instant.getTime() + durationMins * 60_000)
+  const end = slotEnd(instant, durationMins)
   return `${formatTime(instant, displayTz)}–${formatTime(end, displayTz)}`
 }
 
