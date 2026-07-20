@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Slot } from '../lib/types'
 import { shortId } from '../lib/api'
+import { formatTime, slotDayKey, slotInstant, tzAbbrev, wallClockExists } from '../lib/time'
 import CalendarWeekView from './CalendarWeekView'
 
 const DURATIONS = [15, 30, 45, 60, 90, 120]
@@ -35,12 +36,15 @@ function durationLabel(mins: number): string {
  *  owned by the parent so it can derive the poll mode and clear incompatible
  *  slots when crossing the timed↔days boundary. */
 export default function SlotPicker({
-  view, onViewChange, slots, onChange,
+  view, onViewChange, slots, onChange, timezone,
 }: {
   view: SlotView
   onViewChange: (v: SlotView) => void
   slots: Slot[]
   onChange: (s: Slot[]) => void
+  /** The poll's timezone — used to warn when a proposed time falls in a DST
+   *  spring-forward gap (and so wouldn't exist on the clock that night). */
+  timezone: string
 }) {
   return (
     <div>
@@ -61,7 +65,7 @@ export default function SlotPicker({
       ) : view === 'calendar' ? (
         <CalendarWeekView slots={slots} onChange={onChange} />
       ) : (
-        <FormPicker slots={slots} onChange={onChange} />
+        <FormPicker slots={slots} onChange={onChange} timezone={timezone} />
       )}
     </div>
   )
@@ -101,12 +105,12 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
   const todayStr = localDate(now)
   const [cursor, setCursor] = useState(() => ({ y: now.getFullYear(), m: now.getMonth() }))
 
-  const selected = new Set(slots.map((s) => s.start.slice(0, 10)))
+  const selected = new Set(slots.map((s) => slotDayKey(s)))
 
   function toggle(dateStr: string) {
     if (dateStr < todayStr) return
     if (selected.has(dateStr)) {
-      onChange(slots.filter((s) => s.start.slice(0, 10) !== dateStr))
+      onChange(slots.filter((s) => slotDayKey(s) !== dateStr))
     } else {
       const next = [...slots, { id: shortId(6), start: `${dateStr}T00:00`, durationMins: ALL_DAY_MINS }]
       next.sort((a, b) => a.start.localeCompare(b.start))
@@ -214,7 +218,7 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
 }
 
 /** Timed slots — the original quick date + time + length form. */
-function FormPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
+function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s: Slot[]) => void; timezone: string }) {
   const today = localDate(new Date())
   const [date, setDate] = useState('')
   const [time, setTime] = useState('09:00')
@@ -223,7 +227,6 @@ function FormPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) 
 
   function add() {
     if (!date || !time) return
-    setWarning(null)
 
     // Roll a past selection forward to the next future occurrence of that time.
     // Slots are wall-clock; compare against the user's local clock — close
@@ -231,12 +234,23 @@ function FormPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) 
     let start = `${date}T${time}`
     let d = new Date(start)
     const now = new Date()
+    let msg: string | null = null
     if (d.getTime() <= now.getTime()) {
       d = new Date(`${today}T${time}`)
       while (d.getTime() <= now.getTime()) d.setDate(d.getDate() + 1)
       start = `${localDate(d)}T${time}`
-      setWarning(`You can't pick a time in the past — moved it forward to ${fmtDay(localDate(d))}, ${time}.`)
+      msg = `You can't pick a time in the past — moved it forward to ${fmtDay(localDate(d))}, ${time}.`
     }
+
+    // Spring-forward DST gap: on the switch night the clocks jump (e.g. London
+    // 01:00→02:00), so a time inside the gap never happens on the wall clock and
+    // silently resolves an hour later. Warn rather than block — the host may
+    // still want the (shifted) slot, they just shouldn't be surprised by it.
+    if (!msg && !wallClockExists(start, timezone)) {
+      const inst = slotInstant(start, timezone)
+      msg = `Heads up — ${time} doesn't exist on ${fmtDay(start.slice(0, 10))} in ${tzAbbrev(timezone, inst)}: the clocks skip forward that night, so this slot lands at ${formatTime(inst, timezone)}.`
+    }
+    setWarning(msg)
 
     if (slots.some((s) => s.start === start)) return
     const next = [...slots, { id: shortId(6), start, durationMins: duration }]
@@ -250,7 +264,7 @@ function FormPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) 
 
   const groups = new Map<string, Slot[]>()
   for (const s of slots) {
-    const day = s.start.slice(0, 10)
+    const day = slotDayKey(s)
     if (!groups.has(day)) groups.set(day, [])
     groups.get(day)!.push(s)
   }
