@@ -41,6 +41,29 @@ respondents give only a name, no email (the app's no-sign-up stance).
 
 MIT licensed — free and open source, like all Universal Apps.
 
+## Timezone code (`src/lib/time.ts`)
+
+All timezone/date maths lives in `time.ts` (unit-tested in `time.test.ts`), so
+the frame each helper works in is documented in one place — this area had three
+confirmed timezone bugs in the 2026-07-19 review, and the shared helpers exist
+so the shapes aren't re-derived by hand:
+
+- **`slotInstant` / `slotEnd`** — a slot's start/end as UTC instants (`slotEnd`
+  is the single source of end-instant math, used by both `formatRange` and the
+  calendar-event builder).
+- **`slotDayKey(slot)`** — the `'YYYY-MM-DD'` calendar day of a slot; the one
+  accessor for grouping and days-mode, replacing hand-rolled `start.slice(0,10)`.
+- **`addCalendarDays` vs `addLocalDays`** — two deliberately-separate day-adders:
+  `addCalendarDays` is pure date-string arithmetic in the UTC frame (exclusive
+  all-day end dates), `addLocalDays` steps a `Date` in the viewer's local frame
+  (the week-grid nav). **Different timezone frames — don't conflate them.**
+- **`needsTzNote(poll, viewerTz)`** — whether a viewer-local time should be
+  spelled out (timed poll whose zone differs from the viewer's).
+- **`wallClockExists(local, tz)`** — false when a wall-clock time falls in a DST
+  spring-forward gap (e.g. London `01:30` on switch night, which never occurs).
+  The create form (`SlotPicker` → `FormPicker`) warns the host at creation
+  rather than silently letting the slot resolve an hour later.
+
 ## Suite context
 
 This repo is one part of the **Universal Simulation suite** (the open-source
