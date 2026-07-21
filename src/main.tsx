@@ -7,6 +7,8 @@ import UsageTracker from './UsageTracker'
 import { SUITE_SUPABASE_URL, SUITE_SUPABASE_ANON } from './lib/supabase'
 import './index.css'
 
+console.log(`build: ${import.meta.env.VITE_BUILD_SHA}`)
+
 // Polling keeps its OWN client (src/lib/supabase.ts) on an isolated storage key
 // for the guest host email-OTP flow. Separately, <UniversalProvider> is now
 // wired to the REAL shared suite project so the SDK hooks (useUser /
