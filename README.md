@@ -58,6 +58,11 @@ Build: `npm run build` (outputs `dist/`, served under `/polling/` in
 production). Deploy is a Git-connected Cloudflare Pages project behind the
 `opensource.unisim.co.uk` portal Worker, exactly like the other Universal Apps.
 
+Each build bakes the commit SHA into a `<meta name="build-sha">` tag and logs
+`build: <sha>` to the console at startup, so you can tell which build is live
+in-browser. On Cloudflare Pages the SHA comes from `CF_PAGES_COMMIT_SHA`; locally
+it falls back to the git short SHA (or `dev`).
+
 ## Licence
 
 MIT © Universal Simulation Ltd.
