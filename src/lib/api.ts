@@ -160,6 +160,45 @@ export async function getPoll(id: string): Promise<Poll | null> {
   return (data as Poll) ?? null
 }
 
+/** Fetch a poll, retrying a few times on a *thrown* error before giving up.
+ *
+ *  Why this exists: opening a poll immediately after creating it occasionally
+ *  failed the very first request — the app's Supabase client can still be warming
+ *  up on that first navigation (in-flight auth/token-refresh lock, a cold
+ *  connection, or a service-worker-served shell that raced the network), so a
+ *  single attempt would surface an error that a manual page refresh then cleared.
+ *  Auto-retrying the transient failure removes the need for that refresh.
+ *
+ *  A poll that resolves to `null` is a *definitive* "not found" (the row simply
+ *  isn't there) and is returned immediately — only exceptions are retried.
+ *  `fetch` and `sleep` are injectable purely so the retry logic is unit-testable
+ *  without a live backend. */
+export async function getPollResilient(
+  id: string,
+  opts: {
+    retries?: number
+    delayMs?: number
+    fetch?: (id: string) => Promise<Poll | null>
+    sleep?: (ms: number) => Promise<void>
+  } = {},
+): Promise<Poll | null> {
+  const retries = opts.retries ?? 3
+  const delayMs = opts.delayMs ?? 250
+  const fetchOne = opts.fetch ?? getPoll
+  const sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)))
+  let lastErr: unknown
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fetchOne(id)
+    } catch (e) {
+      lastErr = e
+      // Linear backoff between attempts; no wait after the final one.
+      if (attempt < retries) await sleep(delayMs * (attempt + 1))
+    }
+  }
+  throw lastErr
+}
+
 export async function getResponses(pollId: string): Promise<PollResponse[]> {
   const { data, error } = await supabase
     .from('poll_responses')
