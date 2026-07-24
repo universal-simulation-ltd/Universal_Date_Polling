@@ -157,6 +157,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
             </>
           )}
         </p>
+        {poll.location && <PollLocation location={poll.location} className="mt-3 justify-center" />}
       </header>
 
       {finalSlot && (
@@ -398,6 +399,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, dayMode, isHost, confi
           <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">✓ Confirmed time</div>
           <div className="mt-0.5 text-lg font-bold text-slate-900 break-words">{when}</div>
           {tzNote && <div className="text-xs text-slate-500">{viewerTimeNote(formatRange(inst, slot.durationMins, viewerTz), inst, poll.timezone, viewerTz)}</div>}
+          {poll.location && <PollLocation location={poll.location} className="mt-1.5" />}
         </div>
         <div className="flex items-center gap-2">
           {isHost && (
@@ -413,6 +415,33 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, dayMode, isHost, confi
           <AddToCalendar poll={poll} slot={slot} pollUrl={pollUrl} />
         </div>
       </div>
+    </div>
+  )
+}
+
+/** Whether a location string is a clickable http(s) link (a Teams / Zoom / Meet
+ *  URL) rather than a physical place ("Meeting room 5"). */
+function isUrlLike(s: string): boolean {
+  return /^https?:\/\/\S+$/i.test(s.trim())
+}
+
+/** The poll's event location: a link icon + the value, rendered as an anchor for
+ *  a meeting URL, or plain text for a physical place. */
+function PollLocation({ location, className = '' }: { location: string; className?: string }) {
+  const isLink = isUrlLike(location)
+  return (
+    <div className={`flex items-center gap-1.5 text-sm text-slate-600 ${className}`}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+      {isLink ? (
+        <a href={location} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate font-medium text-[var(--accent-text)] hover:underline underline-offset-2">
+          {location}
+        </a>
+      ) : (
+        <span className="min-w-0 break-words font-medium text-slate-700">{location}</span>
+      )}
     </div>
   )
 }

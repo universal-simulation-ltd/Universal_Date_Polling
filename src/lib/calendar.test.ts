@@ -16,6 +16,7 @@ function timedPoll(overrides: Partial<Poll> = {}): Poll {
     slots: [],
     theme: 'orange',
     branding: null,
+    location: null,
     final_slot_id: null,
     notify_on_response: false,
     created_at: NOW.toISOString(),
@@ -82,6 +83,16 @@ describe('buildIcs', () => {
     expect(ics).toContain('SUMMARY:Lunch\\, drinks\\; then talk')
   })
 
+  it('emits a LOCATION line when the poll has a location, escaped', () => {
+    const ics = buildIcs(timedPoll({ location: 'Meeting room 5, floor 2' }), timedSlot, POLL_URL, NOW)
+    expect(ics).toContain('LOCATION:Meeting room 5\\, floor 2')
+  })
+
+  it('omits LOCATION when the poll has none', () => {
+    const ics = buildIcs(timedPoll({ location: null }), timedSlot, POLL_URL, NOW)
+    expect(ics).not.toContain('LOCATION:')
+  })
+
   // RFC 5545 folding is a 75-OCTET limit and must never split a code point.
   // The poll title is unconstrained Unicode, so emoji/CJK have to survive.
   it('folds long lines at 75 octets without splitting surrogate pairs', () => {
@@ -126,6 +137,13 @@ describe('googleCalendarUrl', () => {
     const poll = timedPoll({ mode: 'days' })
     const url = googleCalendarUrl(poll, { id: 'd1', start: '2026-06-10T00:00', durationMins: 0 }, POLL_URL)
     expect(new URL(url).searchParams.get('dates')).toBe('20260610/20260611')
+  })
+
+  it('passes the location through as a query param, else omits it', () => {
+    const withLoc = googleCalendarUrl(timedPoll({ location: 'https://zoom.us/j/123' }), timedSlot, POLL_URL)
+    expect(new URL(withLoc).searchParams.get('location')).toBe('https://zoom.us/j/123')
+    const without = googleCalendarUrl(timedPoll({ location: null }), timedSlot, POLL_URL)
+    expect(new URL(without).searchParams.has('location')).toBe(false)
   })
 })
 

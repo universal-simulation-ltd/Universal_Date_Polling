@@ -63,6 +63,7 @@ export async function createPoll(
     slots: p.slots,
     theme: p.theme,
     branding: p.branding,
+    location: p.location,
     expires_at: p.expires_at,
   }
   const { data, error } = await client.from('polls').insert(row).select().single()
@@ -127,6 +128,18 @@ export async function setFinalSlot(
   slotId: string | null,
 ): Promise<void> {
   const { error } = await client.from('polls').update({ final_slot_id: slotId }).eq('id', pollId)
+  if (error) throw error
+}
+
+/** Host-only: set (or clear, with `null`) the poll's event location. `client`
+ *  must be signed in as the host — RLS (`polls_owner_update`) gates it. Used as a
+ *  follow-up write for the gated create path, whose RPC doesn't take a location. */
+export async function setPollLocation(
+  client: SupabaseClient,
+  pollId: string,
+  location: string | null,
+): Promise<void> {
+  const { error } = await client.from('polls').update({ location }).eq('id', pollId)
   if (error) throw error
 }
 
