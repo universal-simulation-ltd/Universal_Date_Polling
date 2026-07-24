@@ -1,9 +1,33 @@
 import { describe, expect, it } from 'vitest'
 import type { Poll } from './types'
 import {
-  addCalendarDays, addLocalDays, needsTzNote, sameCalendarDay, slotDayKey,
+  addCalendarDays, addLocalDays, filterTimezones, needsTzNote, sameCalendarDay, slotDayKey,
   slotEnd, slotInstant, tzAbbrev, wallClockExists,
 } from './time'
+
+describe('filterTimezones', () => {
+  const zones = ['UTC', 'Europe/London', 'America/New_York', 'Asia/Tokyo', 'Australia/Sydney']
+
+  it('returns the full list for an empty query', () => {
+    expect(filterTimezones('', zones)).toEqual(zones)
+    expect(filterTimezones('   ', zones)).toEqual(zones)
+  })
+
+  it('matches case-insensitively', () => {
+    expect(filterTimezones('tokyo', zones)).toEqual(['Asia/Tokyo'])
+    expect(filterTimezones('LONDON', zones)).toEqual(['Europe/London'])
+  })
+
+  it('treats spaces / underscores / slashes as interchangeable', () => {
+    // "new york" (space) must match "America/New_York" (underscore).
+    expect(filterTimezones('new york', zones)).toEqual(['America/New_York'])
+    expect(filterTimezones('america new', zones)).toEqual(['America/New_York'])
+  })
+
+  it('returns an empty list when nothing matches', () => {
+    expect(filterTimezones('atlantis', zones)).toEqual([])
+  })
+})
 
 describe('sameCalendarDay', () => {
   it('detects a midnight rollover between poll and viewer zones', () => {
