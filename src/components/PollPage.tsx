@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useUser, useUniversal } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { currentUser, getPoll, getResponses, notifyPollHost, setFinalSlot, submitResponse } from '../lib/api'
-import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
+import { currentUser, getPollResilient, getResponses, notifyPollHost, setFinalSlot, submitResponse } from '../lib/api'
+import { supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import {
   formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, needsTzNote, sameCalendarDay, slotDayKey, slotInstant, tzAbbrev,
@@ -24,6 +24,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const [savedAt, setSavedAt] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   const viewerTz = localTimezone()
 
@@ -41,9 +42,14 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   useEffect(() => {
     let live = true
     async function load() {
-      if (!SUPABASE_CONFIGURED) { setState('error'); setError('Backend not configured.'); return }
+      setState('loading')
+      setError(null)
       try {
-        const p = await getPoll(id)
+        // Resilient fetch: the app's Supabase client can still be warming up on
+        // the first navigation right after a poll is created, which used to
+        // surface a transient error that only a manual refresh cleared. Retrying
+        // the load removes the need for that refresh.
+        const p = await getPollResilient(id)
         if (!live) return
         if (!p) { setState('notfound'); return }
         setPoll(p)
@@ -57,7 +63,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     }
     load()
     return () => { live = false }
-  }, [id])
+  }, [id, reloadKey])
 
   // Pre-fill the form if this browser has already responded under a known name.
   useEffect(() => {
@@ -121,7 +127,8 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
 
   if (state === 'loading') return <Centered>Loading poll…</Centered>
   if (state === 'notfound') return <NotFound pollBase={pollBase} />
-  if (state === 'error' || !poll) return <Centered>{error ?? 'Something went wrong.'}</Centered>
+  if (state === 'error' || !poll) return <LoadError message={error} onRetry={() => setReloadKey((k) => k + 1)} />
+
 
   const slots = [...poll.slots].sort((a, b) => a.start.localeCompare(b.start))
   const dayMode = poll.mode === 'days'
@@ -445,6 +452,25 @@ function groupByDay(slots: Slot[]): [string, Slot[]][] {
 
 function Centered({ children }: { children: React.ReactNode }) {
   return <div className="mx-auto max-w-md px-4 py-20 text-center text-slate-500">{children}</div>
+}
+
+/** Shown when a poll fails to load (network hiccup, backend warming up on the
+ *  first navigation right after creation). The load already auto-retries; this
+ *  gives a one-click retry so the visitor never has to hard-refresh the page. */
+function LoadError({ message, onRetry }: { message: string | null; onRetry: () => void }) {
+  return (
+    <div className="mx-auto max-w-md px-4 py-20 text-center">
+      <h1 className="text-xl font-bold text-slate-900">Couldn't load this poll</h1>
+      <p className="mt-2 text-slate-600">{message ?? 'Something went wrong.'}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-5 inline-flex h-11 items-center rounded-xl bg-orange-600 px-5 font-semibold text-white hover:bg-orange-700"
+      >
+        Try again
+      </button>
+    </div>
+  )
 }
 
 function NotFound({ pollBase }: { pollBase: string }) {
