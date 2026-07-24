@@ -3,7 +3,7 @@ import { useAppFreeToken, useOrg, useOrgBranding, useSubscription, useUniversal,
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
-import { createPoll, createPollGated, currentUser, sendHostCode, setNotifyOnResponse as apiSetNotify, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
+import { createPoll, createPollGated, currentUser, sendHostCode, setNotifyOnResponse as apiSetNotify, setPollLocation as apiSetLocation, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { listTimezones, localTimezone, tzAbbrev } from '../lib/time'
 import SlotPicker from './SlotPicker'
@@ -33,6 +33,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [slots, setSlots] = useState<Slot[]>([])
   const [theme, setTheme] = useState<Theme>('orange')
   const [timezone, setTimezone] = useState(localTimezone())
+  // Optional EVENT location — a meeting link or a physical place — for the whole
+  // poll (not per-slot). Shown to respondents and carried into the export.
+  const [location, setLocation] = useState('')
   const [validityDays, setValidityDays] = useState<number | null>(30)
   const [notifyOnResponse, setNotifyOnResponse] = useState(false)
   const [email, setEmail] = useState('')
@@ -183,7 +186,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   function draft(branding: PollBranding | null): NewPoll {
     const expires_at =
       validityDays == null ? null : new Date(Date.now() + validityDays * 86_400_000).toISOString()
-    return { id: shortId(), title, timezone, mode, slots, theme, branding, expires_at }
+    return { id: shortId(), title, timezone, mode, slots, theme, branding, location: location.trim() || null, expires_at }
   }
 
   // `client` must be signed in as `hostUserId` (suite client for any Universal
@@ -199,6 +202,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       const poll = freeGated
         ? await createPollGated(client, pollDraft, hostEmail)
         : await createPoll(client, pollDraft, hostUserId, hostEmail)
+      // The gated create RPC doesn't take a location, so set it as a follow-up
+      // (the direct insert above already carries it). Non-fatal — the poll is
+      // already created.
+      if (freeGated && pollDraft.location) {
+        try { await apiSetLocation(client, poll.id, pollDraft.location) } catch { /* poll still created */ }
+      }
       // Response alerts are a follow-up update (keeps the create RPC/insert
       // untouched); non-fatal, since the poll itself is already created.
       if (notifyOnResponse) {
@@ -326,6 +335,22 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           <div className="mt-3">
             <SlotPicker view={view} onViewChange={changeView} slots={slots} onChange={setSlots} timezone={timezone} />
           </div>
+        </div>
+
+        {/* Location / meeting link (whole-event, optional) */}
+        <div className="mt-6">
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-800">Location or meeting link <span className="font-normal text-slate-400">(optional)</span></span>
+            <input
+              type="text"
+              value={location}
+              maxLength={500}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. Meeting room 5, or a Teams / Zoom / Meet link"
+              className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+            />
+          </label>
+          <p className="mt-1 text-xs text-slate-500">Shown to everyone on the poll and added to the calendar invite.</p>
         </div>
 
         {/* More options */}

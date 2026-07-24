@@ -64,6 +64,10 @@ export async function createPoll(
     theme: p.theme,
     branding: p.branding,
     expires_at: p.expires_at,
+    // Only send `location` when set: omitting the key when it's null keeps the
+    // insert from referencing the column at all, so a build that shipped before
+    // migration 0060 added `polls.location` still creates location-less polls.
+    ...(p.location ? { location: p.location } : {}),
   }
   const { data, error } = await client.from('polls').insert(row).select().single()
   if (error) throw error
@@ -127,6 +131,18 @@ export async function setFinalSlot(
   slotId: string | null,
 ): Promise<void> {
   const { error } = await client.from('polls').update({ final_slot_id: slotId }).eq('id', pollId)
+  if (error) throw error
+}
+
+/** Host-only: set (or clear, with `null`) the poll's event location. `client`
+ *  must be signed in as the host — RLS (`polls_owner_update`) gates it. Used as a
+ *  follow-up write for the gated create path, whose RPC doesn't take a location. */
+export async function setPollLocation(
+  client: SupabaseClient,
+  pollId: string,
+  location: string | null,
+): Promise<void> {
+  const { error } = await client.from('polls').update({ location }).eq('id', pollId)
   if (error) throw error
 }
 

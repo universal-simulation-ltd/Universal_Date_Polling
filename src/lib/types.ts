@@ -48,6 +48,10 @@ export interface Poll {
   slots: Slot[]
   theme: Theme
   branding: PollBranding | null
+  /** Optional EVENT location — a meeting link (Teams / Zoom / Google Meet) or a
+   *  physical place ("Meeting room 5"). One value for the whole poll (not
+   *  per-slot); shown to respondents and carried into the calendar export. */
+  location: string | null
   /** The slot the host has confirmed as the final chosen time (a `Slot.id`), or
    *  null while undecided. Only the host can set it. */
   final_slot_id: string | null
@@ -79,5 +83,6 @@ export interface NewPoll {
   slots: Slot[]
   theme: Theme
   branding: PollBranding | null
+  location: string | null
   expires_at: string | null
 }

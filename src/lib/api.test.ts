@@ -12,6 +12,7 @@ const fakePoll = (id: string): Poll => ({
   slots: [],
   theme: 'orange',
   branding: null,
+  location: null,
   final_slot_id: null,
   notify_on_response: false,
   created_at: '2026-07-24T10:00:00.000Z',

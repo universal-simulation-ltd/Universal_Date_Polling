@@ -18,6 +18,9 @@ interface CalendarEventBase {
   description: string
   /** Poll page URL, surfaced as the event URL / in the body. */
   url: string
+  /** Event location — a meeting link or physical place — or '' when the poll has
+   *  none. Carried into ICS LOCATION and the Google/Outlook deep-links. */
+  location: string
 }
 
 /** A calendar event is EITHER timed (absolute start/end instants) or all-day
@@ -43,19 +46,20 @@ export type CalendarEvent =
  *  poll page link, woven into the event body so an attendee can get back to it. */
 export function eventForSlot(poll: Poll, slot: Slot, pollUrl: string): CalendarEvent {
   const title = poll.title.trim() || 'Meeting'
+  const location = poll.location?.trim() || ''
   const description = `Scheduled with Universal Date Polling.${pollUrl ? `\n\nView or update the poll: ${pollUrl}` : ''}`
 
   if (poll.mode === 'days') {
     const startDay = slotDayKey(slot)
     return {
-      title, description, url: pollUrl, allDay: true,
+      title, description, url: pollUrl, location, allDay: true,
       startDay, endDay: addCalendarDays(startDay, 1),
     }
   }
 
   const start = slotInstant(slot.start, poll.timezone)
   const end = slotEnd(start, slot.durationMins)
-  return { title, description, url: pollUrl, allDay: false, start, end }
+  return { title, description, url: pollUrl, location, allDay: false, start, end }
 }
 
 // ── ICS ─────────────────────────────────────────────────────────────────────
@@ -78,6 +82,7 @@ export function buildIcs(poll: Poll, slot: Slot, pollUrl: string, now: Date = ne
     `SUMMARY:${escapeIcs(ev.title)}`,
     `DESCRIPTION:${escapeIcs(ev.description)}`,
   ]
+  if (ev.location) lines.push(`LOCATION:${escapeIcs(ev.location)}`)
   if (pollUrl) lines.push(`URL:${escapeIcs(pollUrl)}`)
 
   if (ev.allDay) {
@@ -121,6 +126,7 @@ export function googleCalendarUrl(poll: Poll, slot: Slot, pollUrl: string): stri
     dates,
     details: ev.description,
   })
+  if (ev.location) params.set('location', ev.location)
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
@@ -135,6 +141,7 @@ export function outlookCalendarUrl(poll: Poll, slot: Slot, pollUrl: string): str
     body: ev.description,
     allday: String(ev.allDay),
   })
+  if (ev.location) params.set('location', ev.location)
   if (ev.allDay) {
     params.set('startdt', ev.startDay)
     params.set('enddt', ev.endDay)
