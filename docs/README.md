@@ -27,6 +27,26 @@ it. Clearing it (`final_slot_id = null`) is the "Change"/"Unconfirm" action.
 Emailing the confirmed date to respondents is a deliberate non-goal for now —
 respondents give only a name, no email (the app's no-sign-up stance).
 
+A live timed poll shows **which timezone its times are in** and lets each
+viewer re-render every time on the page in their own zone (a one-click
+shortcut from the browser's `Intl` resolved zone) or any other zone (a
+searchable dropdown, `src/components/TimezonePicker.tsx`). The chosen zone
+(`displayTz` → `activeTz` in `PollPage`) only changes *display* formatting;
+slot instants stay anchored to the poll's own zone.
+
+The host can attach one **event location** to the whole poll (not per-slot): a
+meeting link (Teams / Zoom / Google Meet) or a physical place ("Meeting room
+5"). It's shown to respondents and carried into the Add-to-calendar export
+(ICS `LOCATION` + Google/Outlook deep-links). Backed by a nullable
+`polls.location` column (migration `0060_polls_location.sql`, to be renumbered
+into `backoffice/universal-platform`). `createPoll` omits the key when unset so
+a build can't break before the column exists; the gated create RPC sets it as a
+follow-up update.
+
+Opening a freshly-created poll is resilient to a cold first request: the poll
+load auto-retries a transient error (`getPollResilient` in `src/lib/api.ts`) and
+offers a one-click **Try again** instead of forcing a manual page refresh.
+
 - **Live:** [opensource.unisim.co.uk/polling](https://opensource.unisim.co.uk/polling)
   — served by path via the `opensource-portal` Worker, which proxies `/polling`
   to the Git-connected `universal-polling` Cloudflare Pages project.
@@ -58,7 +78,11 @@ so the shapes aren't re-derived by hand:
   all-day end dates), `addLocalDays` steps a `Date` in the viewer's local frame
   (the week-grid nav). **Different timezone frames — don't conflate them.**
 - **`needsTzNote(poll, viewerTz)`** — whether a viewer-local time should be
-  spelled out (timed poll whose zone differs from the viewer's).
+  spelled out (timed poll whose zone differs from the viewer's). The poll page's
+  viewer-timezone switcher generalises this to any active display zone.
+- **`filterTimezones(query, zones)`** — the searchable-picker filter; treats
+  spaces, `_` and `/` as interchangeable so "new york" matches
+  `America/New_York`.
 - **`wallClockExists(local, tz)`** — false when a wall-clock time falls in a DST
   spring-forward gap (e.g. London `01:30` on switch night, which never occurs).
   The create form (`SlotPicker` → `FormPicker`) warns the host at creation
