@@ -24,6 +24,17 @@ export function listTimezones(): string[] {
   return FALLBACK_ZONES
 }
 
+/** Filter a list of IANA zones by a free-text query for the searchable picker.
+ *  Both the query and each zone are normalised so '/' and '_' read as spaces —
+ *  so "new york" matches "America/New_York" and "london" matches
+ *  "Europe/London". An empty query returns the list unchanged. */
+export function filterTimezones(query: string, zones: string[]): string[] {
+  const norm = (s: string) => s.toLowerCase().replace(/[\s_/]+/g, ' ').trim()
+  const q = norm(query)
+  if (!q) return zones
+  return zones.filter((z) => norm(z).includes(q))
+}
+
 const FALLBACK_ZONES = [
   'UTC',
   'Europe/London', 'Europe/Dublin', 'Europe/Paris', 'Europe/Berlin', 'Europe/Madrid',
