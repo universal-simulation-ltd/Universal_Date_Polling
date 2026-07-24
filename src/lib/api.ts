@@ -63,8 +63,11 @@ export async function createPoll(
     slots: p.slots,
     theme: p.theme,
     branding: p.branding,
-    location: p.location,
     expires_at: p.expires_at,
+    // Only send `location` when set: omitting the key when it's null keeps the
+    // insert from referencing the column at all, so a build that shipped before
+    // migration 0060 added `polls.location` still creates location-less polls.
+    ...(p.location ? { location: p.location } : {}),
   }
   const { data, error } = await client.from('polls').insert(row).select().single()
   if (error) throw error
