@@ -16,7 +16,19 @@ export function shortId(len = 10): string {
 export async function sendHostCode(email: string): Promise<void> {
   const { error } = await supabase.auth.signInWithOtp({
     email: email.trim(),
-    options: { shouldCreateUser: true },
+    options: {
+      shouldCreateUser: true,
+      // Without this the magic link falls back to the project's global site_url
+      // (https://app.unisim.co.uk) and a host who taps it lands on the suite hub
+      // instead of here. The Supabase project is shared, so its site_url can't
+      // be any one product's.
+      //
+      // BASE_URL is Vite's configured base ('/polling/' in production, '/' in dev), and
+      // the trailing slash is stripped so this sends the exact bare form the
+      // redirect allowlist carries — a listed entry without a wildcard has to
+      // match exactly, and '.../polling/' is not '.../polling'.
+      emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`.replace(/\/$/, ''),
+    },
   })
   if (error) throw error
 }
