@@ -21,6 +21,10 @@ const VALIDITY = [
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp']
+// Source-file ceiling, not the stored size — the upload is downscaled in the
+// browser first, so this only needs to be generous enough for a phone photo
+// or a Retina screenshot. Matches the hub's org-branding upload.
+const MAX_LOGO_BYTES = 10 * 1024 * 1024
 
 type Phase = 'edit' | 'sending' | 'code' | 'creating' | 'done'
 
@@ -140,11 +144,14 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const logoPreview = useMemo(() => (logoFile ? URL.createObjectURL(logoFile) : null), [logoFile])
   useEffect(() => () => { if (logoPreview) URL.revokeObjectURL(logoPreview) }, [logoPreview])
 
+  // The picked file is shrunk in the browser at upload time (uploadPollLogo),
+  // so a camera-sized original is fine — this gate only stops files so big
+  // that decoding one would be the problem.
   function onPickLogo(file: File | null) {
     setLogoErr(null)
     if (!file) { setLogoFile(null); return }
     if (!LOGO_TYPES.includes(file.type)) { setLogoErr('Logo must be a PNG, JPG or WebP image.'); return }
-    if (file.size > 2 * 1024 * 1024) { setLogoErr('Logo must be 2 MB or smaller.'); return }
+    if (file.size > MAX_LOGO_BYTES) { setLogoErr('Logo must be 10 MB or smaller.'); return }
     setLogoFile(file)
   }
 
@@ -613,7 +620,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   </button>
                 )}
               </div>
-              <p className="mt-1 text-[11px] text-slate-400">PNG, JPG or WebP · up to 2 MB.</p>
+              <p className="mt-1 text-[11px] text-slate-400">PNG, JPG or WebP · large images are resized for you.</p>
               {logoErr && <p className="mt-1 text-xs text-red-600">{logoErr}</p>}
             </div>
           </div>

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { downscaleImage } from '@unisim/sdk'
 import { supabase } from './supabase'
 import type { Availability, NewPoll, Poll, PollResponse } from './types'
 
@@ -115,21 +116,38 @@ const LOGO_EXT: Record<string, string> = {
   'image/webp': 'webp',
 }
 
+/** The `poll-logos` bucket's own `file_size_limit` (migration 0040). Anything
+ *  the downscale can't get under this would be rejected by storage anyway, so
+ *  we say so ourselves rather than surfacing a raw storage error. */
+const POLL_LOGO_BUCKET_LIMIT = 2 * 1024 * 1024
+
 /** Upload a guest host's logo to the public `poll-logos` bucket under their own
  *  uid (RLS scopes writes to auth.uid()), returning the public URL to snapshot
- *  onto the poll. `client` must be signed in as `hostUserId`. */
+ *  onto the poll. `client` must be signed in as `hostUserId`.
+ *
+ *  The file is shrunk in the browser first (same `@unisim/sdk` helper the hub's
+ *  org branding uses) — the logo renders 36px tall at up to 200px wide, so
+ *  1024px is already several times what's displayed, and a camera-sized
+ *  original lands at a few tens of KB instead of being rejected. */
 export async function uploadPollLogo(
   client: SupabaseClient,
   hostUserId: string,
   file: File,
 ): Promise<string> {
-  const ext = LOGO_EXT[file.type]
-  if (!ext) throw new Error('Logo must be a PNG, JPG or WebP image.')
-  if (file.size > 2 * 1024 * 1024) throw new Error('Logo must be 2 MB or smaller.')
+  if (!LOGO_EXT[file.type]) throw new Error('Logo must be a PNG, JPG or WebP image.')
+
+  const upload = await downscaleImage(file, { maxDimension: 1024, maxBytes: 256 * 1024 })
+  // `downscaleImage` hands the original back untouched when the browser can't
+  // decode it, so re-check the size rather than assuming it shrank.
+  if (upload.size > POLL_LOGO_BUCKET_LIMIT) {
+    throw new Error('That image is too large to upload — try a smaller one.')
+  }
+
+  const ext = LOGO_EXT[upload.type] ?? LOGO_EXT[file.type]
   const path = `${hostUserId}/${shortId(16)}.${ext}`
   const { error } = await client.storage
     .from('poll-logos')
-    .upload(path, file, { contentType: file.type, upsert: false })
+    .upload(path, upload, { contentType: upload.type, upsert: false })
   if (error) throw error
   return client.storage.from('poll-logos').getPublicUrl(path).data.publicUrl
 }
