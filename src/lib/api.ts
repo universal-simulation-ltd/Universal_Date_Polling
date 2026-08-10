@@ -200,6 +200,57 @@ export async function notifyPollHost(pollId: string, respondentName: string): Pr
   }
 }
 
+/** Save (or clear, with '') the respondent's opt-in notification email for
+ *  their response row. Lives in `poll_response_emails` — a write-only table for
+ *  client roles (no SELECT grant on the email column), so an address can never
+ *  be read back by anyone with the link; only the notify-poll-respondents edge
+ *  function's service role sees it. Keyed (poll_id, name) like the response
+ *  itself, and RLS requires the matching response row to exist — so this must
+ *  run AFTER submitResponse. */
+export async function saveResponseEmail(pollId: string, name: string, email: string): Promise<void> {
+  const n = name.trim()
+  const e = email.trim()
+  if (e) {
+    const { error } = await supabase
+      .from('poll_response_emails')
+      .upsert(
+        { poll_id: pollId, name: n, email: e, updated_at: new Date().toISOString() },
+        { onConflict: 'poll_id,name' },
+      )
+    if (error) throw error
+  } else {
+    // Field left (or made) blank = not opted in; remove any earlier opt-in.
+    const { error } = await supabase
+      .from('poll_response_emails')
+      .delete()
+      .eq('poll_id', pollId)
+      .eq('name', n)
+    if (error) throw error
+  }
+}
+
+/** Host-only: ask the edge function to email every opted-in respondent the
+ *  confirmed time (+ .ics). `client` must hold the host's session — the
+ *  function rejects anyone whose uid isn't the poll's host. Returns how many
+ *  emails were sent (0 = nobody opted in). */
+export async function notifyRespondents(client: SupabaseClient, pollId: string): Promise<number> {
+  const { data, error } = await client.functions.invoke('notify-poll-respondents', {
+    body: { pollId },
+  })
+  if (error) {
+    // FunctionsHttpError carries the response; surface the function's own
+    // message when there is one (e.g. "No confirmed time yet").
+    const ctx = (error as { context?: Response }).context
+    if (ctx) {
+      const body = await ctx.json().catch(() => null)
+      if (body?.error) throw new Error(body.error)
+    }
+    throw new Error('Could not send the emails — please try again.')
+  }
+  if (!data?.ok) throw new Error(data?.error ?? 'Could not send the emails.')
+  return data.sent ?? 0
+}
+
 export async function getPoll(id: string): Promise<Poll | null> {
   const { data, error } = await supabase.from('polls').select('*').eq('id', id).maybeSingle()
   if (error) throw error

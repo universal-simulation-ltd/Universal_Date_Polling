@@ -17,11 +17,17 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
 - **Share** the generated link. Anyone with it can respond — no account needed.
 - **Respond** — tick each slot you're *free* or *if-need-be*. Times are shown in
   the poll's timezone, with your own local time alongside if they differ.
+  Optionally leave an email to be notified when the host confirms a time — it's
+  stored write-only (client roles can never read it back) and never shown to
+  other respondents.
 - **Decide** — the results view tallies every slot, shades it by how many people
   are free, and badges the winner(s).
 - **Confirm** — the host (and only the host) can click **"Confirm this time"** on
   a result slot. Everyone with the link then sees a prominent **"Confirmed"**
-  banner with the chosen date/time.
+  banner with the chosen date/time. From that banner the host can **email every
+  respondent who left an address** the confirmed time, with a `.ics` invite
+  attached (the `notify-poll-respondents` Edge Function; never sent
+  automatically — always an explicit host click).
 - **Add to calendar** — each result slot (and the confirmed banner) has an "Add
   to calendar" button: Google Calendar, Outlook, or an `.ics` download (Apple
   Calendar, Outlook desktop). Generated entirely client-side, in the poll's

@@ -18,6 +18,7 @@ function timedPoll(overrides: Partial<Poll> = {}): Poll {
     branding: null,
     location: null,
     final_slot_id: null,
+    final_notified_slot_id: null,
     notify_on_response: false,
     created_at: NOW.toISOString(),
     expires_at: null,

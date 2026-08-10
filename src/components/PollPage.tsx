@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useUser, useUniversal } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { currentUser, getPollResilient, getResponses, notifyPollHost, setFinalSlot, submitResponse } from '../lib/api'
+import { currentUser, getPollResilient, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, submitResponse } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import {
@@ -14,12 +14,23 @@ import TimezonePicker from './TimezonePicker'
 type Load = 'loading' | 'ready' | 'notfound' | 'error'
 
 const NAME_KEY = 'unipoll:name'
+const EMAIL_KEY = 'unipoll:email'
+
+/** The host's "email respondents the confirmed time" action, tracked per page
+ *  view. 'sent' carries how many addresses were actually emailed. */
+type NotifyState =
+  | { status: 'idle' }
+  | { status: 'sending' }
+  | { status: 'sent'; sent: number }
+  | { status: 'error'; message: string }
 
 export default function PollPage({ id, pollBase }: { id: string; pollBase: string }) {
   const [state, setState] = useState<Load>('loading')
   const [poll, setPoll] = useState<Poll | null>(null)
   const [responses, setResponses] = useState<PollResponse[]>([])
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) ?? '')
+  const [email, setEmail] = useState(() => localStorage.getItem(EMAIL_KEY) ?? '')
+  const [notifyState, setNotifyState] = useState<NotifyState>({ status: 'idle' })
   const [mine, setMine] = useState<Record<string, Availability | undefined>>({})
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<number | null>(null)
@@ -88,6 +99,10 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     if (!poll) return
     setError(null)
     if (!name.trim()) { setError('Add your name so people know who you are.'); return }
+    if (email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+      setError("That email doesn't look right — fix it or leave it blank.")
+      return
+    }
     const availability: Record<string, Availability> = {}
     for (const [k, v] of Object.entries(mine)) if (v) availability[k] = v
     // A brand-new responder (not this browser editing an existing entry) — used
@@ -98,6 +113,15 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       await submitResponse(poll.id, name, availability)
       localStorage.setItem(NAME_KEY, name.trim())
       if (isNewResponder) void notifyPollHost(poll.id, name.trim())
+      // The email row rides on the response row (RLS requires it to exist), so
+      // this runs after the availability save. Its failure shouldn't read as
+      // "your response wasn't saved" — it was — so it gets its own message.
+      try {
+        await saveResponseEmail(poll.id, name, email)
+        localStorage.setItem(EMAIL_KEY, email.trim())
+      } catch {
+        setError("Your availability was saved, but your email couldn't be stored — try saving again.")
+      }
       setResponses(await getResponses(poll.id))
       setSavedAt(Date.now())
     } catch (e) {
@@ -124,10 +148,30 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     try {
       await setFinalSlot(client, poll.id, slotId)
       setPoll({ ...poll, final_slot_id: slotId })
+      // A different (or cleared) confirmation invalidates any "sent ✓" state
+      // shown for the previous slot.
+      setNotifyState({ status: 'idle' })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not confirm the time.')
     } finally {
       setConfirming(false)
+    }
+  }
+
+  /** Host-only: email the confirmed time (+ .ics) to every respondent who left
+   *  an address. Always an explicit click — confirming a slot never auto-sends,
+   *  so a host trying out the button can't accidentally spam anyone. */
+  async function emailRespondents() {
+    if (!poll) return
+    const client = hostClientFor(poll)
+    if (!client) return
+    setNotifyState({ status: 'sending' })
+    try {
+      const sent = await notifyRespondents(client, poll.id)
+      setNotifyState({ status: 'sent', sent })
+      if (sent > 0 && poll.final_slot_id) setPoll({ ...poll, final_notified_slot_id: poll.final_slot_id })
+    } catch (e) {
+      setNotifyState({ status: 'error', message: e instanceof Error ? e.message : 'Could not send the emails.' })
     }
   }
 
@@ -181,6 +225,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           poll={poll} slot={finalSlot} pollUrl={pollUrl} viewerTz={viewerTz} activeTz={activeTz}
           dayMode={dayMode} isHost={isHost} confirming={confirming}
           onUnconfirm={() => confirmSlot(null)}
+          notifyState={notifyState} onNotify={emailRespondents}
         />
       )}
       {isHost && !finalSlot && responses.length > 0 && (
@@ -201,17 +246,33 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           <h2 className="text-base font-bold text-slate-900">
             {dayMode ? 'Are you free on these days?' : 'Are you free at these times?'}
           </h2>
-          <label className="mt-3 block">
-            <span className="text-sm font-medium text-slate-700">Your name</span>
-            <input
-              type="text"
-              value={name}
-              maxLength={120}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Sam"
-              className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
-            />
-          </label>
+          <div className="mt-3 flex flex-col sm:flex-row gap-3">
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">Your name</span>
+              <input
+                type="text"
+                value={name}
+                maxLength={120}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Sam"
+                className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">Your email <span className="font-normal text-slate-400">(optional)</span></span>
+              <input
+                type="email"
+                value={email}
+                maxLength={320}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+              />
+            </label>
+          </div>
+          <p className="mt-1.5 text-xs text-slate-500">
+            Leave your email and you'll get the final date (with a calendar invite) once the host confirms it. It's never shown to other respondents.
+          </p>
 
           <div className="mt-4 space-y-4">
             {groupByDay(slots).map(([day, list]) => (
@@ -392,9 +453,10 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
 
 /** The prominent "Confirmed" banner shown to everyone once the host has picked
  *  a final slot — the chosen date/time plus an "Add to calendar" for it. */
-function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isHost, confirming, onUnconfirm }: {
+function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isHost, confirming, onUnconfirm, notifyState, onNotify }: {
   poll: Poll; slot: Slot; pollUrl: string; viewerTz: string; activeTz: string; dayMode: boolean
   isHost: boolean; confirming: boolean; onUnconfirm: () => void
+  notifyState: NotifyState; onNotify: () => void
 }) {
   // Memoize the formatter chain: `inst` and the `when` label each run several
   // Intl.DateTimeFormat passes, and the banner re-renders on every poll refresh.
@@ -409,6 +471,10 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
     }
   }, [slot.start, slot.durationMins, poll.timezone, activeTz, dayMode])
   const tzNote = !dayMode && activeTz !== viewerTz
+  // Whether THIS confirmed slot has already been announced by email (stamped
+  // server-side after a successful send, so it survives reloads).
+  const alreadyNotified = poll.final_notified_slot_id === slot.id
+  const sending = notifyState.status === 'sending'
   return (
     <div className="mt-6 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -432,6 +498,31 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
           <AddToCalendar poll={poll} slot={slot} pollUrl={pollUrl} />
         </div>
       </div>
+      {isHost && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-emerald-200/70 pt-3">
+          <button
+            type="button"
+            onClick={onNotify}
+            disabled={sending}
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-white hover:ring-emerald-400 transition disabled:opacity-60"
+          >
+            ✉️ {sending ? 'Sending…' : alreadyNotified || notifyState.status === 'sent' ? 'Email respondents again' : 'Email respondents this time'}
+          </button>
+          <span className="text-xs text-slate-600">
+            {notifyState.status === 'sent' && (
+              notifyState.sent > 0
+                ? `Sent to ${notifyState.sent} ${notifyState.sent === 1 ? 'person' : 'people'} ✓`
+                : 'No one has left an email address yet.'
+            )}
+            {notifyState.status === 'error' && <span className="text-red-600">{notifyState.message}</span>}
+            {notifyState.status === 'idle' && (
+              alreadyNotified
+                ? 'Respondents have been emailed ✓'
+                : 'Sends the confirmed date and a calendar invite to everyone who left an email.'
+            )}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
