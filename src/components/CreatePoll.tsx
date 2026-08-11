@@ -7,7 +7,7 @@ import { createPoll, createPollGated, currentUser, sendHostCode, setNotifyOnResp
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { addLocalDays, listTimezones, localTimezone, tzAbbrev } from '../lib/time'
 import {
-  busySegmentsByDay, calendarStatus, disconnectCalendar, fetchFreeBusy, startCalendarConnect,
+  busySegmentsByDay, calendarConfigured, calendarStatus, disconnectCalendar, fetchFreeBusy, startCalendarConnect,
   type BusyInterval, type CalendarProvider, type CalendarStatus,
 } from '../lib/hostCalendar'
 import SlotPicker from './SlotPicker'
@@ -180,6 +180,54 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     // calClient is derived from suiteLoggedIn, which is already a dep.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasSession, suiteLoggedIn])
+
+  // Guests without a session yet: all we need to know is whether any provider
+  // is configured, to decide whether the verify-and-connect prompt exists.
+  // (Their calendar can't connect until they verify — tokens key off a uid.)
+  const [calProviders, setCalProviders] = useState<{ google: boolean; microsoft: boolean } | null>(null)
+  useEffect(() => {
+    if (hasSession || !SUPABASE_CONFIGURED) return
+    let live = true
+    calendarConfigured(supabase)
+      .then((c) => { if (live) setCalProviders(c) })
+      .catch(() => { /* prompt stays hidden */ })
+    return () => { live = false }
+  }, [hasSession])
+
+  // The verify-your-email mini-flow inside the calendar prompt (guests only).
+  // Reuses the same OTP the create step uses, just run earlier — so once it
+  // succeeds, `verified` flips, the connect buttons appear, AND the eventual
+  // create skips its own code step.
+  const [calAuthPhase, setCalAuthPhase] = useState<'idle' | 'sending' | 'code' | 'verifying'>('idle')
+  const [calCode, setCalCode] = useState('')
+
+  async function calSendCode() {
+    setCalError(null)
+    if (!EMAIL_RE.test(email)) { setCalError('Enter a valid email address first.'); return }
+    setCalAuthPhase('sending')
+    try {
+      await sendHostCode(email)
+      setCalAuthPhase('code')
+    } catch (e) {
+      setCalError(messageOf(e))
+      setCalAuthPhase('idle')
+    }
+  }
+
+  async function calVerifyCode() {
+    setCalError(null)
+    if (!calCode.trim()) { setCalError('Enter the code from your email.'); return }
+    setCalAuthPhase('verifying')
+    try {
+      await verifyHostCode(email, calCode)
+      setVerified(true)
+      setCalAuthPhase('idle')
+      setCalCode('')
+    } catch (e) {
+      setCalError(messageOf(e))
+      setCalAuthPhase('code')
+    }
+  }
 
   const onWeekChange = useCallback((weekStart: Date) => {
     lastWeekRef.current = weekStart
@@ -530,6 +578,64 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   </button>
                 )}
               </span>
+            </div>
+          )}
+          {/* Guest (no session yet) variant: tokens key off a signed-in uid,
+              so the same email OTP the create step runs happens here first —
+              verify, and the connect buttons above take this prompt's place. */}
+          {view === 'calendar' && !hasSession && (calProviders?.google || calProviders?.microsoft) && (
+            <div className="mt-3 rounded-lg bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5">
+              <span className="block text-xs text-slate-600">
+                <span className="font-medium text-slate-700">See when you're already busy</span> — verify your email (the same one that saves your poll), then connect your calendar. Only you see the shading.
+              </span>
+              {calAuthPhase === 'code' || calAuthPhase === 'verifying' ? (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={calCode}
+                    onChange={(e) => setCalCode(e.target.value)}
+                    placeholder="123456"
+                    className="h-9 w-28 rounded-lg border border-slate-300 px-2.5 text-xs tracking-widest text-slate-900 focus:border-[var(--accent)] outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={calVerifyCode}
+                    disabled={calAuthPhase === 'verifying'}
+                    className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--accent-strong)] disabled:opacity-60"
+                  >
+                    {calAuthPhase === 'verifying' ? 'Verifying…' : 'Verify'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setCalAuthPhase('idle'); setCalCode('') }}
+                    className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
+                  >
+                    Different email
+                  </button>
+                  <span className="basis-full text-[11px] text-slate-500">We emailed a 6-digit code to {email}.</span>
+                </div>
+              ) : (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    className="h-9 w-56 max-w-full rounded-lg border border-slate-300 px-2.5 text-xs text-slate-900 focus:border-[var(--accent)] outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={calSendCode}
+                    disabled={calAuthPhase === 'sending'}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                  >
+                    {calAuthPhase === 'sending' ? 'Sending…' : 'Email me a code'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
           {view === 'calendar' && calError && (

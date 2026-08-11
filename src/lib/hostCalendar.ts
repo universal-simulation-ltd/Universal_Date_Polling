@@ -49,6 +49,14 @@ export async function calendarStatus(client: SupabaseClient): Promise<CalendarSt
   return { configured: d.configured, google: d.google, microsoft: d.microsoft }
 }
 
+/** Which providers exist server-side — the one unauthenticated action, so the
+ *  create screen can offer a signed-out guest the verify-and-connect prompt.
+ *  Configuration only; it can never reveal anyone's connections. */
+export async function calendarConfigured(client: SupabaseClient): Promise<{ google: boolean; microsoft: boolean }> {
+  const d = await invokeCalendarOauth(client, { action: 'configured' })
+  return d.configured as { google: boolean; microsoft: boolean }
+}
+
 /** Returns the provider consent URL to open in a popup. The flow ends with the
  *  edge function 302ing the popup to this app's own static
  *  `calendar-connected.html`, which postMessages
