@@ -1,25 +1,41 @@
-// Universal Date Polling brand icon — icon-only by design. The SDK's
-// UniversalAppsNavBar renders the product name from its catalogue beside this
-// slot, so a wordmark here would duplicate it.
+// GENERATED FILE — do not edit by hand.
+// Source: backoffice/universal-platform/scripts/app-marks/marks.mjs
+// Regenerate: node scripts/app-marks/build.mjs (from backoffice/universal-platform)
+// Mark: Universal Date Polling — A calendar, and a date that works.
+// Hover: The tick draws itself across the date.
+//
+// Icon-only by design: the SDK's UniversalAppsNavBar renders the product name
+// from its catalogue beside this slot, so a wordmark here would print it twice.
+
+const CSS = `
+  /* Resting states */
+  .uam-polling-tick { stroke-dashoffset: 27; transition: stroke-dashoffset .5s cubic-bezier(0.16,1,0.3,1); }
+
+  /* Active states */
+  .uam-host-polling:hover .uam-polling-tick,
+  .uam-host-polling:focus-visible .uam-polling-tick { stroke-dashoffset: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .uam-polling-tick { transition: none !important; }
+  }
+`
+
 export default function ProductLogo() {
   return (
     <span
-      className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-orange-600 text-white"
+      className="uam-host-polling inline-flex h-6 w-6 shrink-0 items-center justify-center"
       aria-hidden="true"
     >
-      <svg
-        viewBox="0 0 24 24"
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
-        <path d="M3.5 9.5 H20.5" />
-        <path d="M8 3.5 V6.5 M16 3.5 V6.5" />
-        <path d="M8.5 14 l2.5 2.5 L16 11" />
+      <style>{CSS}</style>
+      <svg viewBox="0 0 64 64" className="h-6 w-6" aria-hidden="true">
+        <rect x="0" y="0" width="64" height="64" rx="14" fill="#0f172a" />
+        <g fill="none" strokeWidth={4.8} strokeLinecap="round" stroke="#fe8c01">
+          <rect x={12} y={16} width={40} height={34} rx={6} />
+          <path d="M12 26H52" />
+          <path d="M22 11V21" />
+          <path d="M42 11V21" />
+        </g>
+        <path d="M23 37 L29.5 43.5 L42 31" fill="none" strokeWidth={5.2} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={27} stroke="#fe8c01" className="uam-polling-tick" />
       </svg>
     </span>
   )
