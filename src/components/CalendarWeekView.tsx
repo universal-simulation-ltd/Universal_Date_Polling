@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Slot } from '../lib/types'
+import type { DaySegment } from '../lib/hostCalendar'
 import { shortId } from '../lib/api'
 import { addLocalDays, slotDayKey } from '../lib/time'
 
@@ -70,9 +71,18 @@ interface MoveState {
 export default function CalendarWeekView({
   slots,
   onChange,
+  busyByDay,
+  onWeekChange,
 }: {
   slots: Slot[]
   onChange: (s: Slot[]) => void
+  /** Host-calendar busy segments ('YYYY-MM-DD' → wall-clock minutes), shaded
+   *  read-only under the slot picker. Present at all only when the host has a
+   *  calendar connected — presence also drives the legend line. */
+  busyByDay?: Map<string, DaySegment[]>
+  /** Fired on mount and whenever the visible week changes, so the parent can
+   *  fetch busy intervals for that range. */
+  onWeekChange?: (weekStart: Date) => void
 }) {
   const todayStart = startOfWeek(new Date())
   const [weekStart, setWeekStart] = useState<Date>(todayStart)
@@ -105,6 +115,11 @@ export default function CalendarWeekView({
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = (8 - START_HOUR) * HOUR_PX
   }, [])
+
+  // Let the parent fetch host-calendar busy data for the visible week.
+  useEffect(() => {
+    onWeekChange?.(weekStart)
+  }, [weekStart, onWeekChange])
 
   const days = Array.from({ length: 7 }, (_, i) => addLocalDays(weekStart, i))
   const atFirstWeek = weekStart.getTime() <= todayStart.getTime()
@@ -211,6 +226,19 @@ export default function CalendarWeekView({
 
       <p className="mt-2 text-xs text-slate-500">
         Click a day to drop a 1-hour slot, or drag down a column to set the length. Drag a slot to move it within the day; click it to remove.
+        {busyByDay && (
+          <>
+            {' '}
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <span
+                aria-hidden
+                className="inline-block h-2.5 w-2.5 rounded-[3px] align-middle"
+                style={{ backgroundImage: 'repeating-linear-gradient(135deg, rgba(100,116,139,0.45) 0 2px, rgba(100,116,139,0.15) 2px 4px)' }}
+              />
+              Striped = busy in your connected calendar.
+            </span>
+          </>
+        )}
       </p>
 
       {/* Day headers */}
@@ -292,6 +320,25 @@ export default function CalendarWeekView({
                 }}
                 onPointerCancel={() => setDragBoth(null)}
               >
+                {/* Host-calendar busy shading — read-only, under everything
+                    interactive. Clipped to the grid's visible hours. */}
+                {(busyByDay?.get(dayStr) ?? []).map((seg, i) => {
+                  const lo = Math.max(seg.fromMin, DAY_MIN)
+                  const hi = Math.min(seg.toMin, END_MIN)
+                  if (hi <= lo) return null
+                  return (
+                    <div
+                      key={`busy${i}`}
+                      className="pointer-events-none absolute inset-x-0"
+                      style={{
+                        top: ((lo - DAY_MIN) / 60) * HOUR_PX,
+                        height: ((hi - lo) / 60) * HOUR_PX,
+                        backgroundImage: 'repeating-linear-gradient(135deg, rgba(100,116,139,0.28) 0 4px, rgba(100,116,139,0.10) 4px 8px)',
+                      }}
+                    />
+                  )
+                })}
+
                 {/* Past shading: whole day if before today, or up to "now" today */}
                 {isPastDay && <div className="pointer-events-none absolute inset-0 bg-slate-100/70" />}
                 {isToday && nowMin > DAY_MIN && (

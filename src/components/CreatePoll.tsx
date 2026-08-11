@@ -1,11 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAppFreeToken, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
 import { createPoll, createPollGated, currentUser, sendHostCode, setNotifyOnResponse as apiSetNotify, setPollLocation as apiSetLocation, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
-import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
-import { listTimezones, localTimezone, tzAbbrev } from '../lib/time'
+import { SUITE_SUPABASE_URL, SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
+import { addLocalDays, listTimezones, localTimezone, tzAbbrev } from '../lib/time'
+import {
+  busySegmentsByDay, calendarStatus, disconnectCalendar, fetchFreeBusy, startCalendarConnect,
+  type BusyInterval, type CalendarProvider, type CalendarStatus,
+} from '../lib/hostCalendar'
 import SlotPicker from './SlotPicker'
 import type { SlotView } from './SlotPicker'
 import { CONTAINER_CREATE } from '../lib/layout'
@@ -140,6 +144,104 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       }
     })
   }, [])
+
+  // --- Host-calendar free/busy overlay (Phase 3) ------------------------------
+  // Any authenticated host (suite session or a returning guest's OTP session)
+  // can connect Google / Microsoft; tokens live server-side, and the week view
+  // shades the returned busy intervals. Everything below is a convenience
+  // layer — a fetch failure just means no shading.
+  const hasSession = suiteLoggedIn || verified
+  const calClient = suiteLoggedIn ? suiteClient : supabase
+  const [calStatus, setCalStatus] = useState<CalendarStatus | null>(null)
+  const [calError, setCalError] = useState<string | null>(null)
+  const [calBusy, setCalBusy] = useState<BusyInterval[]>([])
+  const fetchedWeeksRef = useRef(new Set<string>())
+  const lastWeekRef = useRef<Date | null>(null)
+
+  const anyConnected = !!calStatus && (calStatus.google.connected || calStatus.microsoft.connected)
+  const anyConfigured = !!calStatus && (calStatus.configured.google || calStatus.configured.microsoft)
+
+  // Refs mirror the values the stable week-change callback needs — the picker
+  // holds onto one callback identity, so it must read current state.
+  const anyConnectedRef = useRef(anyConnected)
+  anyConnectedRef.current = anyConnected
+  const calClientRef = useRef(calClient)
+  calClientRef.current = calClient
+
+  useEffect(() => {
+    if (!hasSession || !SUPABASE_CONFIGURED) return
+    let live = true
+    calendarStatus(calClient)
+      .then((s) => { if (live) setCalStatus(s) })
+      .catch(() => { /* feature stays hidden */ })
+    return () => { live = false }
+    // calClient is derived from suiteLoggedIn, which is already a dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSession, suiteLoggedIn])
+
+  const onWeekChange = useCallback((weekStart: Date) => {
+    lastWeekRef.current = weekStart
+    if (!anyConnectedRef.current) return
+    const key = weekStart.toDateString()
+    if (fetchedWeeksRef.current.has(key)) return
+    fetchedWeeksRef.current.add(key)
+    fetchFreeBusy(calClientRef.current, weekStart.toISOString(), addLocalDays(weekStart, 7).toISOString())
+      .then((busy) => setCalBusy((prev) => [...prev, ...busy]))
+      .catch(() => { fetchedWeeksRef.current.delete(key) })
+  }, [])
+
+  // Once a calendar is (re)connected, backfill the week already on screen.
+  useEffect(() => {
+    if (anyConnected && lastWeekRef.current) onWeekChange(lastWeekRef.current)
+  }, [anyConnected, onWeekChange])
+
+  // The connect popup's closing page postMessages back; refresh on success.
+  useEffect(() => {
+    function onMsg(e: MessageEvent) {
+      if (e.origin !== new URL(SUITE_SUPABASE_URL).origin) return
+      const d = e.data as { type?: string; ok?: boolean } | null
+      if (!d || d.type !== 'unisim-calendar') return
+      if (d.ok) {
+        setCalError(null)
+        fetchedWeeksRef.current.clear()
+        setCalBusy([])
+        calendarStatus(calClientRef.current).then(setCalStatus).catch(() => {})
+      } else {
+        setCalError('Calendar connection was cancelled or failed.')
+      }
+    }
+    window.addEventListener('message', onMsg)
+    return () => window.removeEventListener('message', onMsg)
+  }, [])
+
+  async function connectCalendar(provider: CalendarProvider) {
+    setCalError(null)
+    try {
+      const url = await startCalendarConnect(calClient, provider)
+      const popup = window.open(url, 'unisim-calendar', 'width=540,height=680')
+      if (!popup) setCalError('Your browser blocked the pop-up — allow pop-ups for this site and try again.')
+    } catch (e) {
+      setCalError(messageOf(e))
+    }
+  }
+
+  async function disconnectCal(provider: CalendarProvider) {
+    setCalError(null)
+    try {
+      await disconnectCalendar(calClient, provider)
+      setCalBusy([])
+      fetchedWeeksRef.current.clear()
+      setCalStatus(await calendarStatus(calClient))
+    } catch (e) {
+      setCalError(messageOf(e))
+    }
+  }
+
+  // Busy shading in the poll's timezone — the frame the grid's slots use.
+  const busyByDay = useMemo(
+    () => (anyConnected ? busySegmentsByDay(calBusy, timezone) : undefined),
+    [anyConnected, calBusy, timezone],
+  )
 
   const logoPreview = useMemo(() => (logoFile ? URL.createObjectURL(logoFile) : null), [logoFile])
   useEffect(() => () => { if (logoPreview) URL.revokeObjectURL(logoPreview) }, [logoPreview])
@@ -340,7 +442,15 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             )}
           </p>
           <div className="mt-3">
-            <SlotPicker view={view} onViewChange={changeView} slots={slots} onChange={setSlots} timezone={timezone} />
+            <SlotPicker
+              view={view}
+              onViewChange={changeView}
+              slots={slots}
+              onChange={setSlots}
+              timezone={timezone}
+              busyByDay={busyByDay}
+              onWeekChange={onWeekChange}
+            />
           </div>
         </div>
 
@@ -410,6 +520,39 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   </span>
                 </label>
               </div>
+
+              {/* Host calendar (free/busy overlay) — only offered once the
+                  host has a session (the tokens key off their uid) and at
+                  least one provider OAuth app is configured server-side. */}
+              {hasSession && anyConfigured && calStatus && (
+                <div className="sm:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Your calendar</span>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Connect a calendar and the <span className="font-medium">Calendar</span> view shades the times you're already busy — availability only, we never see event names or details.
+                  </p>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {calStatus.configured.google && (
+                      <CalendarProviderRow
+                        label="Google Calendar"
+                        connected={calStatus.google.connected}
+                        email={calStatus.google.email}
+                        onConnect={() => connectCalendar('google')}
+                        onDisconnect={() => disconnectCal('google')}
+                      />
+                    )}
+                    {calStatus.configured.microsoft && (
+                      <CalendarProviderRow
+                        label="Outlook / Microsoft 365"
+                        connected={calStatus.microsoft.connected}
+                        email={calStatus.microsoft.email}
+                        onConnect={() => connectCalendar('microsoft')}
+                        onDisconnect={() => disconnectCal('microsoft')}
+                      />
+                    )}
+                  </div>
+                  {calError && <p className="mt-2 text-xs text-red-600">{calError}</p>}
+                </div>
+              )}
 
               {/* Timezone (timed polls only) */}
               {mode === 'times' && (
@@ -627,6 +770,41 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function CalendarProviderRow({
+  label, connected, email, onConnect, onDisconnect,
+}: {
+  label: string
+  connected: boolean
+  email: string | null
+  onConnect: () => void
+  onDisconnect: () => void
+}) {
+  if (!connected) {
+    return (
+      <button
+        type="button"
+        onClick={onConnect}
+        className="self-start rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+      >
+        Connect {label}
+      </button>
+    )
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-700">
+      <span className="font-medium">{label}</span>
+      <span className="text-slate-500">connected{email ? ` as ${email}` : ''}</span>
+      <button
+        type="button"
+        onClick={onDisconnect}
+        className="text-slate-500 underline underline-offset-2 hover:text-slate-700"
+      >
+        Disconnect
+      </button>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Slot } from '../lib/types'
+import type { DaySegment } from '../lib/hostCalendar'
 import { shortId } from '../lib/api'
 import { formatTime, slotDayKey, slotInstant, tzAbbrev, wallClockExists } from '../lib/time'
 import CalendarWeekView from './CalendarWeekView'
@@ -36,7 +37,7 @@ function durationLabel(mins: number): string {
  *  owned by the parent so it can derive the poll mode and clear incompatible
  *  slots when crossing the timed↔days boundary. */
 export default function SlotPicker({
-  view, onViewChange, slots, onChange, timezone,
+  view, onViewChange, slots, onChange, timezone, busyByDay, onWeekChange,
 }: {
   view: SlotView
   onViewChange: (v: SlotView) => void
@@ -45,6 +46,9 @@ export default function SlotPicker({
   /** The poll's timezone — used to warn when a proposed time falls in a DST
    *  spring-forward gap (and so wouldn't exist on the clock that night). */
   timezone: string
+  /** Host-calendar busy shading for the calendar view (see CalendarWeekView). */
+  busyByDay?: Map<string, DaySegment[]>
+  onWeekChange?: (weekStart: Date) => void
 }) {
   return (
     <div>
@@ -63,7 +67,7 @@ export default function SlotPicker({
       {view === 'days' ? (
         <DayPicker slots={slots} onChange={onChange} />
       ) : view === 'calendar' ? (
-        <CalendarWeekView slots={slots} onChange={onChange} />
+        <CalendarWeekView slots={slots} onChange={onChange} busyByDay={busyByDay} onWeekChange={onWeekChange} />
       ) : (
         <FormPicker slots={slots} onChange={onChange} timezone={timezone} />
       )}
