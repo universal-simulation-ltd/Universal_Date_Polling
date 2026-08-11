@@ -35,8 +35,10 @@ type Phase = 'edit' | 'sending' | 'code' | 'creating' | 'done'
 export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [title, setTitle] = useState('')
   // `view` drives the slot picker's segmented selector; the stored poll `mode`
-  // is derived from it (only "Whole days" is a days poll).
-  const [view, setView] = useState<SlotView>('form')
+  // is derived from it (only "Whole days" is a days poll). The drag-to-pick
+  // calendar is the default since 2026-08-11 — it's the view the host-calendar
+  // busy overlay lives in; the quick form remains a tab away.
+  const [view, setView] = useState<SlotView>('calendar')
   const mode: PollMode = view === 'days' ? 'days' : 'times'
   const [slots, setSlots] = useState<Slot[]>([])
   const [theme, setTheme] = useState<Theme>('orange')
@@ -477,6 +479,40 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               onWeekChange={onWeekChange}
             />
           </div>
+
+          {/* Connect prompt beside the calendar itself — the overlay lives in
+              this view, so the invitation belongs here, not only buried in
+              More options (where the connected/disconnect rows stay). */}
+          {view === 'calendar' && hasSession && calStatus && anyConfigured && !anyConnected && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5">
+              <span className="text-xs text-slate-600">
+                <span className="font-medium text-slate-700">See when you're already busy</span> — connect a calendar and your busy times shade the grid. Only you see them.
+              </span>
+              <span className="flex flex-wrap items-center gap-2">
+                {calStatus.configured.google && (
+                  <button
+                    type="button"
+                    onClick={() => connectCalendar('google')}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    Connect Google Calendar
+                  </button>
+                )}
+                {calStatus.configured.microsoft && (
+                  <button
+                    type="button"
+                    onClick={() => connectCalendar('microsoft')}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    Connect Outlook
+                  </button>
+                )}
+              </span>
+            </div>
+          )}
+          {view === 'calendar' && calError && (
+            <p className="mt-2 text-xs text-red-600">{calError}</p>
+          )}
         </div>
 
         {/* Location / meeting link (whole-event, optional) */}
