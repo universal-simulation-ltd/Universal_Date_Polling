@@ -186,7 +186,21 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     if (fetchedWeeksRef.current.has(key)) return
     fetchedWeeksRef.current.add(key)
     fetchFreeBusy(calClientRef.current, weekStart.toISOString(), addLocalDays(weekStart, 7).toISOString())
-      .then((busy) => setCalBusy((prev) => [...prev, ...busy]))
+      .then(({ busy, providers }) => {
+        setCalBusy((prev) => [...prev, ...busy])
+        // A failed provider read must not look like an empty calendar — say so.
+        const failed: string[] = []
+        if (providers.google === 'error') failed.push('Google')
+        if (providers.microsoft === 'error') failed.push('Outlook')
+        if (failed.length) {
+          setCalError(`Couldn't read your ${failed.join(' and ')} calendar — the connection works, but the availability lookup failed. Try again shortly, or disconnect and reconnect.`)
+        }
+        if (providers.google === 'reconnect' || providers.microsoft === 'reconnect') {
+          // The server dropped the dead grant; refresh so the row shows it.
+          setCalError('A calendar connection has expired — please connect it again.')
+          calendarStatus(calClientRef.current).then(setCalStatus).catch(() => {})
+        }
+      })
       .catch(() => { fetchedWeeksRef.current.delete(key) })
   }, [])
 

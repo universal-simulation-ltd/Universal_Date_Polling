@@ -65,18 +65,37 @@ export async function disconnectCalendar(client: SupabaseClient, provider: Calen
   await invokeCalendarOauth(client, { action: 'disconnect', provider })
 }
 
-/** Busy intervals (merged, UTC ISO) across every connected calendar for the
- *  given range. Providers that need reconnecting simply drop out of the result
- *  — the overlay is a convenience, not a gate, so partial data still shades. */
+/** Per-provider outcome of a free/busy fetch: 'none' = not connected,
+ *  'reconnect' = the stored grant is dead (the server already deleted it),
+ *  'error' = the provider read failed (e.g. the Calendar API is disabled on
+ *  the OAuth project). */
+export type ProviderFetchStatus = 'ok' | 'none' | 'reconnect' | 'error'
+
+export interface FreeBusyResult {
+  /** Merged busy intervals, UTC ISO. */
+  busy: BusyInterval[]
+  providers: { google: ProviderFetchStatus; microsoft: ProviderFetchStatus }
+}
+
+/** Busy intervals across every connected calendar for the given range, plus
+ *  each provider's outcome — the overlay is a convenience, so partial data
+ *  still shades, but the caller can tell the host when a read failed rather
+ *  than silently showing an empty calendar. */
 export async function fetchFreeBusy(
   client: SupabaseClient,
   timeMin: string,
   timeMax: string,
-): Promise<BusyInterval[]> {
+): Promise<FreeBusyResult> {
   const { data, error } = await client.functions.invoke('calendar-freebusy', { body: { timeMin, timeMax } })
   if (error) throw new Error('Could not load your calendar availability.')
   if (!data?.ok) throw new Error(data?.error ?? 'Could not load your calendar availability.')
-  return (data.busy ?? []) as BusyInterval[]
+  return {
+    busy: (data.busy ?? []) as BusyInterval[],
+    providers: {
+      google: (data.providers?.google ?? 'none') as ProviderFetchStatus,
+      microsoft: (data.providers?.microsoft ?? 'none') as ProviderFetchStatus,
+    },
+  }
 }
 
 // ── Pure overlay math ────────────────────────────────────────────────────────
