@@ -444,7 +444,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         </p>
       </div>
 
-      <div className="mt-8 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7 pop-in">
+      {/* Two columns from lg up: what & where + options on the left, the
+          availability picker (calendar / date form / whole days) on the wider
+          right. Below lg it stacks in DOM order. */}
+      <div className="mt-8 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7 pop-in lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10">
+        {/* Left column (top): what and where */}
+        <div>
         {/* Title */}
         <label className="block">
           <span className="text-sm font-semibold text-slate-800">Poll title</span>
@@ -458,8 +463,25 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           />
         </label>
 
-        {/* Availability (slots) */}
+        {/* Location / meeting link (whole-event, optional) */}
         <div className="mt-6">
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-800">Location or meeting link <span className="font-normal text-slate-400">(optional)</span></span>
+            <input
+              type="text"
+              value={location}
+              maxLength={500}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. Meeting room 5, or a Teams / Zoom / Meet link"
+              className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+            />
+          </label>
+          <p className="mt-1 text-xs text-slate-500">Shown to everyone on the poll and added to the calendar invite.</p>
+        </div>
+        </div>
+
+        {/* Availability (slots) — the right column from lg up */}
+        <div className="mt-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-2">
           <span className="text-sm font-semibold text-slate-800">Availability</span>
           <p className="text-xs text-slate-500 mt-0.5">
             {mode === 'days' ? (
@@ -515,22 +537,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           )}
         </div>
 
-        {/* Location / meeting link (whole-event, optional) */}
-        <div className="mt-6">
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-800">Location or meeting link <span className="font-normal text-slate-400">(optional)</span></span>
-            <input
-              type="text"
-              value={location}
-              maxLength={500}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Meeting room 5, or a Teams / Zoom / Meet link"
-              className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
-            />
-          </label>
-          <p className="mt-1 text-xs text-slate-500">Shown to everyone on the poll and added to the calendar invite.</p>
-        </div>
-
+        {/* Left column (bottom): options + identity/create */}
+        <div className="lg:col-start-1 lg:row-start-2">
         {/* More options */}
         <div className="mt-6 border-t border-slate-100 pt-4">
           <button
@@ -716,6 +724,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             {phase === 'edit' && 'Create poll'}
           </button>
         </div>
+        </div>
       </div>
 
       {/* Branding box — a separate card beneath the create-poll form. Anonymous
@@ -896,7 +905,9 @@ function CreatedPanel({ pollBase, id, theme }: { pollBase: string; id: string; t
   }
   return (
     <div data-theme={themeAttr(theme)} style={themeVars(theme)} className={`${CONTAINER_CREATE} py-12`}>
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-7 text-center pop-in">
+      {/* The container widened for the two-column create form; this success
+          card keeps its original reading width inside it. */}
+      <div className="mx-auto max-w-2xl rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-7 text-center pop-in">
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12.5 L10 17.5 L19 7" />
