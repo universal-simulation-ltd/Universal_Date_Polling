@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useAppFreeToken, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
+import { useAppFreeToken, useFileDrop, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
 import { createPoll, createPollGated, currentUser, sendHostCode, setNotifyOnResponse as apiSetNotify, setPollLocation as apiSetLocation, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
-import { SUITE_SUPABASE_URL, SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
+import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { addLocalDays, listTimezones, localTimezone, tzAbbrev } from '../lib/time'
 import {
   busySegmentsByDay, calendarStatus, disconnectCalendar, fetchFreeBusy, startCalendarConnect,
@@ -195,10 +195,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     if (anyConnected && lastWeekRef.current) onWeekChange(lastWeekRef.current)
   }, [anyConnected, onWeekChange])
 
-  // The connect popup's closing page postMessages back; refresh on success.
+  // The connect popup ends on our own static calendar-connected.html (the
+  // edge function 302s it there), which postMessages back; refresh on success.
   useEffect(() => {
     function onMsg(e: MessageEvent) {
-      if (e.origin !== new URL(SUITE_SUPABASE_URL).origin) return
+      if (e.origin !== window.location.origin) return
       const d = e.data as { type?: string; ok?: boolean } | null
       if (!d || d.type !== 'unisim-calendar') return
       if (d.ok) {
@@ -249,6 +250,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   // The picked file is shrunk in the browser at upload time (uploadPollLogo),
   // so a camera-sized original is fine — this gate only stops files so big
   // that decoding one would be the problem.
+  // One small button in the branding row, so no drop target — but the SDK's
+  // input resets its value, which is what makes picking the SAME logo again
+  // (after a Remove, or after a rejected file) fire at all.
+  const logoPicker = useFileDrop({
+    onFiles: (files) => onPickLogo(files[0] ?? null),
+    accept: 'image/png,image/jpeg,image/webp',
+    multiple: false,
+    clickToBrowse: false,
+  })
+
   function onPickLogo(file: File | null) {
     setLogoErr(null)
     if (!file) { setLogoFile(null); return }
@@ -748,15 +759,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 {logoPreview && (
                   <img src={logoPreview} alt="Logo preview" className="h-10 w-10 rounded object-contain ring-1 ring-slate-200 bg-white" />
                 )}
-                <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                <button
+                  type="button"
+                  onClick={logoPicker.open}
+                  className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
                   {logoFile ? 'Change…' : 'Upload…'}
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={(e) => onPickLogo(e.target.files?.[0] ?? null)}
-                    className="sr-only"
-                  />
-                </label>
+                </button>
+                {/* `hidden`, not `sr-only`: out of the label it had no
+                    accessible name, and the button above is the control. */}
+                <input {...logoPicker.inputProps} className="hidden" />
                 {logoFile && (
                   <button type="button" onClick={() => onPickLogo(null)} className="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2">
                     Remove

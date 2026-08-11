@@ -49,11 +49,15 @@ export async function calendarStatus(client: SupabaseClient): Promise<CalendarSt
   return { configured: d.configured, google: d.google, microsoft: d.microsoft }
 }
 
-/** Returns the provider consent URL to open in a popup. The popup ends on a
- *  page that postMessages `{type:'unisim-calendar', ok, provider}` back to
- *  `window.location.origin` and closes itself. */
+/** Returns the provider consent URL to open in a popup. The flow ends with the
+ *  edge function 302ing the popup to this app's own static
+ *  `calendar-connected.html`, which postMessages
+ *  `{type:'unisim-calendar', ok, provider}` back to the opener (same-origin)
+ *  and closes itself — so the function needs our base URL, not just the
+ *  origin (the app is path-routed under /polling/ in production). */
 export async function startCalendarConnect(client: SupabaseClient, provider: CalendarProvider): Promise<string> {
-  const d = await invokeCalendarOauth(client, { action: 'start', provider, origin: window.location.origin })
+  const base = `${window.location.origin}${import.meta.env.BASE_URL}`
+  const d = await invokeCalendarOauth(client, { action: 'start', provider, base })
   return d.url as string
 }
 

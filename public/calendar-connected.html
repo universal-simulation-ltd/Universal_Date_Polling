@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Universal Date Polling</title>
+  <!-- The calendar-oauth edge function 302s the OAuth popup here (it cannot
+       serve this page itself: the functions gateway rewrites Content-Type to
+       text/plain, so inline HTML shows as raw markup). This page tells the
+       create screen the outcome and closes the popup. -->
+</head>
+<body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f8fafc;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
+  <div style="text-align:center;padding:24px;">
+    <p id="msg" style="font-size:16px;font-weight:600;margin:0;">Finishing up…</p>
+    <p style="font-size:13px;color:#64748b;margin-top:8px;">You can close this window.</p>
+  </div>
+  <script>
+    var params = new URLSearchParams(window.location.search)
+    var ok = params.get('ok') === '1'
+    var provider = params.get('provider') || ''
+    document.getElementById('msg').textContent = ok ? 'Calendar connected ✓' : 'Calendar connection failed or was cancelled.'
+    try {
+      // Same-origin as the create screen that opened this popup, so the app's
+      // listener can check event.origin === window.location.origin.
+      if (window.opener) window.opener.postMessage({ type: 'unisim-calendar', ok: ok, provider: provider }, window.location.origin)
+    } catch (e) { /* opener gone */ }
+    setTimeout(function () { window.close() }, 800)
+  </script>
+</body>
+</html>
