@@ -15,6 +15,10 @@
 /polling/assets/*             /assets/:splat        200
 
 # Static files referenced from index.html / app code (BASE_URL-prefixed).
+# calendar-connected.html is the OAuth popup's closer page — the calendar-oauth
+# edge function 302s here; without this rule it falls into the SPA fallback and
+# the popup boots the whole app instead of closing.
+/polling/calendar-connected.html /calendar-connected.html 200
 /polling/favicon.svg          /favicon.svg          200
 /polling/unisim-icon.png      /unisim-icon.png      200
 /polling/og-image.png         /og-image.png         200
