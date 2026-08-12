@@ -11,6 +11,7 @@ import {
   type BusyInterval, type CalendarProvider, type CalendarStatus,
 } from '../lib/hostCalendar'
 import SlotPicker from './SlotPicker'
+import ProductLogo from './ProductLogo'
 import type { SlotView } from './SlotPicker'
 import { CONTAINER_CREATE } from '../lib/layout'
 
@@ -51,11 +52,17 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [email, setEmail] = useState('')
   const [verified, setVerified] = useState(false)
 
-  // Guest branding (its own collapsible); only for anonymous hosts. Logged-in
-  // hosts brand from their account automatically, so these inputs are hidden.
+  // Branding inputs (their own collapsible). Guests always edit these directly.
+  // A logged-in host's account branding imports automatically and is shown
+  // read-only until they opt into overriding it for this one poll.
   const [brandName, setBrandName] = useState('')
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoErr, setLogoErr] = useState<string | null>(null)
+  // Logged-in hosts only: false = use the imported account branding as-is.
+  const [brandOverride, setBrandOverride] = useState(false)
+  // Set when overriding clears the imported logo, so "no logo" is distinct
+  // from "no new file picked, keep the account one".
+  const [dropOrgLogo, setDropOrgLogo] = useState(false)
 
   const [showMore, setShowMore] = useState(false)
   const [showBranding, setShowBranding] = useState(false)
@@ -128,13 +135,22 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   }, [diag, suiteUser, suiteClient])
 
   // A logged-in host's poll defaults to their account ("My Company") brand
-  // colour — the branding controls are hidden for them, so this is the colour
-  // their poll uses. Runs once the signed-in branding resolves.
+  // colour. Runs once the signed-in branding resolves — and never again after
+  // they start overriding, or a late-arriving org colour would silently undo
+  // the swatch they just picked.
   useEffect(() => {
+    if (brandOverride) return
     if (suiteLoggedIn && orgBranding.brand_color && isHexTheme(orgBranding.brand_color)) {
       setTheme(orgBranding.brand_color)
     }
-  }, [suiteLoggedIn, orgBranding.brand_color])
+  }, [suiteLoggedIn, orgBranding.brand_color, brandOverride])
+
+  /** Switch a logged-in host from the imported branding to editable copies of
+   *  it, so "customise" starts from what they already have rather than blank. */
+  function startBrandOverride() {
+    setBrandName((n) => n || org?.name || '')
+    setBrandOverride(true)
+  }
 
   // A returning guest host already has an OTP session — skip the email step.
   useEffect(() => {
@@ -311,6 +327,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const logoPreview = useMemo(() => (logoFile ? URL.createObjectURL(logoFile) : null), [logoFile])
   useEffect(() => () => { if (logoPreview) URL.revokeObjectURL(logoPreview) }, [logoPreview])
 
+  // What the Logo control shows while overriding: a freshly picked file wins,
+  // otherwise a logged-in host still has their account logo until they remove
+  // it — so the preview matches what buildBranding will actually store.
+  const orgLogoSrc = orgBranding.logo_url ?? orgBranding.icon_url
+  const shownLogo = logoPreview ?? (suiteLoggedIn && !dropOrgLogo ? orgLogoSrc : null)
+
   // The picked file is shrunk in the browser at upload time (uploadPollLogo),
   // so a camera-sized original is fine — this gate only stops files so big
   // that decoding one would be the problem.
@@ -348,10 +370,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   }
 
   function buildBranding(uploadedLogoUrl: string | null): PollBranding | null {
-    // Signed in → brand from the account ("My Company") automatically; the
-    // manual branding controls are hidden for logged-in hosts. If the account
-    // has no branding set, the poll simply carries none.
-    if (suiteLoggedIn) {
+    // Signed in and happy with the import → brand from the account
+    // ("My Company") as-is. If the account has no branding set, the poll
+    // simply carries none.
+    if (suiteLoggedIn && !brandOverride) {
       const hasOrgBranding = !!(org?.name || orgBranding.logo_url || orgBranding.icon_url || orgBranding.brand_color)
       if (!hasOrgBranding) return null
       return {
@@ -363,6 +385,15 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       }
     }
     const name = brandName.trim() || null
+    if (suiteLoggedIn) {
+      // Overriding: a freshly uploaded logo wins, otherwise keep the account's
+      // (unless the host explicitly removed it). Still `source: 'org'` — the
+      // poll belongs to an account, it's just carrying per-poll overrides.
+      const logo = uploadedLogoUrl ?? (dropOrgLogo ? null : orgBranding.logo_url)
+      const icon = uploadedLogoUrl || dropOrgLogo ? null : orgBranding.icon_url
+      if (!name && !logo && !icon) return null
+      return { source: 'org', name, logo_url: logo, icon_url: icon, brand_color: hexOfTheme(theme) }
+    }
     if (!name && !uploadedLogoUrl) return null
     return { source: 'guest', name, logo_url: uploadedLogoUrl, icon_url: null, brand_color: hexOfTheme(theme) }
   }
@@ -379,9 +410,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     setPhase('creating')
     try {
       let logoUrl: string | null = null
-      // Only anonymous hosts upload a logo file; logged-in hosts use their
-      // account logo URL (no per-poll upload).
-      if (!suiteLoggedIn && logoFile) logoUrl = await uploadPollLogo(client, hostUserId, logoFile)
+      // A per-poll logo file is uploaded by guests, and by logged-in hosts who
+      // are overriding their account logo for this poll. A logged-in host who
+      // isn't overriding just carries their account logo URL — no upload.
+      if (logoFile) logoUrl = await uploadPollLogo(client, hostUserId, logoFile)
       const pollDraft = draft(buildBranding(logoUrl))
       const poll = freeGated
         ? await createPollGated(client, pollDraft, hostEmail)
@@ -479,25 +511,20 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         </pre>
       )}
 
-      {/* Logged-in hosts: show the account branding that's being applied
-          automatically (in place of the hidden manual branding controls). */}
-      {suiteLoggedIn && (org?.name || orgBranding.logo_url || orgBranding.icon_url) && (
-        <BrandingBanner name={org?.name ?? null} logo={orgBranding.logo_url} icon={orgBranding.icon_url} />
-      )}
-
-      <div className="text-center">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Find a time that works for everyone</h1>
-        <p className="mt-2 text-slate-600">
-          Pick some {mode === 'days' ? 'days' : 'dates and times'}, share the link, and watch the best option rise to the top. No sign-up needed to vote.
-        </p>
-      </div>
-
       {/* Two columns from lg up: what & where + options on the left, the
           availability picker (calendar / date form / whole days) on the wider
           right. Below lg it stacks in DOM order. */}
-      <div className="mt-8 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7 pop-in lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10">
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7 pop-in lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10">
         {/* Left column (top): what and where */}
         <div>
+        {/* The page's masthead — app mark + tagline. It heads the left column
+            rather than a centred hero above the card, so the form starts at
+            the top of the viewport and the calendar sits alongside it. */}
+        <div className="mb-6">
+          <ProductLogo />
+          <h1 className="mt-2 text-2xl font-extrabold leading-tight text-slate-900">Find a time that works for everyone</h1>
+        </div>
+
         {/* Title */}
         <label className="block">
           <span className="text-sm font-semibold text-slate-800">Poll title</span>
@@ -833,11 +860,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         </div>
       </div>
 
-      {/* Branding box — a separate card beneath the create-poll form. Anonymous
-          hosts only: a logged-in host's branding auto-imports from their account
-          ("My Company") and shows in the banner above the form, so no box. */}
-      {!suiteLoggedIn && (
-        <div className="mt-4 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7">
+      {/* Branding box — a separate card beneath the create-poll form. Guests
+          fill it in by hand; a logged-in host's account branding ("My Company")
+          imports automatically and shows here read-only until they choose to
+          override it for this one poll. */}
+      <div className="mt-4 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <button
               type="button"
@@ -850,15 +877,52 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               </svg>
               <span>
                 <span className="block text-sm font-semibold text-slate-800 group-hover:text-[var(--accent-strong)]">Branding</span>
-                <span className="block text-xs text-slate-500 mt-0.5">Add your colour and logo to the poll's create and share pages.</span>
+                <span className="block text-xs text-slate-500 mt-0.5">
+                  {suiteLoggedIn
+                    ? 'Imported from your account — override it for this poll if you like.'
+                    : "Add your colour and logo to the poll's create and share pages."}
+                </span>
               </span>
             </button>
-            <a href="https://app.unisim.co.uk/login" className="text-xs font-medium text-[var(--accent-strong)] hover:underline whitespace-nowrap">
-              Sign in to import your branding →
-            </a>
+            {!suiteLoggedIn && (
+              <a href="https://app.unisim.co.uk/login" className="text-xs font-medium text-[var(--accent-strong)] hover:underline whitespace-nowrap">
+                Sign in to import your branding →
+              </a>
+            )}
           </div>
 
-          {showBranding && (
+          {/* Logged-in, not overriding: what the poll will carry, read-only. */}
+          {showBranding && suiteLoggedIn && !brandOverride && (
+            <div className="mt-4 flex flex-wrap items-center gap-4">
+              {(orgBranding.logo_url || orgBranding.icon_url) && (
+                <img
+                  src={orgBranding.logo_url ?? orgBranding.icon_url ?? ''}
+                  alt={org?.name ?? 'Account logo'}
+                  className="h-10 max-w-[160px] rounded object-contain ring-1 ring-slate-200 bg-white"
+                />
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-800">{org?.name ?? 'Your account'}</p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                  <span
+                    className="inline-block h-3 w-3 rounded-full ring-1 ring-slate-300"
+                    style={{ backgroundColor: hexOfTheme(theme) ?? undefined }}
+                    aria-hidden="true"
+                  />
+                  {orgBranding.brand_color ? 'Account colour' : 'Default colour'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={startBrandOverride}
+                className="ml-auto rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Customise for this poll
+              </button>
+            </div>
+          )}
+
+          {showBranding && !(suiteLoggedIn && !brandOverride) && (
           <div className="mt-4 grid gap-5 sm:grid-cols-2">
             {/* Booking-page colour */}
             <div className="sm:col-span-2">
@@ -921,21 +985,25 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             <div>
               <span className="text-xs font-medium text-slate-600">Logo</span>
               <div className="mt-1 flex items-center gap-3">
-                {logoPreview && (
-                  <img src={logoPreview} alt="Logo preview" className="h-10 w-10 rounded object-contain ring-1 ring-slate-200 bg-white" />
+                {shownLogo && (
+                  <img src={shownLogo} alt="Logo preview" className="h-10 w-10 rounded object-contain ring-1 ring-slate-200 bg-white" />
                 )}
                 <button
                   type="button"
                   onClick={logoPicker.open}
                   className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
                 >
-                  {logoFile ? 'Change…' : 'Upload…'}
+                  {shownLogo ? 'Change…' : 'Upload…'}
                 </button>
                 {/* `hidden`, not `sr-only`: out of the label it had no
                     accessible name, and the button above is the control. */}
                 <input {...logoPicker.inputProps} className="hidden" />
-                {logoFile && (
-                  <button type="button" onClick={() => onPickLogo(null)} className="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2">
+                {shownLogo && (
+                  <button
+                    type="button"
+                    onClick={() => { onPickLogo(null); setDropOrgLogo(true) }}
+                    className="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2"
+                  >
                     Remove
                   </button>
                 )}
@@ -943,10 +1011,29 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               <p className="mt-1 text-[11px] text-slate-400">PNG, JPG or WebP · large images are resized for you.</p>
               {logoErr && <p className="mt-1 text-xs text-red-600">{logoErr}</p>}
             </div>
+
+            {/* A way back — overriding is per-poll, so reverting just drops the
+                local edits and lets the account branding import again. */}
+            {suiteLoggedIn && (
+              <div className="sm:col-span-2 border-t border-slate-100 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBrandOverride(false)
+                    setDropOrgLogo(false)
+                    onPickLogo(null)
+                    setBrandName('')
+                    if (orgBranding.brand_color && isHexTheme(orgBranding.brand_color)) setTheme(orgBranding.brand_color)
+                  }}
+                  className="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2"
+                >
+                  Use my account branding instead
+                </button>
+              </div>
+            )}
           </div>
           )}
-        </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -982,17 +1069,6 @@ function CalendarProviderRow({
       >
         Disconnect
       </button>
-    </div>
-  )
-}
-
-function BrandingBanner({ name, logo, icon }: { name: string | null; logo: string | null; icon: string | null }) {
-  const img = logo ?? icon
-  if (!img && !name) return null
-  return (
-    <div className="mb-6 flex items-center justify-center gap-3">
-      {img && <img src={img} alt={name ?? 'Brand'} className="h-9 max-w-[180px] object-contain" />}
-      {!img && name && <span className="text-lg font-bold text-[var(--accent-text)]">{name}</span>}
     </div>
   )
 }
