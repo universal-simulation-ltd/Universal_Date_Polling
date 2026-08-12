@@ -513,15 +513,20 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
       {/* Two columns from lg up: what & where + options on the left, the
           availability picker (calendar / date form / whole days) on the wider
-          right. Below lg it stacks in DOM order. */}
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7 pop-in lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10">
-        {/* Left column (top): what and where */}
-        <div>
+          right. Below lg it stacks in DOM order.
+
+          The calendar makes the right column the taller of the two, so the
+          left column's three rows split the slack: the masthead holds the top
+          (auto), the middle row takes the leftover height and bottom-aligns
+          what's in it, and the options/create row sits at the bottom (auto).
+          The form therefore hugs the foot of the card and only the masthead
+          stays up top. */}
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7 pop-in lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr_auto] lg:gap-x-10">
         {/* The page's masthead — app mark + tagline, centred over the left
             column rather than a full-width hero above the card, so the form
             starts at the top of the viewport and the calendar sits alongside
             it. */}
-        <div className="mb-6 text-center">
+        <div className="mb-6 text-center lg:col-start-1 lg:row-start-1">
           <ProductLogo />
           <h1 className="mt-2 text-2xl font-extrabold leading-tight text-slate-900">
             Find a time that<br />
@@ -529,6 +534,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           </h1>
         </div>
 
+        {/* Left column (middle): what and where */}
+        <div className="lg:col-start-1 lg:row-start-2 lg:self-end">
         {/* Title */}
         <label className="block">
           <span className="text-sm font-semibold text-slate-800">Poll title</span>
@@ -560,7 +567,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         </div>
 
         {/* Availability (slots) — the right column from lg up */}
-        <div className="mt-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+        <div className="mt-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-3">
           <span className="text-sm font-semibold text-slate-800">Availability</span>
           <p className="text-xs text-slate-500 mt-0.5">
             {mode === 'days' ? (
@@ -675,7 +682,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         </div>
 
         {/* Left column (bottom): options + identity/create */}
-        <div className="lg:col-start-1 lg:row-start-2">
+        <div className="lg:col-start-1 lg:row-start-3">
         {/* More options */}
         <div className="mt-6 border-t border-slate-100 pt-4">
           <button
