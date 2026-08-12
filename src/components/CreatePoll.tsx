@@ -517,12 +517,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7 pop-in lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr] lg:gap-x-10">
         {/* Left column (top): what and where */}
         <div>
-        {/* The page's masthead — app mark + tagline. It heads the left column
-            rather than a centred hero above the card, so the form starts at
-            the top of the viewport and the calendar sits alongside it. */}
-        <div className="mb-6">
+        {/* The page's masthead — app mark + tagline, centred over the left
+            column rather than a full-width hero above the card, so the form
+            starts at the top of the viewport and the calendar sits alongside
+            it. */}
+        <div className="mb-6 text-center">
           <ProductLogo />
-          <h1 className="mt-2 text-2xl font-extrabold leading-tight text-slate-900">Find a time that works for everyone</h1>
+          <h1 className="mt-2 text-2xl font-extrabold leading-tight text-slate-900">
+            Find a time that<br />
+            <span className="text-orange-600">works for everyone</span>
+          </h1>
         </div>
 
         {/* Title */}
