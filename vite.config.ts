@@ -72,6 +72,15 @@ export default defineConfig(({ mode }) => {
         workbox: {
           // SPA navigations under the base path fall back to the prefixed shell.
           navigateFallback: `${BASE_PATH}index.html`,
+          // ...except the OAuth popup's closer page, which must reach the
+          // network so _redirects can serve the real calendar-connected.html.
+          // Precaching does NOT save us here: the closer is requested
+          // extensionless AND with ?ok=&provider= query params, and Workbox
+          // only strips params matching ignoreURLParametersMatching (default
+          // utm_/fbclid), so no precache key matches and the navigation falls
+          // through to the shell — the popup boots the whole app instead of
+          // postMessaging the opener and closing.
+          navigateFallbackDenylist: [/\/calendar-connected(?:\.html)?(?:\?|$)/],
           // A freshly fetched worker takes control immediately instead of
           // sitting in "waiting" until every tab closes, and stale precaches
           // are purged. With `autoUpdate` the page then reloads once the new
