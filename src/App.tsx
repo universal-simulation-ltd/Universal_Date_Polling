@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { UniversalAppsNavBar } from '@unisim/sdk'
+import { UniversalAppsNavBar, UpdateNotice } from '@unisim/sdk'
 import ProductLogo from './components/ProductLogo'
 import CreatePoll from './components/CreatePoll'
 import PollPage from './components/PollPage'
@@ -44,6 +44,13 @@ export default function App() {
         suiteSwitcherIconSrc={`${BASE}unisim-icon.png`}
         contentClassName={container}
       />
+
+      {/* Renders nothing until this tab is genuinely running superseded code.
+          See the SDK's useAppUpdate: an autoUpdate PWA hands the new worker
+          control but leaves the running page on its old JavaScript. */}
+      <div className={`${container} pt-4`}>
+        <UpdateNotice />
+      </div>
 
       <main className="flex-1">
         {loc.view === 'poll' ? <PollPage id={loc.id} pollBase={BASE} /> : <CreatePoll pollBase={BASE} />}
