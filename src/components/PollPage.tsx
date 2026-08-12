@@ -653,7 +653,7 @@ function NotFound({ pollBase }: { pollBase: string }) {
     <div className="mx-auto max-w-md px-4 py-20 text-center">
       <h1 className="text-xl font-bold text-slate-900">Poll not found</h1>
       <p className="mt-2 text-slate-600">This poll may have been removed, or the link is wrong.</p>
-      <a href={pollBase} className="mt-4 inline-block text-sm font-medium text-orange-600 hover:underline">Create a new poll →</a>
+      <a href={pollBase} className="mt-4 inline-block text-sm font-medium text-orange-700 hover:underline">Create a new poll →</a>
     </div>
   )
 }
