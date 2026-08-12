@@ -640,7 +640,7 @@ function LoadError({ message, onRetry }: { message: string | null; onRetry: () =
       <button
         type="button"
         onClick={onRetry}
-        className="mt-5 inline-flex h-11 items-center rounded-xl bg-orange-600 px-5 font-semibold text-white hover:bg-orange-700"
+        className="mt-5 inline-flex h-11 items-center rounded-xl bg-orange-700 px-5 font-semibold text-white hover:bg-orange-800"
       >
         Try again
       </button>
