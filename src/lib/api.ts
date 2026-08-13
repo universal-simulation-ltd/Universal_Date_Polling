@@ -208,25 +208,23 @@ export async function notifyPollHost(pollId: string, respondentName: string): Pr
  *  itself, and RLS requires the matching response row to exist — so this must
  *  run AFTER submitResponse. */
 export async function saveResponseEmail(pollId: string, name: string, email: string): Promise<void> {
-  const n = name.trim()
-  const e = email.trim()
-  if (e) {
-    const { error } = await supabase
-      .from('poll_response_emails')
-      .upsert(
-        { poll_id: pollId, name: n, email: e, updated_at: new Date().toISOString() },
-        { onConflict: 'poll_id,name' },
-      )
-    if (error) throw error
-  } else {
-    // Field left (or made) blank = not opted in; remove any earlier opt-in.
-    const { error } = await supabase
-      .from('poll_response_emails')
-      .delete()
-      .eq('poll_id', pollId)
-      .eq('name', n)
-    if (error) throw error
-  }
+  // Written through the `upsert_response_email` RPC (migration 0119), NOT by
+  // touching the table — and that is not a style choice. Withholding
+  // table-level SELECT is what keeps addresses unreadable, but PostgREST's
+  // upsert runs as ON CONFLICT DO UPDATE, which *requires* that privilege: the
+  // direct write here failed `42501 permission denied` for every respondent
+  // from 0115 until 0119, refused before RLS was even consulted. A definer
+  // function resolves the conflict as the owner instead, and re-enforces the
+  // live-poll + existing-response checks that RLS used to make — which is
+  // still why this must run AFTER submitResponse.
+  // Blank email = not opted in; the function clears any earlier opt-in, so
+  // both directions are one call and cannot drift apart.
+  const { error } = await supabase.rpc('upsert_response_email', {
+    p_poll_id: pollId,
+    p_name: name.trim(),
+    p_email: email.trim(),
+  })
+  if (error) throw error
 }
 
 /** Host-only: ask the edge function to email every opted-in respondent the

@@ -155,8 +155,13 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       try {
         await saveResponseEmail(poll.id, name, email)
         localStorage.setItem(EMAIL_KEY, email.trim())
-      } catch {
-        setError("Your availability was saved, but your email couldn't be stored — try saving again.")
+      } catch (e) {
+        // Say WHY. This was a bare `catch {}`, and it swallowed the reason for
+        // the whole life of migration 0115: every save failed with a privilege
+        // error the user was never shown, so "try saving again" was advice
+        // that could not work. The RPC raises sentences meant to be read.
+        const why = e instanceof Error ? e.message.trim() : ''
+        setError(`Your availability was saved, but your email couldn't be stored${why ? ` — ${why}` : ' — try saving again'}.`)
       }
       setResponses(await getResponses(poll.id))
       setSavedAt(Date.now())
