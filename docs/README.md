@@ -24,8 +24,55 @@ against `polls.host_user_id`) writes `polls.final_slot_id` via the existing
 `backoffice/universal-platform`). Once set, everyone with the link sees a
 prominent "Confirmed" banner with the chosen date + an "Add to calendar" for
 it. Clearing it (`final_slot_id = null`) is the "Change"/"Unconfirm" action.
-Emailing the confirmed date to respondents is a deliberate non-goal for now —
-respondents give only a name, no email (the app's no-sign-up stance).
+
+The host can then **email the confirmed time to respondents** (Phase 2 — this
+paragraph used to say emailing was a deliberate non-goal; it shipped). Anyone
+responding may optionally leave an address, stored in `poll_response_emails`
+(migration 0115), which client roles can write but never read — the
+`notify-poll-respondents` Edge Function's service-role read is the only path to
+an address. It sends the confirmed date with a `.ics` attachment built by
+`_shared/poll-ics.ts`, then stamps `polls.final_notified_slot_id` so the page
+can show "respondents emailed ✓". Always an explicit host click; confirming a
+slot never auto-sends.
+
+## The host's own calendar (Phase 3)
+
+A host can connect their **Google or Microsoft calendar**, which does two
+things. Both are host-only, opt-in, and never touch a respondent.
+
+**Read — busy shading on the create screen.** The week view shades the times
+the host is already busy, so they don't propose a slot they can't make.
+`calendar-freebusy` returns merged UTC busy intervals; `busySegmentsByDay` in
+`src/lib/hostCalendar.ts` converts them to per-day wall-clock segments in the
+poll's zone (unit-tested — busy shading has to land in the same frame the slots
+are drawn in, or it lies whenever the poll's zone isn't UTC).
+
+**Write — put the confirmed time in the host's diary** (added 2026-08-13).
+Once a slot is confirmed, the banner offers "Add to my Google Calendar /
+Outlook", which creates a real event via the `calendar-event` Edge Function.
+Un-confirming removes it again. Distinct from the "Add to calendar" menu
+everyone sees: that one is client-side deep-links and an `.ics` download, this
+one writes through the host's OAuth grant.
+
+Things worth knowing before touching it:
+
+- **Tokens never reach this app.** They live in `poll_calendar_tokens`
+  (migrations 0117/0118), service-role only, RLS on with zero policies and
+  grants revoked. Everything goes through the three Edge Functions in
+  `backoffice/universal-platform/supabase/functions/calendar-*`, each of which
+  checks the caller's uid itself.
+- **An existing connection cannot write.** The write scope
+  (Google `calendar.events`, Microsoft `Calendars.ReadWrite`) arrived after the
+  read-only one, so a grant made before 2026-08-13 has to be re-consented.
+  `poll_calendar_tokens.scopes` records what the provider *actually granted* —
+  not what was requested, since a user can untick individual permissions on
+  Google's consent screen — and `status.writable` is derived from it. The UI
+  shows "Reconnect … to add it" rather than a button that 403s.
+- **The write is idempotent.** `poll_calendar_events` holds the created event id
+  per (poll, host, provider), so clicking twice updates one event rather than
+  making two, and re-confirming a different slot moves it.
+- **The event's content comes from the poll row server-side**, never from the
+  request body — a host can only write their own poll's confirmed slot.
 
 A live timed poll shows **which timezone its times are in** and lets each
 viewer re-render every time on the page in their own zone (a one-click

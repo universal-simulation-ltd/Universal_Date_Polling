@@ -8,6 +8,10 @@ import {
   formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, sameCalendarDay, slotDayKey, slotInstant, tzAbbrev,
 } from '../lib/time'
 import { CONTAINER_POLL } from '../lib/layout'
+import {
+  addConfirmedTimeToCalendar, calendarStatus, removeConfirmedTimeFromCalendar, startCalendarConnect,
+  type CalendarProvider, type CalendarStatus,
+} from '../lib/hostCalendar'
 import AddToCalendar from './AddToCalendar'
 import TimezonePicker from './TimezonePicker'
 
@@ -24,6 +28,19 @@ type NotifyState =
   | { status: 'sent'; sent: number }
   | { status: 'error'; message: string }
 
+/** The host's "add the confirmed time to my own calendar" action. 'stale' means
+ *  the host is connected but only under the old free/busy grant, so the honest
+ *  offer is "reconnect", not "try again". */
+type CalWriteState =
+  | { status: 'idle' }
+  | { status: 'working' }
+  | { status: 'added'; providers: CalendarProvider[] }
+  | { status: 'removed' }
+  | { status: 'stale' }
+  | { status: 'error'; message: string }
+
+const PROVIDER_LABEL: Record<CalendarProvider, string> = { google: 'Google Calendar', microsoft: 'Outlook' }
+
 export default function PollPage({ id, pollBase }: { id: string; pollBase: string }) {
   const [state, setState] = useState<Load>('loading')
   const [poll, setPoll] = useState<Poll | null>(null)
@@ -37,6 +54,8 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  const [calStatus, setCalStatus] = useState<CalendarStatus | null>(null)
+  const [calWrite, setCalWrite] = useState<CalWriteState>({ status: 'idle' })
   // The timezone the viewer has chosen to see times in. Empty = the poll's own
   // timezone (the default). A viewer can switch to their own zone or any other,
   // and every time on the page re-renders in it — the slots' underlying instants
@@ -81,6 +100,23 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     load()
     return () => { live = false }
   }, [id, reloadKey])
+
+  // The host's own calendar connections, so the confirmed banner can offer to
+  // put the time in their diary. Host-only and best-effort — this is a
+  // convenience on top of a page that must work for everyone, so a failure
+  // leaves calStatus null and simply hides the control.
+  useEffect(() => {
+    if (!poll) return
+    const client = hostClientFor(poll)
+    if (!client) { setCalStatus(null); return }
+    let live = true
+    calendarStatus(client)
+      .then((s) => { if (live) setCalStatus(s) })
+      .catch(() => { if (live) setCalStatus(null) })
+    return () => { live = false }
+    // suiteUser/otpUserId decide which client (if any) hostClientFor returns.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poll?.id, suiteUser?.id, otpUserId])
 
   // Pre-fill the form if this browser has already responded under a known name.
   useEffect(() => {
@@ -151,6 +187,16 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       // A different (or cleared) confirmation invalidates any "sent ✓" state
       // shown for the previous slot.
       setNotifyState({ status: 'idle' })
+      // Un-confirming should take the event back out of the host's calendar —
+      // leaving a diary entry for a time that is no longer the answer is worse
+      // than never having added it. Best-effort and silent: the poll update
+      // already succeeded, so a calendar hiccup must not read as a failed
+      // un-confirm. Re-confirming a DIFFERENT slot needs no cleanup — the
+      // server moves the existing event on the next add.
+      if (slotId === null && calWrite.status === 'added') {
+        setCalWrite({ status: 'idle' })
+        void removeConfirmedTimeFromCalendar(client, poll.id).catch(() => {})
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not confirm the time.')
     } finally {
@@ -172,6 +218,63 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       if (sent > 0 && poll.final_slot_id) setPoll({ ...poll, final_notified_slot_id: poll.final_slot_id })
     } catch (e) {
       setNotifyState({ status: 'error', message: e instanceof Error ? e.message : 'Could not send the emails.' })
+    }
+  }
+
+  /** Host-only: put the confirmed time in the host's own connected calendar(s).
+   *  Always an explicit click — confirming a slot never silently writes to
+   *  someone's diary. */
+  async function addToMyCalendar() {
+    if (!poll) return
+    const client = hostClientFor(poll)
+    if (!client) return
+    setCalWrite({ status: 'working' })
+    try {
+      const res = await addConfirmedTimeToCalendar(client, poll.id)
+      if (res.touched.length) {
+        setCalWrite({ status: 'added', providers: res.touched })
+        return
+      }
+      // Nothing was written. The one case worth its own message is a grant that
+      // predates the write scope: "reconnect" is the fix, and "try again" isn't.
+      const values = Object.values(res.providers)
+      if (values.includes('read_only')) { setCalWrite({ status: 'stale' }); return }
+      if (values.includes('reconnect')) {
+        setCalWrite({ status: 'error', message: 'Your calendar connection expired — reconnect it on the create screen.' })
+        void calendarStatus(client).then(setCalStatus).catch(() => {})
+        return
+      }
+      setCalWrite({ status: 'error', message: "Couldn't add this to your calendar." })
+    } catch (e) {
+      setCalWrite({ status: 'error', message: e instanceof Error ? e.message : "Couldn't add this to your calendar." })
+    }
+  }
+
+  /** Re-consent under the widened scopes, for a host connected read-only. Opens
+   *  the same popup the create screen uses; on success the status is re-read so
+   *  the button flips from "reconnect" to "add". */
+  async function reconnectForWrite(provider: CalendarProvider) {
+    if (!poll) return
+    const client = hostClientFor(poll)
+    if (!client) return
+    try {
+      const url = await startCalendarConnect(client, provider)
+      const popup = window.open(url, 'unisim-calendar', 'width=540,height=680')
+      if (!popup) {
+        setCalWrite({ status: 'error', message: 'Allow pop-ups for this site to reconnect your calendar.' })
+        return
+      }
+      const onMessage = (e: MessageEvent) => {
+        const d = e.data as { type?: string; ok?: boolean } | null
+        if (!d || d.type !== 'unisim-calendar' || e.origin !== window.location.origin) return
+        window.removeEventListener('message', onMessage)
+        if (!d.ok) return
+        setCalWrite({ status: 'idle' })
+        void calendarStatus(client).then(setCalStatus).catch(() => {})
+      }
+      window.addEventListener('message', onMessage)
+    } catch (e) {
+      setCalWrite({ status: 'error', message: e instanceof Error ? e.message : 'Could not start the reconnect.' })
     }
   }
 
@@ -226,6 +329,8 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           dayMode={dayMode} isHost={isHost} confirming={confirming}
           onUnconfirm={() => confirmSlot(null)}
           notifyState={notifyState} onNotify={emailRespondents}
+          calStatus={calStatus} calWrite={calWrite}
+          onAddToMyCalendar={addToMyCalendar} onReconnectCalendar={reconnectForWrite}
         />
       )}
       {isHost && !finalSlot && responses.length > 0 && (
@@ -453,10 +558,12 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
 
 /** The prominent "Confirmed" banner shown to everyone once the host has picked
  *  a final slot — the chosen date/time plus an "Add to calendar" for it. */
-function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isHost, confirming, onUnconfirm, notifyState, onNotify }: {
+function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isHost, confirming, onUnconfirm, notifyState, onNotify, calStatus, calWrite, onAddToMyCalendar, onReconnectCalendar }: {
   poll: Poll; slot: Slot; pollUrl: string; viewerTz: string; activeTz: string; dayMode: boolean
   isHost: boolean; confirming: boolean; onUnconfirm: () => void
   notifyState: NotifyState; onNotify: () => void
+  calStatus: CalendarStatus | null; calWrite: CalWriteState
+  onAddToMyCalendar: () => void; onReconnectCalendar: (provider: CalendarProvider) => void
 }) {
   // Memoize the formatter chain: `inst` and the `when` label each run several
   // Intl.DateTimeFormat passes, and the banner re-renders on every poll refresh.
@@ -475,6 +582,14 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
   // server-side after a successful send, so it survives reloads).
   const alreadyNotified = poll.final_notified_slot_id === slot.id
   const sending = notifyState.status === 'sending'
+
+  // The host's own calendars. `connected` providers split into those that can
+  // be written to and those still on the old free/busy-only grant; a host with
+  // no connection at all sees nothing here (the create screen is where you
+  // connect one, and nagging on a finished poll would be noise).
+  const connected = (['google', 'microsoft'] as CalendarProvider[]).filter((p) => calStatus?.[p].connected)
+  const writable = connected.filter((p) => calStatus?.[p].writable)
+  const staleOnly = connected.length > 0 && writable.length === 0
   return (
     <div className="mt-6 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -519,6 +634,47 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
               alreadyNotified
                 ? 'Respondents have been emailed ✓'
                 : 'Sends the confirmed date and a calendar invite to everyone who left an email.'
+            )}
+          </span>
+        </div>
+      )}
+
+      {isHost && connected.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-emerald-200/70 pt-2.5">
+          {writable.length > 0 ? (
+            <button
+              type="button"
+              onClick={onAddToMyCalendar}
+              disabled={calWrite.status === 'working'}
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-white hover:ring-emerald-400 transition disabled:opacity-60"
+            >
+              📅 {calWrite.status === 'working'
+                ? 'Adding…'
+                : calWrite.status === 'added'
+                  ? 'Update it in my calendar'
+                  : `Add to my ${writable.length === 1 ? PROVIDER_LABEL[writable[0]] : 'calendars'}`}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onReconnectCalendar(connected[0])}
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-white hover:ring-emerald-400 transition"
+            >
+              📅 Reconnect {PROVIDER_LABEL[connected[0]]} to add it
+            </button>
+          )}
+          <span className="text-xs text-slate-600">
+            {calWrite.status === 'added' && (
+              `Added to ${calWrite.providers.map((p) => PROVIDER_LABEL[p]).join(' and ')} ✓`
+            )}
+            {calWrite.status === 'stale' && (
+              'Your calendar was connected for availability only — reconnect it once to allow adding events.'
+            )}
+            {calWrite.status === 'error' && <span className="text-red-600">{calWrite.message}</span>}
+            {(calWrite.status === 'idle' || calWrite.status === 'working' || calWrite.status === 'removed') && (
+              staleOnly
+                ? 'Connected for availability only. One reconnect lets this put the time straight in your diary.'
+                : 'Puts this time in your own calendar. Safe to click twice — it updates the same event.'
             )}
           </span>
         </div>

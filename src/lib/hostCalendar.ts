@@ -17,12 +17,23 @@ export interface BusyInterval {
   end: string
 }
 
+export interface ProviderStatus {
+  connected: boolean
+  email: string | null
+  /** Whether the stored grant can also CREATE events, i.e. whether the
+   *  confirmed time can be written into this calendar. Separate from
+   *  `connected` on purpose: a connection made before the write scope existed
+   *  (2026-08-13) is connected and not writable, and the only fix is to
+   *  reconnect — so the UI has to be able to tell those apart. */
+  writable: boolean
+}
+
 export interface CalendarStatus {
   /** Which provider OAuth apps exist server-side; an unconfigured provider is
    *  hidden in the UI entirely. */
   configured: { google: boolean; microsoft: boolean }
-  google: { connected: boolean; email: string | null }
-  microsoft: { connected: boolean; email: string | null }
+  google: ProviderStatus
+  microsoft: ProviderStatus
 }
 
 // ── Edge-function wrappers ───────────────────────────────────────────────────
@@ -44,9 +55,20 @@ async function invokeCalendarOauth(client: SupabaseClient, body: Record<string, 
   return data
 }
 
+/** Tolerates a server that predates `writable` by defaulting it to false — the
+ *  safe direction, since the alternative is offering a button that 403s. */
+function providerStatusOf(raw: unknown): ProviderStatus {
+  const r = (raw ?? {}) as Partial<ProviderStatus>
+  return { connected: !!r.connected, email: r.email ?? null, writable: !!r.writable }
+}
+
 export async function calendarStatus(client: SupabaseClient): Promise<CalendarStatus> {
   const d = await invokeCalendarOauth(client, { action: 'status' })
-  return { configured: d.configured, google: d.google, microsoft: d.microsoft }
+  return {
+    configured: d.configured,
+    google: providerStatusOf(d.google),
+    microsoft: providerStatusOf(d.microsoft),
+  }
 }
 
 /** Which providers exist server-side — the one unauthenticated action, so the
@@ -104,6 +126,66 @@ export async function fetchFreeBusy(
       microsoft: (data.providers?.microsoft ?? 'none') as ProviderFetchStatus,
     },
   }
+}
+
+// ── Writing the confirmed time back ──────────────────────────────────────────
+
+/** Outcome of a write, per provider. `read_only` is the interesting one: the
+ *  host IS connected, but under the pre-2026-08-13 free/busy-only grant, so the
+ *  fix is to reconnect rather than to retry. */
+export type ProviderWriteStatus = 'ok' | 'none' | 'read_only' | 'reconnect' | 'error'
+
+export interface CalendarWriteResult {
+  /** Providers the event actually landed in. */
+  providers: Partial<Record<CalendarProvider, ProviderWriteStatus>>
+  touched: CalendarProvider[]
+}
+
+async function invokeCalendarEvent(
+  client: SupabaseClient,
+  body: Record<string, unknown>,
+  failureMessage: string,
+): Promise<CalendarWriteResult> {
+  const { data, error } = await client.functions.invoke('calendar-event', { body })
+  if (error) {
+    const ctx = (error as { context?: Response }).context
+    if (ctx) {
+      const parsed = await ctx.json().catch(() => null)
+      if (parsed?.error) throw new Error(parsed.error)
+    }
+    throw new Error(failureMessage)
+  }
+  if (!data?.ok) throw new Error(data?.error ?? failureMessage)
+  return {
+    providers: (data.providers ?? {}) as Partial<Record<CalendarProvider, ProviderWriteStatus>>,
+    touched: ((data.added ?? data.removed ?? []) as CalendarProvider[]),
+  }
+}
+
+/** Host-only: create (or move) the confirmed time in every connected,
+ *  write-capable calendar. Safe to call twice — the server updates the event it
+ *  already made rather than duplicating it. */
+export async function addConfirmedTimeToCalendar(
+  client: SupabaseClient,
+  pollId: string,
+): Promise<CalendarWriteResult> {
+  return invokeCalendarEvent(
+    client,
+    { action: 'add', pollId },
+    "Couldn't add this to your calendar.",
+  )
+}
+
+/** Host-only: take the event back out (used when un-confirming). */
+export async function removeConfirmedTimeFromCalendar(
+  client: SupabaseClient,
+  pollId: string,
+): Promise<CalendarWriteResult> {
+  return invokeCalendarEvent(
+    client,
+    { action: 'remove', pollId },
+    "Couldn't remove this from your calendar.",
+  )
 }
 
 // ── Pure overlay math ────────────────────────────────────────────────────────
