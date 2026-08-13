@@ -263,7 +263,10 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     const client = hostClientFor(poll)
     if (!client) return
     try {
-      const url = await startCalendarConnect(client, provider)
+      // The one place that asks for the write grant. Everywhere else connects
+      // read-only, so this is the only consent screen that mentions creating
+      // events — and it appears only once a host has asked for exactly that.
+      const url = await startCalendarConnect(client, provider, 'write')
       const popup = window.open(url, 'unisim-calendar', 'width=540,height=680')
       if (!popup) {
         setCalWrite({ status: 'error', message: 'Allow pop-ups for this site to reconnect your calendar.' })

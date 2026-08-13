@@ -85,9 +85,19 @@ export async function calendarConfigured(client: SupabaseClient): Promise<{ goog
  *  `{type:'unisim-calendar', ok, provider}` back to the opener (same-origin)
  *  and closes itself — so the function needs our base URL, not just the
  *  origin (the app is path-routed under /polling/ in production). */
-export async function startCalendarConnect(client: SupabaseClient, provider: CalendarProvider): Promise<string> {
+/** `scope` decides how much we ask the provider for. Connecting from the create
+ *  screen asks for 'read' — free/busy is all the overlay needs, and it is what
+ *  the copy beside the button promises. 'write' is asked for only from the
+ *  confirmed banner's "Reconnect … to add it", i.e. at the moment a host has
+ *  actually asked us to put something in their diary. Keeping them apart means
+ *  a provider that refuses the wider consent still leaves the overlay working. */
+export async function startCalendarConnect(
+  client: SupabaseClient,
+  provider: CalendarProvider,
+  scope: 'read' | 'write' = 'read',
+): Promise<string> {
   const base = `${window.location.origin}${import.meta.env.BASE_URL}`
-  const d = await invokeCalendarOauth(client, { action: 'start', provider, base })
+  const d = await invokeCalendarOauth(client, { action: 'start', provider, base, scope })
   return d.url as string
 }
 
