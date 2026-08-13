@@ -37,7 +37,7 @@ function durationLabel(mins: number): string {
  *  owned by the parent so it can derive the poll mode and clear incompatible
  *  slots when crossing the timed↔days boundary. */
 export default function SlotPicker({
-  view, onViewChange, slots, onChange, timezone, busyByDay, onWeekChange,
+  view, onViewChange, slots, onChange, timezone, busyByDay, busySyncing, onWeekChange,
 }: {
   view: SlotView
   onViewChange: (v: SlotView) => void
@@ -48,6 +48,8 @@ export default function SlotPicker({
   timezone: string
   /** Host-calendar busy shading for the calendar view (see CalendarWeekView). */
   busyByDay?: Map<string, DaySegment[]>
+  /** A busy read is in flight — passed straight through to the calendar view. */
+  busySyncing?: boolean
   onWeekChange?: (weekStart: Date) => void
 }) {
   return (
@@ -67,7 +69,7 @@ export default function SlotPicker({
       {view === 'days' ? (
         <DayPicker slots={slots} onChange={onChange} />
       ) : view === 'calendar' ? (
-        <CalendarWeekView slots={slots} onChange={onChange} busyByDay={busyByDay} onWeekChange={onWeekChange} />
+        <CalendarWeekView slots={slots} onChange={onChange} busyByDay={busyByDay} busySyncing={busySyncing} onWeekChange={onWeekChange} />
       ) : (
         <FormPicker slots={slots} onChange={onChange} timezone={timezone} />
       )}

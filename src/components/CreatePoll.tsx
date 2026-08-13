@@ -173,6 +173,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [calStatus, setCalStatus] = useState<CalendarStatus | null>(null)
   const [calError, setCalError] = useState<string | null>(null)
   const [calBusy, setCalBusy] = useState<BusyInterval[]>([])
+  // In-flight busy reads. A count, not a boolean: weeks are fetched
+  // independently and a fast one finishing must not clear the indicator while
+  // a slower one is still running. Without this an empty grid says both
+  // "you're free" and "still loading", which are opposite answers.
+  const [calSyncing, setCalSyncing] = useState(0)
   const fetchedWeeksRef = useRef(new Set<string>())
   const lastWeekRef = useRef<Date | null>(null)
 
@@ -251,6 +256,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     const key = weekStart.toDateString()
     if (fetchedWeeksRef.current.has(key)) return
     fetchedWeeksRef.current.add(key)
+    setCalSyncing((n) => n + 1)
     fetchFreeBusy(calClientRef.current, weekStart.toISOString(), addLocalDays(weekStart, 7).toISOString())
       .then(({ busy, providers }) => {
         setCalBusy((prev) => [...prev, ...busy])
@@ -268,12 +274,49 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         }
       })
       .catch(() => { fetchedWeeksRef.current.delete(key) })
+      .finally(() => setCalSyncing((n) => Math.max(0, n - 1)))
   }, [])
 
   // Once a calendar is (re)connected, backfill the week already on screen.
   useEffect(() => {
     if (anyConnected && lastWeekRef.current) onWeekChange(lastWeekRef.current)
   }, [anyConnected, onWeekChange])
+
+  /** Re-read the connection status and refetch the visible week's busy times.
+   *  Used after the connect popup finishes, so the grid fills in where the
+   *  host is already looking instead of waiting for a page reload. */
+  const refreshCalendar = useCallback(() => {
+    fetchedWeeksRef.current.clear()
+    setCalBusy([])
+    calendarStatus(calClientRef.current)
+      .then((s) => {
+        setCalStatus(s)
+        // Written straight to the ref as well as to state: onWeekChange reads
+        // the ref, and it would otherwise still hold the pre-connect value for
+        // this tick and skip the fetch we are here to make.
+        anyConnectedRef.current = s.google.connected || s.microsoft.connected
+        if (anyConnectedRef.current && lastWeekRef.current) onWeekChange(lastWeekRef.current)
+      })
+      .catch(() => {})
+  }, [onWeekChange])
+
+  /** The popup is *supposed* to end on our calendar-connected page, which
+   *  postMessages the outcome and closes itself. Don't depend on it: that
+   *  message is lost whenever the popup never runs that page — a stale service
+   *  worker serving the SPA shell has done exactly that, and a browser that
+   *  partitions the provider's cookies can strand it too. So when the window
+   *  goes away, refresh regardless. Both routes are idempotent, so receiving a
+   *  message *and* seeing the close is harmless. */
+  const watchPopup = useCallback((popup: Window) => {
+    const timer = window.setInterval(() => {
+      if (!popup.closed) return
+      window.clearInterval(timer)
+      refreshCalendar()
+    }, 500)
+    // A popup the host abandons must not leave an interval running for the
+    // life of the page.
+    window.setTimeout(() => window.clearInterval(timer), 5 * 60_000)
+  }, [refreshCalendar])
 
   // The connect popup ends on our own static calendar-connected.html (the
   // edge function 302s it there), which postMessages back; refresh on success.
@@ -301,6 +344,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       const url = await startCalendarConnect(calClient, provider)
       const popup = window.open(url, 'unisim-calendar', 'width=540,height=680')
       if (!popup) setCalError('Your browser blocked the pop-up — allow pop-ups for this site and try again.')
+      else watchPopup(popup)
     } catch (e) {
       setCalError(messageOf(e))
     }
@@ -584,6 +628,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               onChange={setSlots}
               timezone={timezone}
               busyByDay={busyByDay}
+              busySyncing={anyConnected && calSyncing > 0}
               onWeekChange={onWeekChange}
             />
           </div>

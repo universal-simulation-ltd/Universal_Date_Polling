@@ -72,6 +72,7 @@ export default function CalendarWeekView({
   slots,
   onChange,
   busyByDay,
+  busySyncing,
   onWeekChange,
 }: {
   slots: Slot[]
@@ -80,6 +81,10 @@ export default function CalendarWeekView({
    *  read-only under the slot picker. Present at all only when the host has a
    *  calendar connected — presence also drives the legend line. */
   busyByDay?: Map<string, DaySegment[]>
+  /** A busy read is in flight. Shown because an unshaded grid is ambiguous
+   *  while one is: it reads as "you are free" when it may only mean "not
+   *  loaded yet". */
+  busySyncing?: boolean
   /** Fired on mount and whenever the visible week changes, so the parent can
    *  fetch busy intervals for that range. */
   onWeekChange?: (weekStart: Date) => void
@@ -239,7 +244,25 @@ export default function CalendarWeekView({
             </span>
           </>
         )}
+        {busySyncing && (
+          <>
+            {' '}
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium text-slate-600">
+              <span
+                aria-hidden
+                className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600 align-middle"
+              />
+              Syncing your calendar…
+            </span>
+          </>
+        )}
       </p>
+      {/* Announced separately from the visual note: a screen-reader user gets
+          told the grid is still filling in, without the legend being read out
+          again every time a week loads. */}
+      <span aria-live="polite" className="sr-only">
+        {busySyncing ? 'Syncing your calendar.' : ''}
+      </span>
 
       {/* Day headers */}
       <div className="mt-3 grid" style={{ gridTemplateColumns: `3rem repeat(7, minmax(0, 1fr))` }}>
