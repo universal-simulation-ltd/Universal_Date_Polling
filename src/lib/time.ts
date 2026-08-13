@@ -148,6 +148,18 @@ export function formatCalendarDay(dateStr: string): string {
   }).format(new Date(y, m - 1, d))
 }
 
+/** "Wed, 10 Jun 2026" for a slot instant, in the given display tz — the same
+ *  shape `formatCalendarDay` gives a whole-day slot, but timezone-aware and fed
+ *  a real instant, so the two modes' exports read alike. The year is spelled out
+ *  because the only caller is the plain-text export, which is read in an email
+ *  with no page around the date to date it; on-page headings keep the shorter
+ *  `formatDateHeading`. */
+export function formatLongDate(instant: Date, displayTz: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: displayTz, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+  }).format(instant)
+}
+
 /** "Tue 10 Jun" for the date heading of a slot, in the given display tz. */
 export function formatDateHeading(instant: Date, displayTz: string): string {
   return new Intl.DateTimeFormat('en-GB', {

@@ -90,6 +90,20 @@ into `backoffice/universal-platform`). `createPoll` omits the key when unset so
 a build can't break before the column exists; the gated create RPC sets it as a
 follow-up update.
 
+The host can also **copy the poll's dates as plain text** for people who'd
+rather reply to an email than click a link — offered on the "your poll is live"
+panel and, host-only, at the top of the poll page. `buildPollTextList` in
+`src/lib/textExport.ts` (unit-tested in `textExport.test.ts`) is a pure string
+builder; `components/CopyAsText.tsx` is the textarea, the "include the link to
+the poll" checkbox and the clipboard button. Two things about the format are
+deliberate and are asserted by the tests: the list is **flat and numbered**,
+each line carrying its own full date, so nothing depends on indentation
+surviving a mail client and a reply can just say "2 and 4 work"; and the
+timezone label is anchored to the **first slot's** instant, not to `now`, so a
+January poll copied in June isn't labelled BST. The poll page passes `activeTz`
+rather than the poll's own zone, so the pasted list reads the same as the page
+it was copied from.
+
 Opening a freshly-created poll is resilient to a cold first request: the poll
 load auto-retries a transient error (`getPollResilient` in `src/lib/api.ts`) and
 offers a one-click **Try again** instead of forcing a manual page refresh.
@@ -130,6 +144,10 @@ so the shapes aren't re-derived by hand:
 - **`filterTimezones(query, zones)`** — the searchable-picker filter; treats
   spaces, `_` and `/` as interchangeable so "new york" matches
   `America/New_York`.
+- **`formatLongDate(instant, tz)`** — "Wed, 10 Jun 2026" for an instant in a
+  display zone; the timezone-aware twin of `formatCalendarDay` (which takes a
+  bare date string and does no conversion). Spells the year out for the
+  plain-text export, which is read in an email with no page around it.
 - **`wallClockExists(local, tz)`** — false when a wall-clock time falls in a DST
   spring-forward gap (e.g. London `01:30` on switch night, which never occurs).
   The create form (`SlotPicker` → `FormPicker`) warns the host at creation

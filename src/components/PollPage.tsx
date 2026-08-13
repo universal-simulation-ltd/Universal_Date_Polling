@@ -13,6 +13,7 @@ import {
   type CalendarProvider, type CalendarStatus,
 } from '../lib/hostCalendar'
 import AddToCalendar from './AddToCalendar'
+import CopyAsText from './CopyAsText'
 import TimezonePicker from './TimezonePicker'
 
 type Load = 'loading' | 'ready' | 'notfound' | 'error'
@@ -345,6 +346,15 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         <p className="mt-5 text-center text-sm text-slate-500">
           You're the host — pick the final time below with <span className="font-medium text-slate-700">Confirm this time</span>, and everyone with the link will see it.
         </p>
+      )}
+
+      {/* Host-only: chase the people who haven't clicked the link. Uses
+          `activeTz` rather than the poll's zone so the pasted list reads the
+          same as the page it was copied from. */}
+      {isHost && !expired && (
+        <section className="mt-5 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+          <CopyAsText poll={poll} url={pollUrl} displayTz={activeTz} />
+        </section>
       )}
 
       {expired && (

@@ -10,6 +10,8 @@ import {
   busySegmentsByDay, calendarConfigured, calendarStatus, disconnectCalendar, fetchFreeBusy, startCalendarConnect,
   type BusyInterval, type CalendarProvider, type CalendarStatus,
 } from '../lib/hostCalendar'
+import type { TextListPoll } from '../lib/textExport'
+import CopyAsText from './CopyAsText'
 import SlotPicker from './SlotPicker'
 import ProductLogo from './ProductLogo'
 import type { SlotView } from './SlotPicker'
@@ -528,7 +530,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   }
 
   if (phase === 'done' && createdId) {
-    return <CreatedPanel pollBase={pollBase} id={createdId} theme={theme} />
+    return (
+      <CreatedPanel
+        pollBase={pollBase} id={createdId} theme={theme}
+        poll={{ title, timezone, mode, slots, location: location.trim() || null }}
+      />
+    )
   }
 
   return (
@@ -1129,7 +1136,12 @@ function CalendarProviderRow({
   )
 }
 
-function CreatedPanel({ pollBase, id, theme }: { pollBase: string; id: string; theme: Theme }) {
+function CreatedPanel({ pollBase, id, theme, poll }: {
+  pollBase: string; id: string; theme: Theme
+  /** The draft just created, for the plain-text "copy a list for an email"
+   *  export — the created poll isn't re-fetched here, and doesn't need to be. */
+  poll: TextListPoll
+}) {
   const url = `${window.location.origin}${pollBase}p/${id}`
   const [copied, setCopied] = useState(false)
   async function copy() {
@@ -1174,6 +1186,10 @@ function CreatedPanel({ pollBase, id, theme }: { pollBase: string; id: string; t
         >
           Open your poll →
         </a>
+
+        <div className="mt-6 border-t border-slate-200 pt-5">
+          <CopyAsText poll={poll} url={url} />
+        </div>
       </div>
     </div>
   )
