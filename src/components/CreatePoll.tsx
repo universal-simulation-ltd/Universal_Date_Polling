@@ -5,11 +5,12 @@ import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
 import { createPoll, createPollGated, currentUser, sendHostCode, setNotifyOnResponse as apiSetNotify, setPollLocation as apiSetLocation, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
-import { addLocalDays, listTimezones, localTimezone, tzAbbrev } from '../lib/time'
+import { addLocalDays, listTimezones, localTimezone, tzAbbrev, zonedDayAndMinute } from '../lib/time'
 import {
   busySegmentsByDay, calendarConfigured, calendarStatus, disconnectCalendar, fetchFreeBusy, startCalendarConnect,
-  type BusyInterval, type CalendarProvider, type CalendarStatus,
+  type BusyInterval, type CalendarProvider, type CalendarStatus, type ProviderFetchStatus,
 } from '../lib/hostCalendar'
+import { suggestFreeSlots, SUGGEST_COUNT } from '../lib/autoSlots'
 import type { TextListPoll } from '../lib/textExport'
 import CopyAsText from './CopyAsText'
 import SlotPicker from './SlotPicker'
@@ -32,6 +33,14 @@ const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 // browser first, so this only needs to be generous enough for a phone photo
 // or a Retina screenshot. Matches the hub's org-branding upload.
 const MAX_LOGO_BYTES = 10 * 1024 * 1024
+
+// "Suggest times" — how far ahead to look for free space, and how much notice a
+// suggested slot has to give (nobody wants to be offered a meeting that starts
+// in ten minutes). The slot length copies whatever the host is already
+// proposing; a poll with nothing in it yet gets an hour.
+const SUGGEST_SCAN_DAYS = 21
+const SUGGEST_LEAD_MINS = 60
+const SUGGEST_DEFAULT_MINS = 60
 
 type Phase = 'edit' | 'sending' | 'code' | 'creating' | 'done'
 
@@ -364,6 +373,84 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     }
   }
 
+  // --- Suggest times out of the host's free space -----------------------------
+  // Four options, weekdays only, 10:00–16:00 in the poll's timezone, at most one
+  // morning and one afternoon a day. The picking is pure (`suggestFreeSlots`);
+  // all that happens here is fetching the range it reasons over and folding the
+  // result into the slot list the host can then drag around.
+  const [suggesting, setSuggesting] = useState(false)
+  const [suggestNote, setSuggestNote] = useState<string | null>(null)
+  // Which day the calendar view should show afterwards — free space can be a
+  // fortnight out, and slots off-screen look like nothing happened.
+  const [calFocus, setCalFocus] = useState<{ day: string } | null>(null)
+
+  // Copy the length the host is already proposing. The 10–4 window is six
+  // hours, but a slot longer than half of it can't leave room for both a
+  // morning and an afternoon option — and a days-mode leftover (1440) is
+  // meaningless here — so anything over two hours falls back to the default.
+  const lastDuration = slots[slots.length - 1]?.durationMins
+  const suggestDuration = lastDuration > 0 && lastDuration <= 120 ? lastDuration : SUGGEST_DEFAULT_MINS
+
+  async function suggestTimes() {
+    setCalError(null)
+    setSuggestNote(null)
+    setSuggesting(true)
+    try {
+      // Fetch the whole scan range rather than reusing whichever weeks the grid
+      // has loaded: the answer has to come from the host's real diary, not from
+      // how far they happen to have scrolled.
+      const now = new Date()
+      const { busy, providers } = await fetchFreeBusy(
+        calClient,
+        now.toISOString(),
+        addLocalDays(now, SUGGEST_SCAN_DAYS + 1).toISOString(),
+      )
+      // Half a diary would propose times the host isn't free for, so a failed
+      // provider stops the suggestion instead of quietly narrowing it.
+      const failed = (s: ProviderFetchStatus) => s === 'error' || s === 'reconnect'
+      if (failed(providers.google) || failed(providers.microsoft)) {
+        if (providers.google === 'reconnect' || providers.microsoft === 'reconnect') {
+          setCalError('A calendar connection has expired — please connect it again, then suggest times.')
+          calendarStatus(calClientRef.current).then(setCalStatus).catch(() => {})
+        } else {
+          setCalError("Couldn't read your calendar just now, so nothing was suggested — try again shortly.")
+        }
+        return
+      }
+      // The grid may as well have the freshly-read range too (overlapping
+      // intervals merge into the same shading).
+      setCalBusy((prev) => [...prev, ...busy])
+
+      const nowThere = zonedDayAndMinute(now, timezone)
+      const found = suggestFreeSlots({
+        busyByDay: busySegmentsByDay([...calBusy, ...busy], timezone),
+        fromDay: nowThere.day,
+        fromMin: nowThere.min + SUGGEST_LEAD_MINS,
+        days: SUGGEST_SCAN_DAYS,
+        durationMins: suggestDuration,
+        count: SUGGEST_COUNT,
+        existing: slots,
+      })
+      if (!found.length) {
+        setSuggestNote(`No free time between 10:00 and 16:00 on a weekday in the next ${SUGGEST_SCAN_DAYS} days — add times by hand, or free some space up and try again.`)
+        return
+      }
+      const next = [...slots, ...found.map((s) => ({ id: shortId(6), ...s }))]
+      next.sort((a, b) => a.start.localeCompare(b.start))
+      setSlots(next)
+      setCalFocus({ day: found[0].start.slice(0, 10) })
+      setSuggestNote(
+        found.length < SUGGEST_COUNT
+          ? `Added ${found.length} of ${SUGGEST_COUNT} — that was all the free time there was. Drag to move one, click to remove it.`
+          : `Added ${found.length} times from your free space. Drag to move one, click to remove it.`,
+      )
+    } catch (e) {
+      setCalError(messageOf(e))
+    } finally {
+      setSuggesting(false)
+    }
+  }
+
   // Busy shading in the poll's timezone — the frame the grid's slots use.
   const busyByDay = useMemo(
     () => (anyConnected ? busySegmentsByDay(calBusy, timezone) : undefined),
@@ -637,8 +724,38 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               busyByDay={busyByDay}
               busySyncing={anyConnected && calSyncing > 0}
               onWeekChange={onWeekChange}
+              focus={calFocus}
             />
           </div>
+
+          {/* Fill the poll in from the host's own free time — in the calendar
+              view, where the result lands in the grid beside the shading it was
+              picked from, and only with a calendar connected, since free space
+              is the whole input. */}
+          {view === 'calendar' && anyConnected && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5">
+              <span className="flex-1 min-w-[16rem] text-xs text-slate-600">
+                <span className="font-medium text-slate-700">Not sure what to propose?</span> We'll pick {SUGGEST_COUNT} times you're free — weekdays, 10:00–16:00 {tzAbbrev(timezone)}, at most one morning and one afternoon a day.
+              </span>
+              <button
+                type="button"
+                onClick={suggestTimes}
+                disabled={suggesting}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+              >
+                {suggesting ? 'Finding free time…' : `Suggest ${SUGGEST_COUNT} times`}
+              </button>
+              {suggestNote && (
+                <span className="basis-full text-[11px] text-slate-500">{suggestNote}</span>
+              )}
+            </div>
+          )}
+          {/* The outcome again for a screen reader — a live region that's always
+              mounted, since text appearing inside a freshly-inserted node isn't
+              reliably announced. */}
+          <span aria-live="polite" className="sr-only">
+            {suggesting ? 'Finding free time in your calendar.' : suggestNote ?? ''}
+          </span>
 
           {/* Connect prompt beside the calendar itself — the overlay lives in
               this view, so the invitation belongs here, not only buried in

@@ -74,6 +74,7 @@ export default function CalendarWeekView({
   busyByDay,
   busySyncing,
   onWeekChange,
+  focus,
 }: {
   slots: Slot[]
   onChange: (s: Slot[]) => void
@@ -88,6 +89,12 @@ export default function CalendarWeekView({
   /** Fired on mount and whenever the visible week changes, so the parent can
    *  fetch busy intervals for that range. */
   onWeekChange?: (weekStart: Date) => void
+  /** Ask the grid to show the week holding `day` ('YYYY-MM-DD'). Set when slots
+   *  arrive without the host drawing them — auto-suggested times can land in a
+   *  later week, and slots you can't see may as well not have been added. A
+   *  fresh object each time, so asking twice for the same day still moves the
+   *  view back to it. */
+  focus?: { day: string } | null
 }) {
   const todayStart = startOfWeek(new Date())
   const [weekStart, setWeekStart] = useState<Date>(todayStart)
@@ -125,6 +132,15 @@ export default function CalendarWeekView({
   useEffect(() => {
     onWeekChange?.(weekStart)
   }, [weekStart, onWeekChange])
+
+  // Jump to the week holding `focus.day` whenever one is asked for. Built from
+  // numeric parts (local midnight) so it's the week the host would call that
+  // day, whatever their offset from UTC.
+  useEffect(() => {
+    if (!focus) return
+    const [y, m, d] = focus.day.split('-').map(Number)
+    setWeekStart(startOfWeek(new Date(y, m - 1, d)))
+  }, [focus])
 
   const days = Array.from({ length: 7 }, (_, i) => addLocalDays(weekStart, i))
   const atFirstWeek = weekStart.getTime() <= todayStart.getTime()
