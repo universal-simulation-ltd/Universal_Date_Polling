@@ -28,6 +28,11 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
   respondent who left an address** the confirmed time, with a `.ics` invite
   attached (the `notify-poll-respondents` Edge Function; never sent
   automatically — always an explicit host click).
+- **Suggest times** — with a calendar connected, one click fills the poll in
+  from the host's own free time: 4 options, weekdays only, between 10:00 and
+  16:00 in the poll's timezone, and at most one morning and one afternoon on any
+  given day. They're ordinary slots once added — drag one to move it, click to
+  remove it, click again for four more.
 - **Add to calendar** — each result slot (and the confirmed banner) has an "Add
   to calendar" button: Google Calendar, Outlook, or an `.ics` download (Apple
   Calendar, Outlook desktop). Generated entirely client-side, in the poll's

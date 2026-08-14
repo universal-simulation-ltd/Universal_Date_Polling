@@ -109,6 +109,32 @@ export function addCalendarDays(day: string, n: number): string {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
 }
 
+/** Day of the week of a 'YYYY-MM-DD' string — 0 = Sunday … 6 = Saturday. Pure
+ *  calendar arithmetic in the UTC frame, like `addCalendarDays`: parsing the
+ *  string with `new Date(day)` would put it at UTC midnight and then read it
+ *  back in the viewer's frame, which is a day out for anyone west of Greenwich. */
+export function calendarWeekday(day: string): number {
+  const [y, m, d] = day.slice(0, 10).split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
+}
+
+/** The wall-clock day ('YYYY-MM-DD') and minutes-since-midnight of an instant
+ *  in `tz` — the frame the week grid's busy shading and the auto-suggested
+ *  slots both work in, so the two can be compared minute for minute. */
+export function zonedDayAndMinute(instant: Date, tz: string): { day: string; min: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(instant).reduce<Record<string, string>>((a, p) => {
+    if (p.type !== 'literal') a[p.type] = p.value
+    return a
+  }, {})
+  // '24' for midnight in some engines — normalise to 0.
+  const hour = parts.hour === '24' ? 0 : +parts.hour
+  return { day: `${parts.year}-${parts.month}-${parts.day}`, min: hour * 60 + +parts.minute }
+}
+
 /** Add whole days to a `Date` in the viewer's LOCAL frame — for stepping the
  *  week grid, where "the next day" means the user's own next calendar day.
  *  Distinct from `addCalendarDays` (pure date-string, UTC frame). */

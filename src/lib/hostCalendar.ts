@@ -7,7 +7,7 @@
 // wall-clock segments for the week grid, and is unit-tested in isolation.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { addCalendarDays, zonedWallClockToInstant } from './time'
+import { addCalendarDays, zonedDayAndMinute, zonedWallClockToInstant } from './time'
 
 export type CalendarProvider = 'google' | 'microsoft'
 
@@ -206,20 +206,6 @@ export interface DaySegment {
   toMin: number
 }
 
-/** Wall-clock day + minutes of a UTC instant in `tz`. */
-function zonedParts(instant: Date, tz: string): { day: string; min: number } {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: tz,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hour12: false,
-  }).formatToParts(instant).reduce<Record<string, string>>((a, p) => {
-    if (p.type !== 'literal') a[p.type] = p.value
-    return a
-  }, {})
-  const hour = parts.hour === '24' ? 0 : +parts.hour
-  return { day: `${parts.year}-${parts.month}-${parts.day}`, min: hour * 60 + +parts.minute }
-}
-
 /** Merge overlapping/adjacent segments so double-booked (or twice-fetched)
  *  intervals paint as one clean block. */
 export function mergeSegments(segs: DaySegment[]): DaySegment[] {
@@ -257,8 +243,8 @@ export function busySegmentsByDay(busy: BusyInterval[], tz: string): Map<string,
     if (Number.isNaN(t.getTime()) || Number.isNaN(end.getTime())) continue
     // Guard: an interval spanning more days than any fetch range is malformed.
     for (let guard = 0; t < end && guard < 100; guard++) {
-      const p = zonedParts(t, tz)
-      const e = zonedParts(end, tz)
+      const p = zonedDayAndMinute(t, tz)
+      const e = zonedDayAndMinute(end, tz)
       if (e.day === p.day) {
         push(p.day, { fromMin: p.min, toMin: e.min })
         break

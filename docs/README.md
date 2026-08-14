@@ -47,6 +47,34 @@ the host is already busy, so they don't propose a slot they can't make.
 poll's zone (unit-tested — busy shading has to land in the same frame the slots
 are drawn in, or it lies whenever the poll's zone isn't UTC).
 
+**Suggest — build the poll out of the free space** (added 2026-08-14). Beside
+the week view, "Suggest 4 times" fills the poll in from the host's own
+availability instead of making them draw every slot. The picking is a pure
+function, `suggestFreeSlots` in `src/lib/autoSlots.ts` (unit-tested in
+`autoSlots.test.ts`), fed the same per-day busy segments the shading uses — so
+a suggestion lands exactly where the grid says the host is free, in the poll's
+timezone. The rules it encodes:
+
+- **Weekdays only, 10:00–16:00** wall-clock in the poll's zone. A slot starts no
+  earlier than 10:00 and ends no later than 16:00.
+- **At most one morning and one afternoon per day** (split at noon, classified
+  by start time), so four options can't all be one Tuesday.
+- **Spread before density** — the first pass takes one option per day,
+  alternating the half of the day it tries first so the set isn't four identical
+  10am slots; only when the days run out does a second pass double up.
+- **Afternoons prefer 13:00 onwards**, dropping into the 12:00–13:00 hour only
+  when nothing later fits.
+- Starts snap to the same 30-minute grid a drawn slot does, existing slots count
+  as busy (so a second click adds four *more* options, not four duplicates), and
+  the first day is cut off an hour ahead of now.
+
+The click fetches the whole 21-day scan range itself rather than reusing
+whichever weeks the grid has loaded, and **aborts if any connected provider's
+read fails** — half a diary would propose times the host isn't actually free
+for. The calendar view then jumps to the week the first suggestion landed in
+(`focus` prop on `CalendarWeekView`), since slots off-screen look like nothing
+happened.
+
 **Write — put the confirmed time in the host's diary** (added 2026-08-13).
 Once a slot is confirmed, the banner offers "Add to my Google Calendar /
 Outlook", which creates a real event via the `calendar-event` Edge Function.
@@ -138,6 +166,14 @@ so the shapes aren't re-derived by hand:
   `addCalendarDays` is pure date-string arithmetic in the UTC frame (exclusive
   all-day end dates), `addLocalDays` steps a `Date` in the viewer's local frame
   (the week-grid nav). **Different timezone frames — don't conflate them.**
+- **`calendarWeekday(day)`** — the weekday (0 = Sunday) of a `'YYYY-MM-DD'`
+  string, in the same pure UTC frame as `addCalendarDays`; `new Date(day)` would
+  read UTC midnight back in the viewer's frame and be a day out west of
+  Greenwich. Used to keep auto-suggested slots on Mon–Fri.
+- **`zonedDayAndMinute(instant, tz)`** — an instant's wall-clock day and
+  minutes-since-midnight in `tz`. The one frame busy shading
+  (`busySegmentsByDay`) and the auto-suggester both work in, so the two can be
+  compared minute for minute.
 - **`needsTzNote(poll, viewerTz)`** — whether a viewer-local time should be
   spelled out (timed poll whose zone differs from the viewer's). The poll page's
   viewer-timezone switcher generalises this to any active display zone.
