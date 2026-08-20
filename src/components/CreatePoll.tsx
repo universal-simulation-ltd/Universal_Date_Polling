@@ -3,7 +3,7 @@ import { useAppFreeToken, useFileDrop, useOrg, useOrgBranding, useSubscription, 
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
-import { createPoll, createPollGated, currentUser, sendHostCode, setNotifyOnResponse as apiSetNotify, setPollLocation as apiSetLocation, shortId, signOut, uploadPollLogo, verifyHostCode } from '../lib/api'
+import { createPoll, createPollGated, currentUser, sendHostCode, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollLocation as apiSetLocation, shortId, signOut, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { addLocalDays, listTimezones, localTimezone, tzAbbrev, zonedDayAndMinute } from '../lib/time'
 import {
@@ -60,6 +60,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [location, setLocation] = useState('')
   const [validityDays, setValidityDays] = useState<number | null>(30)
   const [notifyOnResponse, setNotifyOnResponse] = useState(false)
+  // "Just the two of us": the shared link becomes a booking page — the one
+  // person it was sent to picks a slot and it is booked on the spot, with a
+  // calendar invite to both. Opted into here rather than inferred from the
+  // response count, so the link's meaning is fixed the moment it is created.
+  const [bookingMode, setBookingMode] = useState(false)
   const [email, setEmail] = useState('')
   const [verified, setVerified] = useState(false)
 
@@ -534,7 +539,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   function draft(branding: PollBranding | null): NewPoll {
     const expires_at =
       validityDays == null ? null : new Date(Date.now() + validityDays * 86_400_000).toISOString()
-    return { id: shortId(), title, timezone, mode, slots, theme, branding, location: location.trim() || null, expires_at }
+    return {
+      id: shortId(), title, timezone, mode, slots, theme, branding,
+      location: location.trim() || null, booking_mode: bookingMode, expires_at,
+    }
   }
 
   // `client` must be signed in as `hostUserId` (suite client for any Universal
@@ -557,9 +565,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       if (freeGated && pollDraft.location) {
         try { await apiSetLocation(client, poll.id, pollDraft.location) } catch { /* poll still created */ }
       }
+      // Likewise booking mode: the gated RPC predates the column, so the free
+      // tier gets it as a follow-up. Failing here would leave the host with an
+      // ordinary poll rather than a booking page — a difference they would
+      // notice on the very next screen — so unlike the others it is reported.
+      if (freeGated && pollDraft.booking_mode) {
+        await apiSetBookingMode(client, poll.id, true)
+      }
       // Response alerts are a follow-up update (keeps the create RPC/insert
       // untouched); non-fatal, since the poll itself is already created.
-      if (notifyOnResponse) {
+      if (notifyOnResponse && !bookingMode) {
         try { await apiSetNotify(client, poll.id, true) } catch { /* poll still created */ }
       }
       setCreatedId(poll.id)
@@ -620,7 +635,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     return (
       <CreatedPanel
         pollBase={pollBase} id={createdId} theme={theme}
-        poll={{ title, timezone, mode, slots, location: location.trim() || null }}
+        poll={{ title, timezone, mode, slots, location: location.trim() || null, booking_mode: bookingMode }}
       />
     )
   }
@@ -864,10 +879,40 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             More options
+            {bookingMode && !showMore && (
+              <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-text)]">
+                Booking page
+              </span>
+            )}
           </button>
 
           {showMore && (
             <div className="mt-4 grid gap-5 sm:grid-cols-2">
+              {/* Just the two of us — a booking page rather than a poll. First in
+                  the list because it changes what every other option means. */}
+              <div className="sm:col-span-2">
+                <label
+                  className={`flex items-start gap-2.5 cursor-pointer rounded-xl p-3 ring-1 transition ${
+                    bookingMode ? 'bg-[var(--accent-softer)] ring-[var(--accent)]' : 'bg-white ring-slate-200 hover:ring-slate-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={bookingMode}
+                    onChange={(e) => setBookingMode(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[var(--accent)] focus:ring-[var(--accent)]"
+                  />
+                  <span className="text-sm text-slate-700">
+                    <span className="font-semibold text-slate-900">Just the two of us</span> — make this an instant booking page
+                    <span className="block text-xs text-slate-500">
+                      {bookingMode
+                        ? "Whoever you send the link to picks one time and it's booked on the spot — no votes, and nothing for you to confirm. You'll both get a calendar invite by email."
+                        : 'For a one-to-one. They pick a time, it books itself, and you both get a calendar invite — instead of collecting availability and confirming a time yourself.'}
+                    </span>
+                  </span>
+                </label>
+              </div>
+
               {/* Validity */}
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Link stays valid for</span>
@@ -882,7 +927,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 </select>
               </div>
 
-              {/* Response alerts */}
+              {/* Response alerts. Not offered on a booking page: the booking
+                  email to the host is unconditional there, so the checkbox
+                  could only ever promise something already happening. */}
+              {!bookingMode && (
               <div className="sm:col-span-2">
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <input
@@ -906,6 +954,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   </span>
                 </label>
               </div>
+              )}
 
               {/* Host calendar (free/busy overlay) — only offered once the
                   host has a session (the tokens key off their uid) and at
@@ -1278,9 +1327,12 @@ function CalendarProviderRow({
 function CreatedPanel({ pollBase, id, theme, poll }: {
   pollBase: string; id: string; theme: Theme
   /** The draft just created, for the plain-text "copy a list for an email"
-   *  export — the created poll isn't re-fetched here, and doesn't need to be. */
+   *  export — the created poll isn't re-fetched here, and doesn't need to be.
+   *  Its `booking_mode` also switches this panel's copy: "share with everyone"
+   *  is the wrong instruction for a page that can only be booked once. */
   poll: TextListPoll
 }) {
+  const booking = !!poll.booking_mode
   const url = `${window.location.origin}${pollBase}p/${id}`
   const [copied, setCopied] = useState(false)
   async function copy() {
@@ -1302,8 +1354,14 @@ function CreatedPanel({ pollBase, id, theme, poll }: {
             <path d="M5 12.5 L10 17.5 L19 7" />
           </svg>
         </div>
-        <h2 className="mt-4 text-xl font-extrabold text-slate-900">Your poll is live</h2>
-        <p className="mt-1 text-slate-600">Share this link with everyone you want to invite.</p>
+        <h2 className="mt-4 text-xl font-extrabold text-slate-900">
+          {booking ? 'Your booking page is live' : 'Your poll is live'}
+        </h2>
+        <p className="mt-1 text-slate-600">
+          {booking
+            ? 'Send this link to the one person you want to meet. The first time they pick is booked, and you\u2019ll both get a calendar invite.'
+            : 'Share this link with everyone you want to invite.'}
+        </p>
         <div className="mt-5 flex items-stretch gap-2">
           <input
             readOnly

@@ -17,6 +17,7 @@ function timedPoll(overrides: Partial<Poll> = {}): Poll {
     theme: 'orange',
     branding: null,
     location: null,
+    booking_mode: false,
     final_slot_id: null,
     final_notified_slot_id: null,
     notify_on_response: false,

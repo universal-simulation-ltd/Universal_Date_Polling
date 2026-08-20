@@ -81,6 +81,10 @@ export async function createPoll(
     // insert from referencing the column at all, so a build that shipped before
     // migration 0060 added `polls.location` still creates location-less polls.
     ...(p.location ? { location: p.location } : {}),
+    // Same reasoning for `booking_mode` (migration 0120): an ordinary poll never
+    // names the column, so this build still works against a database that
+    // hasn't taken 0120 yet — it just can't make booking pages.
+    ...(p.booking_mode ? { booking_mode: true } : {}),
   }
   const { data, error } = await client.from('polls').insert(row).select().single()
   if (error) throw error
@@ -176,6 +180,18 @@ export async function setPollLocation(
   if (error) throw error
 }
 
+/** Host-only: turn a poll into (or back out of) a 1:1 booking page. `client`
+ *  must be signed in as the host — RLS (`polls_owner_update`) gates it. Used as
+ *  a follow-up write for the gated create path, whose RPC predates the column. */
+export async function setBookingMode(
+  client: SupabaseClient,
+  pollId: string,
+  on: boolean,
+): Promise<void> {
+  const { error } = await client.from('polls').update({ booking_mode: on }).eq('id', pollId)
+  if (error) throw error
+}
+
 /** Host-only: turn per-response email alerts on/off for a poll. `client` must be
  *  signed in as the host — RLS (`polls_owner_update`) gates it. */
 export async function setNotifyOnResponse(
@@ -247,6 +263,73 @@ export async function notifyRespondents(client: SupabaseClient, pollId: string):
   }
   if (!data?.ok) throw new Error(data?.error ?? 'Could not send the emails.')
   return data.sent ?? 0
+}
+
+/** Raised by the booking calls with the edge function's own `code`, so the page
+ *  can react to "somebody beat you to it" differently from a network hiccup. */
+export class BookingError extends Error {
+  code: string | null
+  constructor(message: string, code: string | null) {
+    super(message)
+    this.code = code
+  }
+}
+
+/** Pull the edge function's own JSON error out of a FunctionsHttpError, which
+ *  otherwise surfaces as a bare "non-2xx status code" with the body unread. */
+async function functionError(error: unknown, fallback: string): Promise<BookingError> {
+  const ctx = (error as { context?: Response }).context
+  if (ctx) {
+    const body = await ctx.json().catch(() => null)
+    if (body?.error) return new BookingError(body.error, body.code ?? null)
+  }
+  return new BookingError(fallback, null)
+}
+
+export interface BookingResult {
+  /** True when the host's own connected calendar sent the invitation (the guest
+   *  gets a real Google/Outlook invite). False = we emailed a .ics instead. */
+  viaCalendar: boolean
+  /** Whether the confirmation email to the guest actually went out. */
+  invitee: boolean
+}
+
+/** Book a slot on a 1:1 booking page. Anonymous by design — the guest has no
+ *  account — and routed through the edge function rather than written directly
+ *  because the booking and the invitations must not be able to come apart:
+ *  `book_poll_slot` is service-role-only, so there is no client path to a
+ *  booking that skips the emails (migration 0120). */
+export async function bookSlot(
+  pollId: string,
+  slotId: string,
+  name: string,
+  email: string,
+): Promise<BookingResult> {
+  const { data, error } = await supabase.functions.invoke('book-poll-slot', {
+    body: { action: 'book', pollId, slotId, name: name.trim(), email: email.trim() },
+  })
+  if (error) throw await functionError(error, 'Could not book that time — please try again.')
+  if (!data?.ok) throw new BookingError(data?.error ?? 'Could not book that time.', data?.code ?? null)
+  return { viaCalendar: !!data.viaCalendar, invitee: !!data.invitee }
+}
+
+/** Host-only: release a booked page so it can be booked again, telling the
+ *  guest it's off (provider cancellation where the host's calendar sent the
+ *  invite, a METHOD:CANCEL .ics otherwise). `client` must hold the host's
+ *  session — the function checks the uid against the poll's host itself. */
+export async function cancelBooking(
+  client: SupabaseClient,
+  pollId: string,
+): Promise<{ notified: boolean; notifyError: string | null }> {
+  const { data, error } = await client.functions.invoke('book-poll-slot', {
+    body: { action: 'cancel', pollId },
+  })
+  if (error) throw await functionError(error, 'Could not cancel that booking — please try again.')
+  if (!data?.ok) throw new BookingError(data?.error ?? 'Could not cancel that booking.', data?.code ?? null)
+  // `notified` is not decoration: cancelling deletes the guest's address, so a
+  // cancellation the guest was never told about is one nobody can retry. The
+  // host has to hear about it, which is why this is returned rather than logged.
+  return { notified: !!data.notified, notifyError: data.notifyError ?? null }
 }
 
 export async function getPoll(id: string): Promise<Poll | null> {

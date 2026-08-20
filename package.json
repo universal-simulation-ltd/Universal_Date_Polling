@@ -4,13 +4,14 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "description": "Universal Date Polling — a free group scheduler. Create a poll, share a link, find the time that works for everyone.",
+  "description": "Universal Date Polling \u2014 a free group scheduler. Create a poll, share a link, find the time that works for everyone.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:booking": "node e2e/booking.e2e.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",

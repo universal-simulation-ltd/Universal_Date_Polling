@@ -18,6 +18,11 @@ export interface TextListPoll {
   mode: PollMode
   slots: Slot[]
   location: string | null
+  /** A 1:1 booking page rather than a poll. Changes what the list ASKS FOR:
+   *  picking a time on a booking page settles it, so inviting a reply by email
+   *  would be inviting a reply nobody is waiting for. Optional because the
+   *  create screen's draft and older callers predate it. */
+  booking_mode?: boolean
 }
 
 export interface TextListOptions {
@@ -52,10 +57,11 @@ export function buildPollTextList(poll: TextListPoll, opts: TextListOptions = {}
     // Anchor the tz abbreviation to the first slot, not to "now" — a poll for
     // January copied in June would otherwise be labelled BST.
     const anchor = slotInstant(slots[0].start, poll.timezone)
+    const timesNote = dayMode ? '' : ` All times ${tzAbbrev(tz, anchor)}.`
     lines.push(
-      dayMode
-        ? 'Which of these days work for you?'
-        : `Which of these times work for you? All times ${tzAbbrev(tz, anchor)}.`,
+      poll.booking_mode
+        ? `Pick whichever ${dayMode ? 'day' : 'time'} suits you — it's booked as soon as you choose.${timesNote}`
+        : `Which of these ${dayMode ? 'days' : 'times'} work for you?${timesNote}`,
       '',
     )
     slots.forEach((slot, i) => {
@@ -77,7 +83,13 @@ export function buildPollTextList(poll: TextListPoll, opts: TextListOptions = {}
 
   const url = opts.url?.trim()
   if (opts.includeLink && url) {
-    lines.push('', 'Feel free to email back, or to leave your preferences here:', url)
+    lines.push(
+      '',
+      poll.booking_mode
+        ? 'Book your slot here:'
+        : 'Feel free to email back, or to leave your preferences here:',
+      url,
+    )
   }
 
   return lines.join('\n')

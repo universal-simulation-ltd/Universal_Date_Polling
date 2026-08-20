@@ -52,8 +52,16 @@ export interface Poll {
    *  physical place ("Meeting room 5"). One value for the whole poll (not
    *  per-slot); shown to respondents and carried into the calendar export. */
   location: string | null
+  /** True = this is a 1:1 BOOKING PAGE, not a poll. The one person the link was
+   *  sent to picks a slot and it is confirmed there and then, with a calendar
+   *  invite to both people — no availability grid, and no host confirmation
+   *  step. Opted into at creation; never inferred from the response count,
+   *  because a second responder would then silently change what the link
+   *  means. See migration 0120 and the book-poll-slot edge function. */
+  booking_mode: boolean
   /** The slot the host has confirmed as the final chosen time (a `Slot.id`), or
-   *  null while undecided. Only the host can set it. */
+   *  null while undecided. Set by the host on an ordinary poll, or by the guest
+   *  themselves (server-side, via book-poll-slot) on a booking page. */
   final_slot_id: string | null
   /** The slot respondents were last emailed about by notify-poll-respondents,
    *  or null if the host has never sent the confirmation email. Stamped
@@ -88,5 +96,6 @@ export interface NewPoll {
   theme: Theme
   branding: PollBranding | null
   location: string | null
+  booking_mode: boolean
   expires_at: string | null
 }

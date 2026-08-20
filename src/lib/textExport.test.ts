@@ -98,4 +98,47 @@ describe('buildPollTextList', () => {
     // …and the blocks stay separated by blank lines rather than running together.
     expect(text).not.toMatch(/\S\n\S*Where:/)
   })
+
+  // ---- 1:1 booking pages ---------------------------------------------------
+  // A booking page settles the time the moment the guest clicks, so the list
+  // must not ask them to reply — the ask is the whole difference between the
+  // two products, and it is the part a reader acts on.
+  describe('booking mode', () => {
+    it('asks the reader to pick rather than to say which work', () => {
+      const text = buildPollTextList(timedPoll({ booking_mode: true }))
+      expect(text).toContain("Pick whichever time suits you — it's booked as soon as you choose.")
+      expect(text).not.toContain('Which of these times work for you?')
+    })
+
+    it('still names the timezone, anchored to the first slot', () => {
+      expect(buildPollTextList(timedPoll({ booking_mode: true }))).toContain('All times BST.')
+      expect(buildPollTextList(timedPoll({
+        booking_mode: true,
+        slots: [{ id: 's1', start: '2026-01-14T10:00', durationMins: 60 }],
+      }))).toContain('All times GMT.')
+    })
+
+    it('says "day" for a whole-day booking page, and drops the times note', () => {
+      const text = buildPollTextList(timedPoll({
+        booking_mode: true,
+        mode: 'days',
+        slots: [{ id: 'd1', start: '2026-06-10T00:00', durationMins: 0 }],
+      }))
+      expect(text).toContain("Pick whichever day suits you — it's booked as soon as you choose.")
+      expect(text).not.toContain('All times')
+    })
+
+    it('invites a booking, not an email back', () => {
+      const text = buildPollTextList(timedPoll({ booking_mode: true }), { includeLink: true, url: POLL_URL })
+      expect(text).toContain('Book your slot here:')
+      expect(text).not.toContain('Feel free to email back')
+      expect(text.split('\n').pop()).toBe(POLL_URL)
+    })
+
+    it('leaves an ordinary poll untouched', () => {
+      const text = buildPollTextList(timedPoll({ booking_mode: false }), { includeLink: true, url: POLL_URL })
+      expect(text).toContain('Which of these times work for you? All times BST.')
+      expect(text).toContain('Feel free to email back, or to leave your preferences here:')
+    })
+  })
 })

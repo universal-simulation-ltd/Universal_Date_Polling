@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useUser, useUniversal } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { currentUser, getPollResilient, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, submitResponse } from '../lib/api'
+import { bookSlot, BookingError, cancelBooking, currentUser, getPollResilient, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, submitResponse } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import {
@@ -20,6 +20,7 @@ type Load = 'loading' | 'ready' | 'notfound' | 'error'
 
 const NAME_KEY = 'unipoll:name'
 const EMAIL_KEY = 'unipoll:email'
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 /** The host's "email respondents the confirmed time" action, tracked per page
  *  view. 'sent' carries how many addresses were actually emailed. */
@@ -42,6 +43,16 @@ type CalWriteState =
 
 const PROVIDER_LABEL: Record<CalendarProvider, string> = { google: 'Google Calendar', microsoft: 'Outlook' }
 
+/** The guest's booking on a 1:1 page. 'booked' carries how the invite actually
+ *  reached them, because that decides what the page can honestly promise: a
+ *  provider-sent invitation arrives as a Google/Outlook invite with
+ *  accept/decline, and our own .ics arrives as an attachment. */
+type BookingState =
+  | { status: 'idle' }
+  | { status: 'booking' }
+  | { status: 'booked'; viaCalendar: boolean; emailed: boolean }
+  | { status: 'error'; message: string }
+
 export default function PollPage({ id, pollBase }: { id: string; pollBase: string }) {
   const [state, setState] = useState<Load>('loading')
   const [poll, setPoll] = useState<Poll | null>(null)
@@ -54,6 +65,10 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const [savedAt, setSavedAt] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
+  // 1:1 booking pages (poll.booking_mode): the guest's own pick, and which slot
+  // they chose while the page waits for the reload to catch up.
+  const [booking, setBooking] = useState<BookingState>({ status: 'idle' })
+  const [pickedSlot, setPickedSlot] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [calStatus, setCalStatus] = useState<CalendarStatus | null>(null)
   const [calWrite, setCalWrite] = useState<CalWriteState>({ status: 'idle' })
@@ -141,7 +156,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     if (!poll) return
     setError(null)
     if (!name.trim()) { setError('Add your name so people know who you are.'); return }
-    if (email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+    if (email.trim() && !EMAIL_RE.test(email.trim())) {
       setError("That email doesn't look right — fix it or leave it blank.")
       return
     }
@@ -210,6 +225,69 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not confirm the time.')
+    } finally {
+      setConfirming(false)
+    }
+  }
+
+  /** The guest's booking on a 1:1 page: pick a slot, leave a name and an email,
+   *  and it's confirmed there and then. Everything happens server-side in one
+   *  call (book-poll-slot) — the claim on the slot and the invitations cannot
+   *  come apart, because there is no client path to the first without the
+   *  second. */
+  async function book(slotId: string) {
+    if (!poll) return
+    if (!name.trim()) { setBooking({ status: 'error', message: 'Add your name so they know who they\u2019re meeting.' }); return }
+    if (!EMAIL_RE.test(email.trim())) {
+      setBooking({ status: 'error', message: 'Add the email address your invite should go to.' })
+      return
+    }
+    setBooking({ status: 'booking' })
+    try {
+      const res = await bookSlot(poll.id, slotId, name, email)
+      localStorage.setItem(NAME_KEY, name.trim())
+      localStorage.setItem(EMAIL_KEY, email.trim())
+      setPoll({ ...poll, final_slot_id: slotId, final_notified_slot_id: res.invitee ? slotId : poll.final_notified_slot_id })
+      setBooking({ status: 'booked', viaCalendar: res.viaCalendar, emailed: res.invitee })
+      // Pull the response row back so the banner can say who booked it rather
+      // than a bare "Booked". Best-effort and after the state is already set —
+      // the booking is done, and a failed refresh must not read as a failed
+      // booking.
+      try { setResponses(await getResponses(poll.id)) } catch { /* cosmetic */ }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Could not book that time.'
+      setBooking({ status: 'error', message })
+      // Somebody got there first. Reload rather than leaving the page showing
+      // times that can no longer be booked — the confirmed banner is the
+      // honest view of a page that is now taken.
+      if (e instanceof BookingError && e.code === 'already_booked') setReloadKey((k) => k + 1)
+    }
+  }
+
+  /** Host-only: release a booked 1:1 page so it can be booked again, and tell
+   *  the guest it's off. Distinct from un-confirming an ordinary poll, where
+   *  nobody was ever promised anything. */
+  async function cancelBookedTime() {
+    if (!poll) return
+    const client = hostClientFor(poll)
+    if (!client) return
+    setError(null)
+    setConfirming(true)
+    try {
+      const { notified } = await cancelBooking(client, poll.id)
+      setPoll({ ...poll, final_slot_id: null, final_notified_slot_id: null })
+      setBooking({ status: 'idle' })
+      setNotifyState({ status: 'idle' })
+      setCalWrite({ status: 'idle' })
+      setResponses(await getResponses(poll.id))
+      // Cancelling deletes the guest's address — it is the only copy — so if
+      // the email didn't go, nothing can send it later and the host is the only
+      // one who can put it right. Saying so is not optional.
+      if (!notified) {
+        setError("The booking is cancelled and the page is open again — but we couldn't email your guest. Please let them know yourself.")
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not cancel that booking.')
     } finally {
       setConfirming(false)
     }
@@ -299,6 +377,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
 
   const slots = [...poll.slots].sort((a, b) => a.start.localeCompare(b.start))
   const dayMode = poll.mode === 'days'
+  // A 1:1 booking page rather than a poll: no availability grid, no tally, and
+  // the guest's pick IS the confirmation.
+  const isBooking = !!poll.booking_mode
   // The timezone times are actually displayed in: the viewer's choice, else the
   // poll's own zone. Instants are always anchored to the poll's zone; only the
   // display formatting follows `activeTz`.
@@ -325,7 +406,13 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       <header className="text-center">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 break-words">{poll.title}</h1>
         <p className="mt-2 text-sm text-slate-600">
-          {responses.length === 0 ? 'Be the first to respond.' : `${responses.length} ${responses.length === 1 ? 'person has' : 'people have'} responded.`}
+          {isBooking
+            ? (poll.final_slot_id
+                ? 'This time is booked.'
+                : isHost
+                  ? "Waiting for your guest to pick a time."
+                  : "Pick the time that suits you \u2014 it's booked straight away.")
+            : responses.length === 0 ? 'Be the first to respond.' : `${responses.length} ${responses.length === 1 ? 'person has' : 'people have'} responded.`}
           {!dayMode && (
             <>{' · '}Times in <span className="font-medium">{tzAbbrev(activeTz, anchor)}</span></>
           )}
@@ -343,23 +430,39 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       {finalSlot && (
         <ConfirmedBanner
           poll={poll} slot={finalSlot} pollUrl={pollUrl} viewerTz={viewerTz} activeTz={activeTz}
-          dayMode={dayMode} isHost={isHost} confirming={confirming}
-          onUnconfirm={() => confirmSlot(null)}
+          dayMode={dayMode} isHost={isHost} confirming={confirming} isBooking={isBooking}
+          bookedBy={isBooking ? (responses.find((r) => r.availability[finalSlot.id] === 'yes')?.name ?? null) : null}
+          onUnconfirm={isBooking ? cancelBookedTime : () => confirmSlot(null)}
           notifyState={notifyState} onNotify={emailRespondents}
           calStatus={calStatus} calWrite={calWrite}
           onAddToMyCalendar={addToMyCalendar} onReconnectCalendar={reconnectForWrite}
         />
       )}
-      {isHost && !finalSlot && responses.length > 0 && (
+      {isBooking && booking.status === 'booked' && (
+        <div className="mt-3 rounded-xl bg-white ring-1 ring-slate-200 px-4 py-3 text-sm text-slate-700">
+          <span className="font-semibold text-slate-900">You're booked in.</span>{' '}
+          {booking.viaCalendar
+            ? <>A calendar invitation is on its way to <span className="font-medium">{email.trim()}</span> — accept it and the meeting lands in your calendar.</>
+            : booking.emailed
+              ? <>We've emailed the invite to <span className="font-medium">{email.trim()}</span> — open the attachment to add it to your calendar.</>
+              : <>We couldn't email you a copy just now, so add it to your calendar from the button above — the time itself is booked.</>}
+        </div>
+      )}
+      {isHost && !finalSlot && !isBooking && responses.length > 0 && (
         <p className="mt-5 text-center text-sm text-slate-500">
           You're the host — pick the final time below with <span className="font-medium text-slate-700">Confirm this time</span>, and everyone with the link will see it.
+        </p>
+      )}
+      {isHost && !finalSlot && isBooking && !expired && (
+        <p className="mt-5 text-center text-sm text-slate-500">
+          This is a booking page. Send the link to one person — whichever time they pick is booked immediately, and you'll both get a calendar invite.
         </p>
       )}
 
       {/* Host-only: chase the people who haven't clicked the link. Uses
           `activeTz` rather than the poll's zone so the pasted list reads the
           same as the page it was copied from. */}
-      {isHost && !expired && (
+      {isHost && !expired && !(isBooking && finalSlot) && (
         <section className="mt-5 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
           <CopyAsText poll={poll} url={pollUrl} displayTz={activeTz} />
         </section>
@@ -380,8 +483,23 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         </div>
       )}
 
+      {/* Book (1:1 pages) — the guest's pick settles it, so there is no grid and
+          no save-then-wait. Hidden from the host: a host booking their own page
+          would be scheduling a meeting with themselves. */}
+      {isBooking && !expired && !finalSlot && !isHost && (
+        <BookingPanel
+          poll={poll} slots={slots} dayMode={dayMode} activeTz={activeTz} viewerTz={viewerTz} tzNote={tzNote}
+          name={name} email={email} onName={setName} onEmail={setEmail}
+          picked={pickedSlot} onPick={setPickedSlot}
+          state={booking} onBook={book}
+        />
+      )}
+      {isBooking && !finalSlot && isHost && (
+        <OfferedTimes poll={poll} slots={slots} dayMode={dayMode} activeTz={activeTz} viewerTz={viewerTz} tzNote={tzNote} />
+      )}
+
       {/* Respond */}
-      {!expired && (
+      {!expired && !isBooking && (
         <section className="mt-7 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-6 pop-in">
           <h2 className="text-base font-bold text-slate-900">
             {dayMode ? 'Are you free on these days?' : 'Are you free at these times?'}
@@ -479,13 +597,150 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         </section>
       )}
 
-      {/* Results */}
+      {/* Results. A booking page has none: one person picks one time, and the
+          confirmed banner above already says which. */}
+      {!isBooking && (
       <Results
         poll={poll} slots={slots} responses={responses} viewerTz={viewerTz} activeTz={activeTz} pollUrl={pollUrl}
         isHost={isHost} confirming={confirming} finalSlotId={poll.final_slot_id}
         onConfirm={confirmSlot}
       />
+      )}
     </div>
+  )
+}
+
+/** A slot as one selectable row on a booking page. Shared by the guest's picker
+ *  and the host's read-only preview so the two can't drift apart in wording. */
+function SlotLine({ poll, slot, dayMode, activeTz, viewerTz, tzNote }: {
+  poll: Poll; slot: Slot; dayMode: boolean; activeTz: string; viewerTz: string; tzNote: boolean
+}) {
+  const inst = slotInstant(slot.start, poll.timezone)
+  return (
+    <>
+      <div className="text-sm font-medium text-slate-900">
+        {dayMode ? formatCalendarDay(slotDayKey(slot)) : `${formatDateHeading(inst, activeTz)} · ${formatRange(inst, slot.durationMins, activeTz)}`}
+      </div>
+      {tzNote && <div className="text-xs text-slate-500">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</div>}
+    </>
+  )
+}
+
+/** The 1:1 booking page's whole interaction: pick one time, say who you are,
+ *  and it is booked. Deliberately NOT a two-step wizard — a handful of times
+ *  and two fields fit on one screen, and the guest can see what they are
+ *  committing to at the moment they commit to it.
+ *
+ *  The email is required here, unlike the optional address on an ordinary poll:
+ *  the promise of this page is that an invite arrives, and there is nowhere to
+ *  send one without it. */
+function BookingPanel({ poll, slots, dayMode, activeTz, viewerTz, tzNote, name, email, onName, onEmail, picked, onPick, state, onBook }: {
+  poll: Poll; slots: Slot[]; dayMode: boolean; activeTz: string; viewerTz: string; tzNote: boolean
+  name: string; email: string; onName: (v: string) => void; onEmail: (v: string) => void
+  picked: string | null; onPick: (id: string | null) => void
+  state: BookingState; onBook: (slotId: string) => void
+}) {
+  const busy = state.status === 'booking'
+  return (
+    <section className="mt-7 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-6 pop-in">
+      <h2 className="text-base font-bold text-slate-900">
+        {dayMode ? 'Pick a day' : 'Pick a time'}
+      </h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Whichever you choose is booked straight away — there's nothing else to send back.
+      </p>
+
+      <div className="mt-4 space-y-2">
+        {slots.map((slot) => {
+          const chosen = picked === slot.id
+          return (
+            <button
+              key={slot.id}
+              type="button"
+              onClick={() => onPick(chosen ? null : slot.id)}
+              aria-pressed={chosen}
+              disabled={busy}
+              className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition disabled:opacity-60 ${
+                chosen
+                  ? 'border-[var(--accent)] bg-[var(--accent-softer)] ring-1 ring-[var(--accent)]'
+                  : 'border-slate-200 hover:border-[var(--accent)]'
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${chosen ? 'border-[var(--accent)]' : 'border-slate-300'}`}
+              >
+                {chosen && <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />}
+              </span>
+              <span className="min-w-0">
+                <SlotLine poll={poll} slot={slot} dayMode={dayMode} activeTz={activeTz} viewerTz={viewerTz} tzNote={tzNote} />
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="mt-5 flex flex-col sm:flex-row gap-3">
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700">Your name</span>
+          <input
+            type="text"
+            value={name}
+            maxLength={120}
+            onChange={(e) => onName(e.target.value)}
+            placeholder="e.g. Sam"
+            className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700">Your email</span>
+          <input
+            type="email"
+            value={email}
+            maxLength={320}
+            onChange={(e) => onEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+          />
+        </label>
+      </div>
+      <p className="mt-1.5 text-xs text-slate-500">
+        Your calendar invite goes here. It's only ever used for this booking.
+      </p>
+
+      {state.status === 'error' && <p className="mt-3 text-sm text-red-600">{state.message}</p>}
+
+      <div className="mt-5">
+        <button
+          type="button"
+          onClick={() => picked && onBook(picked)}
+          disabled={busy || !picked}
+          className="h-11 px-5 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
+        >
+          {busy ? 'Booking…' : picked ? `Book ${dayMode ? 'this day' : 'this time'}` : `Pick a ${dayMode ? 'day' : 'time'} above`}
+        </button>
+      </div>
+    </section>
+  )
+}
+
+/** What the host sees on their own un-booked booking page: the times they are
+ *  offering, read-only. No confirm buttons — confirming is the guest's job here,
+ *  and a host who wants a different set of times makes a new page. */
+function OfferedTimes({ poll, slots, dayMode, activeTz, viewerTz, tzNote }: {
+  poll: Poll; slots: Slot[]; dayMode: boolean; activeTz: string; viewerTz: string; tzNote: boolean
+}) {
+  return (
+    <section className="mt-7 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-6">
+      <h2 className="text-base font-bold text-slate-900">{dayMode ? "Days you're offering" : "Times you're offering"}</h2>
+      <div className="mt-3 space-y-2">
+        {slots.map((slot) => (
+          <div key={slot.id} className="rounded-xl border border-slate-200 px-3 py-2.5">
+            <SlotLine poll={poll} slot={slot} dayMode={dayMode} activeTz={activeTz} viewerTz={viewerTz} tzNote={tzNote} />
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -593,9 +848,16 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
 
 /** The prominent "Confirmed" banner shown to everyone once the host has picked
  *  a final slot — the chosen date/time plus an "Add to calendar" for it. */
-function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isHost, confirming, onUnconfirm, notifyState, onNotify, calStatus, calWrite, onAddToMyCalendar, onReconnectCalendar }: {
+function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isHost, confirming, isBooking, bookedBy, onUnconfirm, notifyState, onNotify, calStatus, calWrite, onAddToMyCalendar, onReconnectCalendar }: {
   poll: Poll; slot: Slot; pollUrl: string; viewerTz: string; activeTz: string; dayMode: boolean
-  isHost: boolean; confirming: boolean; onUnconfirm: () => void
+  isHost: boolean; confirming: boolean
+  /** A 1:1 booking rather than a host-confirmed poll slot. Changes what
+   *  "Change" means: there is a real person holding this time, so it warns
+   *  first and the cancellation is sent for them. */
+  isBooking: boolean
+  /** Who booked it, on a booking page. */
+  bookedBy: string | null
+  onUnconfirm: () => void
   notifyState: NotifyState; onNotify: () => void
   calStatus: CalendarStatus | null; calWrite: CalWriteState
   onAddToMyCalendar: () => void; onReconnectCalendar: (provider: CalendarProvider) => void
@@ -629,7 +891,9 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
     <div className="mt-6 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">✓ Confirmed time</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            {isBooking ? (bookedBy ? `✓ Booked by ${bookedBy}` : '✓ Booked') : '✓ Confirmed time'}
+          </div>
           <div className="mt-0.5 text-lg font-bold text-slate-900 break-words">{when}</div>
           {tzNote && <div className="text-xs text-slate-500">{viewerTimeNote(formatRange(inst, slot.durationMins, viewerTz), inst, activeTz, viewerTz)}</div>}
           {poll.location && <PollLocation location={poll.location} className="mt-1.5" />}
@@ -638,11 +902,19 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
           {isHost && (
             <button
               type="button"
-              onClick={onUnconfirm}
+              onClick={() => {
+                // Un-confirming a poll disappoints nobody — the slot was never
+                // promised. Cancelling a BOOKING takes a meeting out of
+                // somebody's diary, so it asks first and says who it affects.
+                if (isBooking && !window.confirm(
+                  `Cancel this booking?\n\n${bookedBy ? bookedBy : 'Your guest'} will be emailed to say it's off, and the page opens for them to pick another time.`,
+                )) return
+                onUnconfirm()
+              }}
               disabled={confirming}
               className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200 hover:bg-white hover:text-slate-700 transition disabled:opacity-60"
             >
-              Change
+              {confirming ? 'Working…' : 'Change'}
             </button>
           )}
           <AddToCalendar poll={poll} slot={slot} pollUrl={pollUrl} />
@@ -656,7 +928,11 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
             disabled={sending}
             className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-white hover:ring-emerald-400 transition disabled:opacity-60"
           >
-            ✉️ {sending ? 'Sending…' : alreadyNotified || notifyState.status === 'sent' ? 'Email respondents again' : 'Email respondents this time'}
+            ✉️ {sending
+              ? 'Sending…'
+              : isBooking
+                ? 'Resend the confirmation'
+                : alreadyNotified || notifyState.status === 'sent' ? 'Email respondents again' : 'Email respondents this time'}
           </button>
           <span className="text-xs text-slate-600">
             {notifyState.status === 'sent' && (
@@ -666,15 +942,23 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
             )}
             {notifyState.status === 'error' && <span className="text-red-600">{notifyState.message}</span>}
             {notifyState.status === 'idle' && (
-              alreadyNotified
-                ? 'Respondents have been emailed ✓'
-                : 'Sends the confirmed date and a calendar invite to everyone who left an email.'
+              isBooking
+                ? `${bookedBy ?? 'Your guest'} was emailed the invite when they booked ✓`
+                : alreadyNotified
+                  ? 'Respondents have been emailed ✓'
+                  : 'Sends the confirmed date and a calendar invite to everyone who left an email.'
             )}
           </span>
         </div>
       )}
 
-      {isHost && connected.length > 0 && (
+      {/* The host's own-calendar control, hidden on a booking page: booking it
+          already put the event in their diary (or emailed them a .ics), so the
+          button could only ever re-send an event that is already there — and a
+          plain re-add carries no attendees, which would quietly patch the
+          guest's invitation without telling them. The "Add to calendar" menu
+          above is still there for everyone. */}
+      {isHost && !isBooking && connected.length > 0 && (
         <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-emerald-200/70 pt-2.5">
           {writable.length > 0 ? (
             <button
