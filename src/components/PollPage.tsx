@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useUser, useUniversal } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { currentUser, getPollResilient, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, submitResponse } from '../lib/api'
+import { currentUser, getPollResilient, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, submitResponse } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import {
@@ -71,10 +71,15 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // their client is the one RLS will accept the "confirm slot" update on.
   const { user: suiteUser } = useUser()
   const { supabase: suiteClient } = useUniversal()
-  const [otpUserId, setOtpUserId] = useState<string | null>(null)
+  const [otpUser, setOtpUser] = useState<{ id: string; email: string | null } | null>(null)
   useEffect(() => {
-    currentUser().then((u) => setOtpUserId(u?.id ?? null)).catch(() => setOtpUserId(null))
+    currentUser().then(setOtpUser).catch(() => setOtpUser(null))
   }, [])
+
+  async function handleSignOut() {
+    await signOut()
+    setOtpUser(null)
+  }
 
   useEffect(() => {
     let live = true
@@ -115,9 +120,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       .then((s) => { if (live) setCalStatus(s) })
       .catch(() => { if (live) setCalStatus(null) })
     return () => { live = false }
-    // suiteUser/otpUserId decide which client (if any) hostClientFor returns.
+    // suiteUser/otpUser decide which client (if any) hostClientFor returns.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poll?.id, suiteUser?.id, otpUserId])
+  }, [poll?.id, suiteUser?.id, otpUser?.id])
 
   // Pre-fill the form if this browser has already responded under a known name.
   useEffect(() => {
@@ -177,7 +182,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // poll's host. null for everyone else (so non-hosts never see host controls).
   function hostClientFor(p: Poll) {
     if (suiteUser?.id === p.host_user_id) return suiteClient
-    if (otpUserId && otpUserId === p.host_user_id) return supabase
+    if (otpUser && otpUser.id === p.host_user_id) return supabase
     return null
   }
 
@@ -309,6 +314,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const pollUrl = window.location.origin + window.location.pathname
 
   const isHost = !!hostClientFor(poll)
+  // Only the guest-OTP host gets a "signed in" indicator here — a suite user's
+  // identity is already visible via the shared navbar's profile/avatar.
+  const isOtpHost = !!otpUser && otpUser.id === poll.host_user_id
   const finalSlot = poll.final_slot_id ? slots.find((s) => s.id === poll.final_slot_id) ?? null : null
 
   return (
@@ -355,6 +363,15 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         <section className="mt-5 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
           <CopyAsText poll={poll} url={pollUrl} displayTz={activeTz} />
         </section>
+      )}
+
+      {isOtpHost && otpUser?.email && (
+        <p className="mt-3 text-center text-xs text-slate-400">
+          Signed in as <span className="font-medium text-slate-500">{otpUser.email}</span> —{' '}
+          <button type="button" onClick={handleSignOut} className="underline underline-offset-2 hover:text-slate-600">
+            Sign out
+          </button>
+        </p>
       )}
 
       {expired && (

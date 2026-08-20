@@ -3,7 +3,7 @@ import { useAppFreeToken, useFileDrop, useOrg, useOrgBranding, useSubscription, 
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
-import { createPoll, createPollGated, currentUser, sendHostCode, setNotifyOnResponse as apiSetNotify, setPollLocation as apiSetLocation, shortId, uploadPollLogo, verifyHostCode } from '../lib/api'
+import { createPoll, createPollGated, currentUser, sendHostCode, setNotifyOnResponse as apiSetNotify, setPollLocation as apiSetLocation, shortId, signOut, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { addLocalDays, listTimezones, localTimezone, tzAbbrev, zonedDayAndMinute } from '../lib/time'
 import {
@@ -892,12 +892,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[var(--accent)] focus:ring-[var(--accent)]"
                   />
                   <span className="text-sm text-slate-700">
-                    Email me when someone responds
+                    Want to be emailed when your guests respond?
                     {(() => {
                       const to = suiteLoggedIn ? (suiteUser?.email ?? '') : email.trim()
-                      return to
-                        ? <span className="block text-xs text-slate-500">We'll email <span className="font-medium">{to}</span> each time a new person responds.</span>
-                        : <span className="block text-xs text-slate-500">We'll email you (at the address you verify below) each time a new person responds.</span>
+                      if (suiteLoggedIn) {
+                        return <span className="block text-xs text-slate-500">We'll email <span className="font-medium">{to}</span> each time a new person responds.</span>
+                      }
+                      if (to && verified) {
+                        return <span className="block text-xs text-slate-500">We'll email <span className="font-medium">{to}</span> (confirmed) each time a new person responds.</span>
+                      }
+                      return <span className="block text-xs text-slate-500">You'll confirm your email below to create your poll — check this and we'll also alert you there each time someone responds.</span>
                     })()}
                   </span>
                 </label>
@@ -982,7 +986,14 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             </p>
           ) : verified ? (
             <p className="text-sm text-slate-600">
-              Creating as <span className="font-medium text-slate-900">{email}</span> (verified).
+              Signed in as <span className="font-medium text-slate-900">{email}</span> (verified).{' '}
+              <button
+                type="button"
+                onClick={async () => { await signOut(); setVerified(false); setEmail('') }}
+                className="text-slate-500 hover:text-slate-700 underline underline-offset-2"
+              >
+                Not you? Sign out
+              </button>
             </p>
           ) : (
             <label className="block">
@@ -996,6 +1007,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 disabled={phase === 'code'}
                 className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none disabled:bg-slate-50"
               />
+              <p className="mt-1.5 text-xs text-slate-500">
+                We'll send a quick code to confirm it's you — that's how you'll manage this poll later
+                {notifyOnResponse
+                  ? <> and where we'll send your response alerts.</>
+                  : <>. Want an email each time a guest responds? Turn that on under More options.</>}
+              </p>
             </label>
           )}
 
@@ -1013,6 +1030,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 px-3 tracking-widest text-slate-900 focus:border-[var(--accent)] outline-none"
                 />
               </label>
+              <p className="mt-2 text-xs text-slate-600">
+                {notifyOnResponse
+                  ? "Confirming creates your poll and turns on response alerts to this address."
+                  : 'Confirming creates your poll and lets you manage it later from this address.'}
+              </p>
               <button
                 type="button"
                 onClick={() => { setPhase('edit'); setCode('') }}
