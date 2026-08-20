@@ -135,7 +135,7 @@ function poll(overrides = {}) {
 /** Stub the Supabase REST/functions surface. `bookings` collects the bodies the
  *  page actually POSTs, which is the assertion that matters most: a picker that
  *  looks right and books the wrong slot is the bug worth catching. */
-async function stubBackend(page, { row, bookResponse = { ok: true, viaCalendar: true, invitee: true }, bookings }) {
+async function stubBackend(page, { row, bookResponse = { ok: true, viaCalendar: true, invitee: true }, bookings, tableReads = [] }) {
   // The responses table is STATEFUL: a booking writes a response row, and the
   // page reads it back to say who booked. A stub that always returned [] would
   // let a page that never refreshes pass.
@@ -148,8 +148,18 @@ async function stubBackend(page, { row, bookResponse = { ok: true, viaCalendar: 
   await page.route('**/rest/v1/**', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: '[]',
   }))
-  await page.route('**/rest/v1/poll_responses*', (route) => route.fulfill({
+  // The reads moved off PostgREST tables onto SECURITY DEFINER RPCs in
+  // migration 0121 — `from('polls')` became `rpc('get_poll')` — because an RLS
+  // policy cannot require the caller to name an id and `using (true)` therefore
+  // meant every poll was world-readable. These stubs follow the app to the new
+  // URLs. Note the shapes differ from the table reads they replace:
+  // `get_poll` returns ONE OBJECT (or null), not a one-element array, and
+  // `get_poll_responses` returns the array directly.
+  await page.route('**/rest/v1/rpc/get_poll_responses', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify(responses),
+  }))
+  await page.route('**/rest/v1/rpc/get_poll', (route) => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(row),
   }))
   await page.route('**/functions/v1/**', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: '{"ok":true}',
@@ -157,7 +167,13 @@ async function stubBackend(page, { row, bookResponse = { ok: true, viaCalendar: 
   await page.route('**/auth/v1/**', (route) => route.fulfill({
     status: 401, contentType: 'application/json', body: '{"message":"no session"}',
   }))
+  // Kept, but inverted in purpose: nothing should reach the poll TABLES any
+  // more, so a hit here is recorded and asserted to be zero at the end. Without
+  // that, a stray `from('polls')` reintroduced later would be served happily by
+  // the '**/rest/v1/**' catch-all above and nothing would notice — right up
+  // until 0122's revoke made it return an empty list in production.
   await page.route('**/rest/v1/polls*', async (route) => {
+    tableReads.push(route.request().url())
     const wantsObject = (route.request().headers()['accept'] ?? '').includes('pgrst.object')
     await route.fulfill({
       status: 200,
@@ -191,11 +207,20 @@ try {
   {
     const page = await browser.newPage()
     const bookings = []
-    await stubBackend(page, { row: poll(), bookings })
+    // Collected across this whole scenario: see the stub for `**/rest/v1/polls*`.
+    const tableReads = []
+    await stubBackend(page, { row: poll(), bookings, tableReads })
     await page.goto(`${base}/p/book123`, { waitUntil: 'networkidle' })
 
     const body = await page.locator('body').innerText()
     check('shows the title', body.includes('Coffee and a catch-up'))
+    // The page rendered from `get_poll`, which is the whole point of 0121: if
+    // the app had still been reading the table this would be non-empty, and
+    // after 0122's revoke that read returns [] in production — i.e. every poll
+    // page would say "not found". Asserted here rather than trusted, because it
+    // is exactly the kind of thing a catch-all stub hides.
+    check('nothing reads the polls table any more', tableReads.length === 0,
+      tableReads.join(', '))
     check('tells the guest their pick settles it', body.includes("it's booked straight away"))
     check('offers a picker, not an availability grid', body.includes('Pick a time'))
     check('drops the yes/maybe/no grid', !body.includes('Are you free at these times?'), body.slice(0, 200))

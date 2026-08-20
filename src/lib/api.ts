@@ -332,10 +332,22 @@ export async function cancelBooking(
   return { notified: !!data.notified, notifyError: data.notifyError ?? null }
 }
 
+/** One poll, by id.
+ *
+ *  ⚠️ Goes through the `get_poll` RPC rather than `from('polls')`, and that is a
+ *  privacy boundary rather than a style choice. The table's read policy used to
+ *  be `using (true)`, and RLS filters rows without ever seeing the caller's
+ *  WHERE clause — so "anyone with the link can read a poll" was in fact "anyone
+ *  can read every poll", host addresses included, no link required. Measured
+ *  against prod on 2026-08-20: an unfiltered read returned all 14. Passing the
+ *  id as an ARGUMENT is what makes it required (migrations 0121/0122).
+ *
+ *  The returned object carries every column except `host_email`, which nothing
+ *  on the client has ever read. */
 export async function getPoll(id: string): Promise<Poll | null> {
-  const { data, error } = await supabase.from('polls').select('*').eq('id', id).maybeSingle()
+  const { data, error } = await supabase.rpc('get_poll', { p_id: id })
   if (error) throw error
-  return (data as Poll) ?? null
+  return (data as Poll | null) ?? null
 }
 
 /** Fetch a poll, retrying a few times on a *thrown* error before giving up.
@@ -377,26 +389,38 @@ export async function getPollResilient(
   throw lastErr
 }
 
+/** Everyone's answers to one poll. See `getPoll` for why this is an RPC.
+ *
+ *  Ordering stays server-side (`order by created_at` inside the function), so
+ *  the grid's row order is unchanged from the PostgREST version. */
 export async function getResponses(pollId: string): Promise<PollResponse[]> {
-  const { data, error } = await supabase
-    .from('poll_responses')
-    .select('*')
-    .eq('poll_id', pollId)
-    .order('created_at', { ascending: true })
+  const { data, error } = await supabase.rpc('get_poll_responses', { p_poll_id: pollId })
   if (error) throw error
-  return (data as PollResponse[]) ?? []
+  return (data as PollResponse[] | null) ?? []
 }
 
+/** Add or update one person's availability.
+ *
+ *  ⚠️ An RPC for a sharper reason than the two reads above. PostgREST's upsert
+ *  is `INSERT ... ON CONFLICT DO UPDATE`, and that path requires **table-level
+ *  SELECT** on the target — so the moment 0122 takes SELECT away from client
+ *  roles, a respondent CHANGING an answer they had already given would fail
+ *  with `42501 permission denied`, before RLS was even consulted. A first-time
+ *  answer (a plain insert) would have carried on working, which is exactly the
+ *  kind of half-broken that gets shipped. This is the same trap 0119 hit on
+ *  `poll_response_emails`; it is written up at length there.
+ *
+ *  The function re-enforces the live-poll check that 0025's insert policy used
+ *  to make, because RLS does not run inside a SECURITY DEFINER function. */
 export async function submitResponse(
   pollId: string,
   name: string,
   availability: Record<string, Availability>,
 ): Promise<void> {
-  const { error } = await supabase
-    .from('poll_responses')
-    .upsert(
-      { poll_id: pollId, name: name.trim(), availability, updated_at: new Date().toISOString() },
-      { onConflict: 'poll_id,name' },
-    )
+  const { error } = await supabase.rpc('submit_response', {
+    p_poll_id: pollId,
+    p_name: name.trim(),
+    p_availability: availability,
+  })
   if (error) throw error
 }

@@ -143,7 +143,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       out.sdk_subscriptions = await probe(() =>
         suiteClient.from('subscriptions').select('org_id').limit(1))
       // App's OWN client (anon, same project) — does ANY request from this page work?
-      out.app_polls = await probe(() => supabase.from('polls').select('id').limit(1))
+      // ⚠️ An RPC, not `from('polls')`. This probe answers "does ANY request
+      // from this page reach the backend?", and after 0122 a table read returns
+      // an empty list rather than an error — which would have made a working
+      // backend and a locked-out one look identical here. `get_poll` with an id
+      // that cannot exist round-trips properly and returns null.
+      out.app_polls = await probe(() => supabase.rpc('get_poll', { p_id: '__diagnostic_probe__' }))
 
       if (live) setDiagRaw(out)
     })()

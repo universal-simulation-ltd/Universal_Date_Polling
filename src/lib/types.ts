@@ -41,7 +41,11 @@ export interface Slot {
 export interface Poll {
   id: string
   title: string
-  host_email: string
+  /** ⚠️ Present only on a poll you just CREATED (the insert returns the row
+   *  you wrote). `getPoll` omits it deliberately: it is the host's email
+   *  address, no client code has ever displayed it, and it used to be
+   *  readable by anyone who asked for the table. See migrations 0121/0122. */
+  host_email?: string
   host_user_id: string
   timezone: string
   mode: PollMode
