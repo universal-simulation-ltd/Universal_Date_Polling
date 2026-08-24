@@ -438,6 +438,15 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           onAddToMyCalendar={addToMyCalendar} onReconnectCalendar={reconnectForWrite}
         />
       )}
+      {/* The host's only notification channel is email, so a send that failed is
+          invisible to them unless the page says so. Host-only: the guest was
+          already told at booking time by the response's own flags. */}
+      {isHost && finalSlot && poll.booking_notify_failed && (
+        <BookingNotifyBanner
+          which={poll.booking_notify_failed}
+          guest={isBooking ? (responses.find((r) => r.availability[finalSlot.id] === 'yes')?.name ?? null) : null}
+        />
+      )}
       {isBooking && booking.status === 'booked' && (
         <div className="mt-3 rounded-xl bg-white ring-1 ring-slate-200 px-4 py-3 text-sm text-slate-700">
           <span className="font-semibold text-slate-900">You're booked in.</span>{' '}
@@ -741,6 +750,36 @@ function OfferedTimes({ poll, slots, dayMode, activeTz, viewerTz, tzNote }: {
         ))}
       </div>
     </section>
+  )
+}
+
+/**
+ * "A booking was made but we couldn't email you."
+ *
+ * Amber rather than rose, and the first sentence always says the booking is
+ * real: the failure here is a DELIVERY failure, and a red banner over a held
+ * slot reads as "your booking broke" — which would send the host chasing a
+ * problem that does not exist while missing the one that does.
+ */
+function BookingNotifyBanner({ which, guest }: { which: 'host' | 'invitee' | 'both'; guest: string | null }) {
+  const who = guest ?? 'your guest'
+  return (
+    <div
+      role="status"
+      className="mt-3 rounded-lg bg-amber-50 text-amber-900 ring-1 ring-amber-200 px-4 py-3 text-sm"
+    >
+      <span className="font-semibold">This time is booked — but an email didn't get through.</span>{' '}
+      {which === 'both' ? (
+        <>Neither you nor <span className="font-medium">{who}</span> was emailed about it. The time is held either
+        way, so it's worth contacting them directly to confirm it.</>
+      ) : which === 'invitee' ? (
+        <>We couldn't email <span className="font-medium">{who}</span>, so they may not know it's confirmed. The
+        time is held — contacting them directly is the reliable fix.</>
+      ) : (
+        <><span className="font-medium">{who}</span> was emailed and has the details, but our copy to you bounced.
+        Check the address on your account if you'd expected it.</>
+      )}
+    </div>
   )
 }
 

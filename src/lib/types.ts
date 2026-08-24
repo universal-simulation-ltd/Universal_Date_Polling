@@ -71,6 +71,15 @@ export interface Poll {
    *  or null if the host has never sent the confirmation email. Stamped
    *  server-side after a successful send. */
   final_notified_slot_id: string | null
+  /** Which side of a booking's confirmation emails failed to send — or null
+   *  when nothing failed, which is almost every poll. Written server-side by
+   *  book-poll-slot; see migration 0126.
+   *
+   *  Exists because email is the HOST's only notification channel: a booking
+   *  whose emails both failed is otherwise completely invisible to them, and
+   *  the slot is held regardless. An in-app flag rather than a retry queue —
+   *  a permanent rejection retries forever and the host still never learns. */
+  booking_notify_failed: 'host' | 'invitee' | 'both' | null
   /** When true, the host is emailed each time a new person responds. */
   notify_on_response: boolean
   created_at: string

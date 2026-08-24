@@ -16,6 +16,7 @@ const fakePoll = (id: string): Poll => ({
   booking_mode: false,
   final_slot_id: null,
   final_notified_slot_id: null,
+  booking_notify_failed: null,
   notify_on_response: false,
   created_at: '2026-07-24T10:00:00.000Z',
   expires_at: null,

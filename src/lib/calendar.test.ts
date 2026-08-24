@@ -20,6 +20,7 @@ function timedPoll(overrides: Partial<Poll> = {}): Poll {
     booking_mode: false,
     final_slot_id: null,
     final_notified_slot_id: null,
+    booking_notify_failed: null,
     notify_on_response: false,
     created_at: NOW.toISOString(),
     expires_at: null,
