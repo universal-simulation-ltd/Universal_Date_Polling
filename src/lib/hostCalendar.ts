@@ -67,14 +67,24 @@ async function invokeCalendarOauth(client: SupabaseClient, body: Record<string, 
 }
 
 /** Tolerates a server that predates `writable` by defaulting it to false — the
- *  safe direction, since the alternative is offering a button that 403s. */
-function providerStatusOf(raw: unknown): ProviderStatus {
+ *  safe direction, since the alternative is offering a button that 403s.
+ *
+ *  Exported for the tests: the two optional flags want OPPOSITE defaults, and
+ *  a wrong one is invisible until a host is looking at it. */
+export function providerStatusOf(raw: unknown): ProviderStatus {
   const r = (raw ?? {}) as Partial<ProviderStatus>
   return {
     connected: !!r.connected,
     email: r.email ?? null,
     writable: !!r.writable,
-    detailed: !!r.detailed,
+    // ⚠️ Missing means TRUE here, the opposite of `writable` above, and the
+    // asymmetry is the point. A server that predates this field is one where
+    // NOTHING reads titles, so defaulting to false would put "reconnect to
+    // show event names" under every row — including Microsoft's, which has
+    // always been able to read them — offering a fix for a problem the
+    // reconnect would not solve. `writable` defaults the other way because
+    // there the wrong guess offers a button that 403s.
+    detailed: r.detailed === undefined ? true : !!r.detailed,
   }
 }
 
@@ -153,11 +163,12 @@ export async function fetchFreeBusy(
       google: (data.providers?.google ?? 'none') as ProviderFetchStatus,
       microsoft: (data.providers?.microsoft ?? 'none') as ProviderFetchStatus,
     },
-    // Defaults to false against a server that predates the field — the safe
-    // direction, since it only ever suppresses a reconnect prompt.
+    // Missing means true, for the same reason as in `providerStatusOf`: a
+    // server that predates the field reads no titles at all, so claiming the
+    // grant is the reason would be a lie with a useless remedy attached.
     detailed: {
-      google: !!data.detailed?.google,
-      microsoft: !!data.detailed?.microsoft,
+      google: data.detailed?.google === undefined ? true : !!data.detailed.google,
+      microsoft: data.detailed?.microsoft === undefined ? true : !!data.detailed.microsoft,
     },
   }
 }

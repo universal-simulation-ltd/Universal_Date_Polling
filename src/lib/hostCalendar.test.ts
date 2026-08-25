@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { busySegmentsByDay, mergeSegments, type BusyInterval } from './hostCalendar'
+import { busySegmentsByDay, mergeSegments, providerStatusOf, type BusyInterval } from './hostCalendar'
 
 const iv = (start: string, end: string, title?: string): BusyInterval =>
   title ? { start, end, title } : { start, end }
@@ -168,5 +168,40 @@ describe('event titles', () => {
     const copy = structuredClone(input)
     mergeSegments(input)
     expect(input).toEqual(copy)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Reading a provider status off the wire.
+//
+// The interesting case is a server that predates a field, because the two
+// optional flags want OPPOSITE defaults and getting one of them backwards is
+// invisible until it is in front of a host.
+// ---------------------------------------------------------------------------
+
+describe('providerStatusOf', () => {
+  it('reads a full status verbatim', () => {
+    expect(providerStatusOf({ connected: true, email: 'a@b.com', writable: true, detailed: true }))
+      .toEqual({ connected: true, email: 'a@b.com', writable: true, detailed: true })
+  })
+
+  // A grant that cannot write must not be offered a button that 403s.
+  it('an absent `writable` is false — the safe direction for a write', () => {
+    expect(providerStatusOf({ connected: true, email: null }).writable).toBe(false)
+  })
+
+  // ⚠️ The opposite default, deliberately. A server with no `detailed` field
+  // reads no titles at all, so "reconnect to show event names" would appear on
+  // every row — Microsoft's included — proposing a fix that changes nothing.
+  it('an absent `detailed` is TRUE — a missing field is not an anonymous grant', () => {
+    expect(providerStatusOf({ connected: true, email: null }).detailed).toBe(true)
+  })
+
+  it('an explicit false is still false', () => {
+    expect(providerStatusOf({ connected: true, email: null, detailed: false }).detailed).toBe(false)
+  })
+
+  it('an empty object is a disconnected provider', () => {
+    expect(providerStatusOf({})).toEqual({ connected: false, email: null, writable: false, detailed: true })
   })
 })
