@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { busySegmentsByDay, mergeSegments, type BusyInterval } from './hostCalendar'
 
-const iv = (start: string, end: string): BusyInterval => ({ start, end })
+const iv = (start: string, end: string, title?: string): BusyInterval =>
+  title ? { start, end, title } : { start, end }
 
 describe('mergeSegments', () => {
   it('merges overlapping and adjacent segments', () => {
@@ -89,5 +90,83 @@ describe('busySegmentsByDay', () => {
       iv('not-a-date', '2026-08-11T10:00:00Z'),
     ], 'UTC')
     expect(m.size).toBe(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Event titles on the shaded blocks (James, 2026-08-13: on both providers).
+//
+// The titles ride along the same segment math as the shading, and the failure
+// mode is silent in both directions: a title that gets dropped by a merge, and
+// a title that leaks onto a block it does not belong to. Neither shows up as an
+// error — the grid just quietly says something untrue about the host's diary.
+// ---------------------------------------------------------------------------
+
+describe('event titles', () => {
+  it('carries a title through to the day segment', () => {
+    const out = busySegmentsByDay([iv('2026-06-10T09:00:00Z', '2026-06-10T10:00:00Z', 'Standup')], 'UTC')
+    expect(out.get('2026-06-10')).toEqual([{ fromMin: 540, toMin: 600, titles: ['Standup'] }])
+  })
+
+  it('leaves an anonymous interval without a titles list at all', () => {
+    const out = busySegmentsByDay([iv('2026-06-10T09:00:00Z', '2026-06-10T10:00:00Z')], 'UTC')
+    expect(out.get('2026-06-10')).toEqual([{ fromMin: 540, toMin: 600 }])
+  })
+
+  // The regression worth pinning: merging two overlapping meetings must not
+  // hide one of them behind the other's name.
+  it('keeps BOTH names when two meetings overlap', () => {
+    const out = busySegmentsByDay([
+      iv('2026-06-10T09:00:00Z', '2026-06-10T10:00:00Z', 'Standup'),
+      iv('2026-06-10T09:30:00Z', '2026-06-10T11:00:00Z', '1:1 with Dana'),
+    ], 'UTC')
+    expect(out.get('2026-06-10')).toEqual([
+      { fromMin: 540, toMin: 660, titles: ['Standup', '1:1 with Dana'] },
+    ])
+  })
+
+  // One meeting reaching us from both a work and a personal calendar is the
+  // ordinary case, not an edge case.
+  it('does not repeat a name that arrived twice', () => {
+    const out = busySegmentsByDay([
+      iv('2026-06-10T09:00:00Z', '2026-06-10T10:00:00Z', 'Standup'),
+      iv('2026-06-10T09:00:00Z', '2026-06-10T10:00:00Z', 'Standup'),
+    ], 'UTC')
+    expect(out.get('2026-06-10')).toEqual([{ fromMin: 540, toMin: 600, titles: ['Standup'] }])
+  })
+
+  it('an anonymous block merged with a named one takes the name', () => {
+    const out = busySegmentsByDay([
+      iv('2026-06-10T09:00:00Z', '2026-06-10T10:00:00Z'),
+      iv('2026-06-10T09:30:00Z', '2026-06-10T11:00:00Z', 'Standup'),
+    ], 'UTC')
+    expect(out.get('2026-06-10')).toEqual([{ fromMin: 540, toMin: 660, titles: ['Standup'] }])
+  })
+
+  it('names do not leak between separate blocks on the same day', () => {
+    const out = busySegmentsByDay([
+      iv('2026-06-10T09:00:00Z', '2026-06-10T10:00:00Z', 'Standup'),
+      iv('2026-06-10T14:00:00Z', '2026-06-10T15:00:00Z', 'Retro'),
+    ], 'UTC')
+    expect(out.get('2026-06-10')).toEqual([
+      { fromMin: 540, toMin: 600, titles: ['Standup'] },
+      { fromMin: 840, toMin: 900, titles: ['Retro'] },
+    ])
+  })
+
+  // An overnight event is named on BOTH days. Naming only the day it starts
+  // leaves the morning half of a red-eye as an unexplained block, which is the
+  // thing titles exist to stop.
+  it('names an overnight event on every day it covers', () => {
+    const out = busySegmentsByDay([iv('2026-06-10T22:00:00Z', '2026-06-11T06:00:00Z', 'Red-eye to JFK')], 'UTC')
+    expect(out.get('2026-06-10')).toEqual([{ fromMin: 1320, toMin: 1440, titles: ['Red-eye to JFK'] }])
+    expect(out.get('2026-06-11')).toEqual([{ fromMin: 0, toMin: 360, titles: ['Red-eye to JFK'] }])
+  })
+
+  it('mergeSegments does not mutate its input', () => {
+    const input = [{ fromMin: 60, toMin: 120, titles: ['A'] }, { fromMin: 90, toMin: 180, titles: ['B'] }]
+    const copy = structuredClone(input)
+    mergeSegments(input)
+    expect(input).toEqual(copy)
   })
 })

@@ -15,6 +15,11 @@ export interface BusyInterval {
   /** ISO UTC instants. */
   start: string
   end: string
+  /** The event's title, where the connected grant can read one. Absent is a
+   *  real state rather than a missing value: a Google connection made before
+   *  the detail scope existed (2026-08-25) genuinely cannot see it, and the UI
+   *  shows an anonymous block plus a reconnect prompt rather than an error. */
+  title?: string
 }
 
 export interface ProviderStatus {
@@ -26,6 +31,12 @@ export interface ProviderStatus {
    *  (2026-08-13) is connected and not writable, and the only fix is to
    *  reconnect — so the UI has to be able to tell those apart. */
   writable: boolean
+  /** Whether the stored grant can read event TITLES, as opposed to only "busy".
+   *  Reported separately from `connected` for the same reason `writable` is:
+   *  a Google connection made before the detail scope existed is connected and
+   *  anonymous, and only a reconnect changes that. Always true for Microsoft —
+   *  Calendars.Read has always permitted `subject`. */
+  detailed: boolean
 }
 
 export interface CalendarStatus {
@@ -59,7 +70,12 @@ async function invokeCalendarOauth(client: SupabaseClient, body: Record<string, 
  *  safe direction, since the alternative is offering a button that 403s. */
 function providerStatusOf(raw: unknown): ProviderStatus {
   const r = (raw ?? {}) as Partial<ProviderStatus>
-  return { connected: !!r.connected, email: r.email ?? null, writable: !!r.writable }
+  return {
+    connected: !!r.connected,
+    email: r.email ?? null,
+    writable: !!r.writable,
+    detailed: !!r.detailed,
+  }
 }
 
 export async function calendarStatus(client: SupabaseClient): Promise<CalendarStatus> {
@@ -115,6 +131,8 @@ export interface FreeBusyResult {
   /** Merged busy intervals, UTC ISO. */
   busy: BusyInterval[]
   providers: { google: ProviderFetchStatus; microsoft: ProviderFetchStatus }
+  /** Whether each provider's read could see titles this time round. */
+  detailed: { google: boolean; microsoft: boolean }
 }
 
 /** Busy intervals across every connected calendar for the given range, plus
@@ -134,6 +152,12 @@ export async function fetchFreeBusy(
     providers: {
       google: (data.providers?.google ?? 'none') as ProviderFetchStatus,
       microsoft: (data.providers?.microsoft ?? 'none') as ProviderFetchStatus,
+    },
+    // Defaults to false against a server that predates the field — the safe
+    // direction, since it only ever suppresses a reconnect prompt.
+    detailed: {
+      google: !!data.detailed?.google,
+      microsoft: !!data.detailed?.microsoft,
     },
   }
 }
@@ -204,10 +228,21 @@ export interface DaySegment {
   /** Wall-clock minutes since that day's midnight, in the poll's timezone. */
   fromMin: number
   toMin: number
+  /** Titles of every event that went into this block, in start order and
+   *  deduplicated. Empty for an anonymous block. A list rather than a string
+   *  because the grid renders them as separate lines and the `title` attribute
+   *  joins them differently. */
+  titles?: string[]
 }
 
 /** Merge overlapping/adjacent segments so double-booked (or twice-fetched)
- *  intervals paint as one clean block. */
+ *  intervals paint as one clean block.
+ *
+ *  ⚠️ The titles of everything that went into a block are KEPT, not replaced.
+ *  Dropping all but the first is the obvious implementation and it quietly
+ *  hides one of a host's two overlapping meetings behind the name of the
+ *  other — the same trap the server's `mergeIntervals` has. Deduplicated
+ *  because one meeting can arrive from two connected calendars. */
 export function mergeSegments(segs: DaySegment[]): DaySegment[] {
   const sorted = [...segs].sort((a, b) => a.fromMin - b.fromMin)
   const out: DaySegment[] = []
@@ -215,8 +250,9 @@ export function mergeSegments(segs: DaySegment[]): DaySegment[] {
     const last = out[out.length - 1]
     if (last && s.fromMin <= last.toMin) {
       if (s.toMin > last.toMin) last.toMin = s.toMin
+      if (s.titles?.length) last.titles = [...new Set([...(last.titles ?? []), ...s.titles])]
     } else {
-      out.push({ ...s })
+      out.push({ ...s, ...(s.titles?.length ? { titles: [...new Set(s.titles)] } : {}) })
     }
   }
   return out
@@ -241,15 +277,19 @@ export function busySegmentsByDay(busy: BusyInterval[], tz: string): Map<string,
     let t = new Date(iv.start)
     const end = new Date(iv.end)
     if (Number.isNaN(t.getTime()) || Number.isNaN(end.getTime())) continue
+    // An overnight event is named on EVERY day it covers. The alternative —
+    // naming only the day it starts — leaves the second half of a red-eye as an
+    // unexplained block, which is the thing titles exist to stop.
+    const titles = iv.title ? { titles: [iv.title] } : {}
     // Guard: an interval spanning more days than any fetch range is malformed.
     for (let guard = 0; t < end && guard < 100; guard++) {
       const p = zonedDayAndMinute(t, tz)
       const e = zonedDayAndMinute(end, tz)
       if (e.day === p.day) {
-        push(p.day, { fromMin: p.min, toMin: e.min })
+        push(p.day, { fromMin: p.min, toMin: e.min, ...titles })
         break
       }
-      push(p.day, { fromMin: p.min, toMin: 1440 })
+      push(p.day, { fromMin: p.min, toMin: 1440, ...titles })
       t = zonedWallClockToInstant(`${addCalendarDays(p.day, 1)}T00:00`, tz)
     }
   }

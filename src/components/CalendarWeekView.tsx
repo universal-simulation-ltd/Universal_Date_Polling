@@ -365,16 +365,31 @@ export default function CalendarWeekView({
                   const lo = Math.max(seg.fromMin, DAY_MIN)
                   const hi = Math.min(seg.toMin, END_MIN)
                   if (hi <= lo) return null
+                  const height = ((hi - lo) / 60) * HOUR_PX
+                  const names = seg.titles?.length ? seg.titles.join(', ') : ''
                   return (
                     <div
                       key={`busy${i}`}
-                      className="pointer-events-none absolute inset-x-0"
+                      className="pointer-events-none absolute inset-x-0 overflow-hidden"
                       style={{
                         top: ((lo - DAY_MIN) / 60) * HOUR_PX,
-                        height: ((hi - lo) / 60) * HOUR_PX,
+                        height,
                         backgroundImage: 'repeating-linear-gradient(135deg, rgba(100,116,139,0.28) 0 4px, rgba(100,116,139,0.10) 4px 8px)',
                       }}
-                    />
+                      // The full list on hover regardless of what fits: a 30
+                      // minute block is ~20px and will show at most one line.
+                      title={names || undefined}
+                    >
+                      {/* ⚠️ Rendered only when the block is tall enough to hold
+                          a line. Below that the text is clipped to a sliver of
+                          letter-tops, which reads as a rendering fault rather
+                          than as a label — the hover title still carries it. */}
+                      {names && height >= 16 && (
+                        <span className="block truncate px-1 pt-px text-[10px] font-medium leading-[14px] text-slate-600">
+                          {names}
+                        </span>
+                      )}
+                    </div>
                   )
                 })}
 

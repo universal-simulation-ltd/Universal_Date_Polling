@@ -968,7 +968,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 <div className="sm:col-span-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Your calendar</span>
                   <p className="mt-1 text-xs text-slate-500">
-                    Connect a calendar and the <span className="font-medium">Calendar</span> view shades the times you're already busy — availability only, we never see event names or details.
+                    Connect a calendar and the <span className="font-medium">Calendar</span> view shades the times you're already busy, labelled with each event's name so you can tell them apart. We read when you're busy and what it's called — never who else is invited, where it is, or anything in the description. Nothing is shown to the people you send the poll to.
                   </p>
                   <div className="mt-2 flex flex-col gap-2">
                     {calStatus.configured.google && (
@@ -976,6 +976,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                         label="Google Calendar"
                         connected={calStatus.google.connected}
                         email={calStatus.google.email}
+                        detailed={calStatus.google.detailed}
                         onConnect={() => connectCalendar('google')}
                         onDisconnect={() => disconnectCal('google')}
                       />
@@ -985,6 +986,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                         label="Outlook / Microsoft 365"
                         connected={calStatus.microsoft.connected}
                         email={calStatus.microsoft.email}
+                        detailed={calStatus.microsoft.detailed}
                         onConnect={() => connectCalendar('microsoft')}
                         onDisconnect={() => disconnectCal('microsoft')}
                       />
@@ -1295,11 +1297,15 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 }
 
 function CalendarProviderRow({
-  label, connected, email, onConnect, onDisconnect,
+  label, connected, email, detailed, onConnect, onDisconnect,
 }: {
   label: string
   connected: boolean
   email: string | null
+  /** False for a grant that can see busy times but not event names. Only
+   *  Google can be in that state, and only if it was connected before the
+   *  detail scope existed. */
+  detailed: boolean
   onConnect: () => void
   onDisconnect: () => void
 }) {
@@ -1315,16 +1321,35 @@ function CalendarProviderRow({
     )
   }
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-700">
-      <span className="font-medium">{label}</span>
-      <span className="text-slate-500">connected{email ? ` as ${email}` : ''}</span>
-      <button
-        type="button"
-        onClick={onDisconnect}
-        className="text-slate-500 underline underline-offset-2 hover:text-slate-700"
-      >
-        Disconnect
-      </button>
+    <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-700">
+        <span className="font-medium">{label}</span>
+        <span className="text-slate-500">connected{email ? ` as ${email}` : ''}</span>
+        <button
+          type="button"
+          onClick={onDisconnect}
+          className="text-slate-500 underline underline-offset-2 hover:text-slate-700"
+        >
+          Disconnect
+        </button>
+      </div>
+      {/* ⚠️ An OFFER, not a warning. This connection works — it shades the right
+          times — it just cannot read the names, and nothing the host does in
+          this app will change that except reconnecting. Mirrors the confirmed
+          banner's "Reconnect … to add it" rather than erroring, which is the
+          pattern for a grant that is narrower than the current one. */}
+      {!detailed && (
+        <p className="text-xs text-slate-500">
+          Busy times only — this connection predates event names.{' '}
+          <button
+            type="button"
+            onClick={onConnect}
+            className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-800"
+          >
+            Reconnect to show them
+          </button>
+        </p>
+      )}
     </div>
   )
 }
