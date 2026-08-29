@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { UniversalAppsNavBar, UpdateNotice } from '@unisim/sdk'
+import { AdvancedMenu, UniversalAppsNavBar, UpdateNotice } from '@unisim/sdk'
 import ProductLogo from './components/ProductLogo'
 import CreatePoll from './components/CreatePoll'
 import PollPage from './components/PollPage'
@@ -40,6 +40,19 @@ export default function App() {
       <UniversalAppsNavBar
         product="polling"
         productLogo={<ProductLogo />}
+        actions={
+          /* Advanced — the SDK's own category, so every app in the suite has
+             one in the same place, and whatever goes in it next is one change
+             rather than nineteen. "About this app" is always its last row. */
+          <AdvancedMenu
+            about={{
+              repo:    'https://github.com/universal-simulation-ltd/Universal_Date_Polling',
+              // Server-backed: the local-first claim is not true here.
+              privacy: false,
+              version: __APP_VERSION__,
+            }}
+          />
+        }
         productHomeHref={BASE}
         suiteSwitcherIconSrc={`${BASE}unisim-icon.png`}
         contentClassName={container}
