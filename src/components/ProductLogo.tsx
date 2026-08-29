@@ -28,14 +28,20 @@ export default function ProductLogo() {
     >
       <style>{CSS}</style>
       <svg viewBox="0 0 64 64" className="h-6 w-6" aria-hidden="true">
-        <rect x="0" y="0" width="64" height="64" rx="14" fill="#0f172a" />
-        <g fill="none" strokeWidth={4.8} strokeLinecap="round" stroke="#fe8c01">
+        <defs>
+          <linearGradient id="uam-nav-polling-tile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#fe8c01" />
+            <stop offset="1" stopColor="#e05504" />
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" rx="14" fill="url(#uam-nav-polling-tile)" />
+        <g fill="none" strokeWidth={4.8} strokeLinecap="round" stroke="#ffffff">
           <rect x={12} y={16} width={40} height={34} rx={6} />
           <path d="M12 26H52" />
           <path d="M22 11V21" />
           <path d="M42 11V21" />
         </g>
-        <path d="M23 37 L29.5 43.5 L42 31" fill="none" strokeWidth={5.2} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={27} stroke="#fe8c01" className="uam-polling-tick" />
+        <path d="M23 37 L29.5 43.5 L42 31" fill="none" strokeWidth={5.2} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={27} stroke="#ffffff" className="uam-polling-tick" />
       </svg>
     </span>
   )
