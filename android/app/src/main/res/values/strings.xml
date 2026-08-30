@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Universal Date Polling</string>
+    <string name="title_activity_main">Universal Date Polling</string>
+    <string name="package_name">uk.co.unisim.polling</string>
+    <string name="custom_url_scheme">uk.co.unisim.polling</string>
+</resources>
