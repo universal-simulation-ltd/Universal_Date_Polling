@@ -22,7 +22,15 @@ function resolveBuildSha(): string {
 const BUILD_SHA = resolveBuildSha()
 
 export default defineConfig(({ mode }) => {
-  const BASE_PATH = mode === 'production' ? '/polling/' : '/'
+  // `desktop` mode is what the Capacitor (iOS) build uses. It needs two things
+  // the hosted build must NOT have: a RELATIVE base, because Capacitor serves
+  // from a local `capacitor://localhost` origin where `/polling/` resolves to
+  // nothing and the app loads as a blank screen; and no service worker, because
+  // a precached shell inside a native container fights the native update path
+  // and caches URLs belonging to a different origin. See capacitor.config.ts
+  // and scripts/verify-mobile-bundle.mjs, which fails the build if either slips.
+  const isDesktop = mode === 'desktop'
+  const BASE_PATH = isDesktop ? './' : mode === 'production' ? '/polling/' : '/'
   return {
     base: BASE_PATH,
     // Honour an externally-assigned PORT (e.g. preview tooling) when provided.
@@ -50,7 +58,7 @@ export default defineConfig(({ mode }) => {
       },
       react(),
       tailwindcss(),
-      VitePWA({
+      ...(isDesktop ? [] : [VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'og-image.png'],
         manifest: {
@@ -91,7 +99,7 @@ export default defineConfig(({ mode }) => {
           cleanupOutdatedCaches: true,
         },
         devOptions: { enabled: false }
-      })
+      })])
     ]
   }
 })

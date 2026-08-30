@@ -36,7 +36,14 @@ export default function App() {
   const container = loc.view === 'poll' ? CONTAINER_POLL : CONTAINER_CREATE
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-100">
+    // ⚠️ pt-[env(safe-area-inset-top)] is for the native (Capacitor) build, not
+    // the web one. Capacitor runs the app in a FULL-SCREEN WKWebView, and
+    // index.html asks for `viewport-fit=cover`, so without this the navbar
+    // renders UNDERNEATH the status bar and Dynamic Island, which puts the
+    // product name on the clock and the menu out of reach. In a browser the
+    // inset is 0, so this is a no-op on web. Universal Converter, PDF, QR and
+    // Images all carry the same line.
+    <div className="flex flex-col min-h-screen bg-slate-100 pt-[env(safe-area-inset-top)]">
       <UniversalAppsNavBar
         product="polling"
         productLogo={<ProductLogo />}
@@ -69,7 +76,9 @@ export default function App() {
         {loc.view === 'poll' ? <PollPage id={loc.id} pollBase={BASE} /> : <CreatePoll pollBase={BASE} />}
       </main>
 
-      <footer className="border-t border-slate-200 bg-white">
+      {/* pb-[env(safe-area-inset-bottom)] keeps the last line of the page off
+          the home indicator in the native build; 0 everywhere else. */}
+      <footer className="border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
         <div className={`${container} py-4 flex flex-row items-center gap-3 sm:gap-4 text-xs text-slate-500`}>
           <span>
             With{' '}

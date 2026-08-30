@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { downscaleImage } from '@unisim/sdk'
 import { supabase } from './supabase'
+import { emailReturnUrl } from './appUrl'
 import type { Availability, NewPoll, Poll, PollResponse } from './types'
 
 // ---- Short, URL-safe poll ids (no ambiguous characters) --------------------
@@ -24,11 +25,13 @@ export async function sendHostCode(email: string): Promise<void> {
       // instead of here. The Supabase project is shared, so its site_url can't
       // be any one product's.
       //
-      // BASE_URL is Vite's configured base ('/polling/' in production, '/' in dev), and
-      // the trailing slash is stripped so this sends the exact bare form the
-      // redirect allowlist carries — a listed entry without a wildcard has to
-      // match exactly, and '.../polling/' is not '.../polling'.
-      emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`.replace(/\/$/, ''),
+      // ⚠️ Inside the iPhone app the running origin is
+      // `capacitor://localhost`, which no allowlist can accept — so Supabase
+      // would fall back to site_url and put the hub link in the email after
+      // all. `emailReturnUrl` substitutes the hosted site there. The app signs
+      // in with the TYPED CODE, so the link is not its route in; it just has to
+      // lead somewhere sensible for whoever taps it. See src/lib/appUrl.ts.
+      emailRedirectTo: emailReturnUrl(import.meta.env.BASE_URL),
     },
   })
   if (error) throw error

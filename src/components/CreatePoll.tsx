@@ -17,6 +17,7 @@ import SlotPicker from './SlotPicker'
 import ProductLogo from './ProductLogo'
 import type { SlotView } from './SlotPicker'
 import { CONTAINER_CREATE } from '../lib/layout'
+import { pollLink } from '../lib/appUrl'
 
 const VALIDITY = [
   { label: '7 days', days: 7 },
@@ -1363,7 +1364,10 @@ function CreatedPanel({ pollBase, id, theme, poll }: {
   poll: TextListPoll
 }) {
   const booking = !!poll.booking_mode
-  const url = `${window.location.origin}${pollBase}p/${id}`
+  // Not the running origin: inside the iPhone app that is
+  // `capacitor://localhost`, and this string is the app's whole output —
+  // the link the host copies and sends to everyone. See src/lib/appUrl.ts.
+  const url = pollLink(pollBase, id)
   const [copied, setCopied] = useState(false)
   async function copy() {
     try {

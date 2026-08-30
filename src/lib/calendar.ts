@@ -11,6 +11,7 @@
 
 import type { Poll, Slot } from './types'
 import { addCalendarDays, slotDayKey, slotEnd, slotInstant } from './time'
+import { saveBlob } from './saveFile'
 
 interface CalendarEventBase {
   title: string
@@ -97,18 +98,17 @@ export function buildIcs(poll: Poll, slot: Slot, pollUrl: string, now: Date = ne
   return lines.map(foldIcsLine).join('\r\n')
 }
 
-/** Trigger a browser download of the slot's .ics. DOM-only; not unit-tested. */
+/** Hand the slot's .ics to the user — a download in a browser, the share sheet
+ *  in the iPhone app. DOM-only; not unit-tested.
+ *
+ *  ⚠️ The anchor's `download` attribute is IGNORED in a Capacitor WebView: no
+ *  error, no console warning, nothing happens at all. Doing it directly here
+ *  would leave "Download .ics" dead on the phone while passing every test that
+ *  runs in a real browser. See src/lib/saveFile.ts. */
 export function downloadIcs(poll: Poll, slot: Slot, pollUrl: string): void {
   const ics = buildIcs(poll, slot, pollUrl)
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${slugify(poll.title)}.ics`
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  saveBlob(blob, `${slugify(poll.title)}.ics`)
 }
 
 // ── Web calendar deep-links ───────────────────────────────────────────────────

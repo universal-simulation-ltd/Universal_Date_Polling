@@ -59,7 +59,7 @@ data and host email verification use the shared suite **Supabase** project
 ## Develop
 
 ```bash
-cd Universal_Apps/Universal_Polling
+cd Universal_Apps/Universal_Date_Polling
 cp .env.example .env.local   # fill in the shared project's URL + anon key
 npm install
 npm run dev
@@ -68,6 +68,43 @@ npm run dev
 Build: `npm run build` (outputs `dist/`, served under `/polling/` in
 production). Deploy is a Git-connected Cloudflare Pages project behind the
 `opensource.unisim.co.uk` portal Worker, exactly like the other Universal Apps.
+
+### The iPhone app
+
+The same React app ships as a native iOS app through **Capacitor**
+(`uk.co.unisim.polling`). Sideloaded only — it is not on the App Store.
+
+```bash
+cd Universal_Apps/Universal_Date_Polling
+npm run cap:sync
+npm run cap:open:ios
+```
+
+⚠️ **Always go through `npm run cap:sync`, never a bare `npx cap sync`.** The
+native build is a *different Vite mode* (`--mode desktop`): base `./` instead of
+`/polling/`, and no service worker. Sync the ordinary web build instead and the
+app installs, launches, and shows a **blank screen** — every asset URL is a 404
+against the `capacitor://localhost` origin, while Xcode still says BUILD
+SUCCEEDED and the copied bundle is gitignored so nothing local disagrees.
+`cap:sync` builds the right mode and then runs
+`npm run check:mobile-bundle` (`scripts/verify-mobile-bundle.mjs`), which fails
+if the copied `index.html` holds a root-absolute asset URL or a service worker.
+
+Two things the shell changes that the web never sees, both in
+[`src/lib/appUrl.ts`](src/lib/appUrl.ts) and
+[`src/lib/saveFile.ts`](src/lib/saveFile.ts):
+
+- The running origin is `capacitor://localhost`, so **any URL built from
+  `window.location` is useless** — an unopenable poll link, or a sign-in email
+  Supabase redirects to the suite hub because no allowlist can hold that origin.
+  The hosted site stands in wherever the origin is not a real one.
+- An anchor's `download` attribute is **ignored** in a WKWebView: no error, no
+  console warning. The `.ics` goes to the iOS share sheet instead.
+
+The app icon and launch image are generated from the canonical mark — from
+`backoffice/universal-platform`, `node scripts/app-marks/native-icons.mjs
+Universal_Date_Polling`. Do not hand-edit them, and note iOS applies its own
+squircle mask, so the source art must be a full-bleed square with no alpha.
 
 Each build bakes the commit SHA into a `<meta name="build-sha">` tag and logs
 `build: <sha>` to the console at startup, so you can tell which build is live

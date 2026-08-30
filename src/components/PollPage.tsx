@@ -8,6 +8,7 @@ import {
   formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, sameCalendarDay, slotDayKey, slotInstant, tzAbbrev,
 } from '../lib/time'
 import { CONTAINER_POLL } from '../lib/layout'
+import { pollLink } from '../lib/appUrl'
 import {
   addConfirmedTimeToCalendar, calendarStatus, removeConfirmedTimeFromCalendar, startCalendarConnect,
   type CalendarProvider, type CalendarStatus,
@@ -390,9 +391,11 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // Anchor tz abbreviations to the first slot's instant, not "now" — a summer
   // page-view of a winter poll would otherwise label GMT times as BST.
   const anchor = slots.length ? slotInstant(slots[0].start, poll.timezone) : new Date()
-  // The page we're on IS the shareable poll link — reuse it verbatim for the
-  // "view or update the poll" line stamped into each calendar event.
-  const pollUrl = window.location.origin + window.location.pathname
+  // The shareable poll link, stamped into each calendar event's "view or
+  // update the poll" line and into the plain-text export. Built rather than
+  // read off `window.location`, because in the iPhone app the page we are on
+  // is `capacitor://localhost/` — which is neither shareable nor this poll.
+  const pollUrl = pollLink(pollBase, id)
 
   const isHost = !!hostClientFor(poll)
   // Only the guest-OTP host gets a "signed in" indicator here — a suite user's

@@ -7,6 +7,7 @@
 // wall-clock segments for the week grid, and is unit-tested in isolation.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { appBase } from './appUrl'
 import { addCalendarDays, zonedDayAndMinute, zonedWallClockToInstant } from './time'
 
 export type CalendarProvider = 'google' | 'microsoft'
@@ -122,7 +123,14 @@ export async function startCalendarConnect(
   provider: CalendarProvider,
   scope: 'read' | 'write' = 'read',
 ): Promise<string> {
-  const base = `${window.location.origin}${import.meta.env.BASE_URL}`
+  // ⚠️ Not `window.location.origin` — inside the iPhone app that is
+  // `capacitor://localhost`, which the provider would refuse as a redirect
+  // target, so the consent screen would die before it opened. The hosted site
+  // stands in there. The popup's postMessage is then cross-origin and gets
+  // dropped by the listener's origin check, which is exactly the case
+  // `watchPopup` in CreatePoll already covers: it refreshes when the popup
+  // closes, however it closed.
+  const base = appBase(import.meta.env.BASE_URL)
   const d = await invokeCalendarOauth(client, { action: 'start', provider, base, scope })
   return d.url as string
 }
