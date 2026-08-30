@@ -72,12 +72,16 @@ export default function AddToCalendar({ poll, slot, pollUrl }: { poll: Poll; slo
         Add to calendar
       </button>
 
+      {/* z-[1100], not z-50: the SDK navbar sets an inline `zIndex: 1000`, which
+          no Tailwind class can beat — the scale stops at 50 and an inline style
+          wins regardless. The menu is portalled to document.body, so it shares
+          the root stacking context with the bar and the comparison is real. */}
       {open && createPortal(
         <div
           ref={menuRef}
           role="menu"
           style={{ position: 'fixed', top: pos.top, left: pos.left, width: MENU_WIDTH }}
-          className="z-50 overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-slate-200 pop-in"
+          className="z-[1100] overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-slate-200 pop-in"
         >
           <MenuItem onClick={() => openExternal(googleCalendarUrl(poll, slot, pollUrl))}>
             Google Calendar

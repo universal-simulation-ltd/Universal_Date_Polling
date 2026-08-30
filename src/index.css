@@ -59,3 +59,25 @@ body {
   0%   { opacity: 0; transform: translateY(6px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+
+/* iOS Safari zooms the page in when a field under 16px takes focus, and it does
+   not zoom back out — which is how a layout that fits ends up half off-screen
+   with the right-hand edge unreachable. Touch devices therefore get a 16px
+   floor on every control, in any orientation; pointer devices keep the denser
+   14px type scale untouched.
+
+   ⚠️ The alternative — `maximum-scale=1, user-scalable=no` on the viewport —
+   is NOT acceptable: it takes pinch-zoom away from everyone, including the
+   people who need it most.
+
+   `!important` and the bare element selectors are deliberate: this has to
+   reach the controls the suite chrome renders with inline styles, which no
+   class of ours can touch. `max(16px, 1em)` leaves anything already larger
+   (the poll title field) at its own size. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}
