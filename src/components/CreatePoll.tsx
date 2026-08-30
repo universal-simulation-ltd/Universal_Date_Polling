@@ -91,6 +91,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [createdId, setCreatedId] = useState<string | null>(null)
 
   const colorRef = useRef<HTMLInputElement>(null)
+  // The availability block, so More options can send the host up to it rather
+  // than silently changing something off the bottom of the screen.
+  const availabilityRef = useRef<HTMLDivElement>(null)
   const zones = listTimezones()
 
   // --- Enterprise detection via the suite SDK (cookie SSO in production) ------
@@ -207,6 +210,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
   const anyConnected = !!calStatus && (calStatus.google.connected || calStatus.microsoft.connected)
   const anyConfigured = !!calStatus && (calStatus.configured.google || calStatus.configured.microsoft)
+  // Providers you could still connect: configured server-side, not yet linked.
+  // Connecting is offered in ONE place — the prompt beside the calendar, where
+  // the shading it produces appears — so this drives that prompt, including the
+  // "Google connected, Outlook not" case that More options used to be the only
+  // route to. More options keeps what is already connected, and disconnecting.
+  const connectable = {
+    google: !!calStatus && calStatus.configured.google && !calStatus.google.connected,
+    microsoft: !!calStatus && calStatus.configured.microsoft && !calStatus.microsoft.connected,
+  }
+  const anyConnectable = connectable.google || connectable.microsoft
 
   // Refs mirror the values the stable week-change callback needs — the picker
   // holds onto one callback identity, so it must read current state.
@@ -500,6 +513,14 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     setLogoFile(file)
   }
 
+  /** More options is below the picker, so switching the view from there would
+   *  otherwise change something the host cannot see. Scrolls to it as well. */
+  function openCalendarView() {
+    changeView('calendar')
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    availabilityRef.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+  }
+
   function changeView(next: SlotView) {
     if (next === view) return
     // Clear only when crossing the timed↔days boundary — those slot shapes
@@ -730,7 +751,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         </div>
 
         {/* Availability (slots) */}
-        <div className="mt-6">
+        <div ref={availabilityRef} className="mt-6">
           <span className="text-sm font-semibold text-slate-800">Availability</span>
           <p className="text-xs text-slate-500 mt-0.5">
             {view === null ? (
@@ -784,16 +805,22 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             {suggesting ? 'Finding free time in your calendar.' : suggestNote ?? ''}
           </span>
 
-          {/* Connect prompt beside the calendar itself — the overlay lives in
-              this view, so the invitation belongs here, not only buried in
-              More options (where the connected/disconnect rows stay). */}
-          {view === 'calendar' && hasSession && calStatus && anyConfigured && !anyConnected && (
+          {/* The ONE place a calendar is connected — beside the grid the
+              shading lands in. More options used to offer the same buttons a
+              second time; it now shows only what is connected (see below).
+              Shown while ANY configured provider is unlinked, so adding a
+              second calendar to a first one lives here too. */}
+          {view === 'calendar' && hasSession && calStatus && anyConnectable && (
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5">
               <span className="text-xs text-slate-600">
-                <span className="font-medium text-slate-700">See when you're already busy</span> — connect a calendar and your busy times shade the grid. Only you see them.
+                {anyConnected ? (
+                  <><span className="font-medium text-slate-700">Busy somewhere else too?</span> Connect your other calendar and it shades the grid as well.</>
+                ) : (
+                  <><span className="font-medium text-slate-700">See when you're already busy</span> — connect a calendar and your busy times shade the grid. Only you see them.</>
+                )}
               </span>
               <span className="flex flex-wrap items-center gap-2">
-                {calStatus.configured.google && (
+                {connectable.google && (
                   <button
                     type="button"
                     onClick={() => connectCalendar('google')}
@@ -802,7 +829,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     Connect Google Calendar
                   </button>
                 )}
-                {calStatus.configured.microsoft && (
+                {connectable.microsoft && (
                   <button
                     type="button"
                     onClick={() => connectCalendar('microsoft')}
@@ -977,26 +1004,41 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   <p className="mt-1 text-xs text-slate-500">
                     Connect a calendar and the <span className="font-medium">Calendar</span> view shades the times you're already busy, labelled with each event's name so you can tell them apart. We read when you're busy and what it's called — never who else is invited, where it is, or anything in the description. Nothing is shown to the people you send the poll to.
                   </p>
+                  {/* What is connected, and how to undo it. NOT where you
+                      connect: that is offered beside the calendar, in the one
+                      view the shading appears in — a host working in Manual or
+                      Whole days gets nothing from the overlay, and two Connect
+                      buttons for the same account is one too many. */}
                   <div className="mt-2 flex flex-col gap-2">
-                    {calStatus.configured.google && (
+                    {calStatus.google.connected && (
                       <CalendarProviderRow
                         label="Google Calendar"
-                        connected={calStatus.google.connected}
                         email={calStatus.google.email}
                         detailed={calStatus.google.detailed}
-                        onConnect={() => connectCalendar('google')}
+                        onReconnect={() => connectCalendar('google')}
                         onDisconnect={() => disconnectCal('google')}
                       />
                     )}
-                    {calStatus.configured.microsoft && (
+                    {calStatus.microsoft.connected && (
                       <CalendarProviderRow
                         label="Outlook / Microsoft 365"
-                        connected={calStatus.microsoft.connected}
                         email={calStatus.microsoft.email}
                         detailed={calStatus.microsoft.detailed}
-                        onConnect={() => connectCalendar('microsoft')}
+                        onReconnect={() => connectCalendar('microsoft')}
                         onDisconnect={() => disconnectCal('microsoft')}
                       />
+                    )}
+                    {!anyConnected && (
+                      <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                        Nothing connected yet.
+                        <button
+                          type="button"
+                          onClick={openCalendarView}
+                          className="font-medium text-[var(--accent-strong)] underline underline-offset-2 hover:no-underline"
+                        >
+                          Connect one in the Calendar view →
+                        </button>
+                      </span>
                     )}
                   </div>
                   {calError && <p className="mt-2 text-xs text-red-600">{calError}</p>}
@@ -1303,30 +1345,24 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   )
 }
 
+/** One CONNECTED calendar: which account, and how to disconnect it. There is
+ *  deliberately no disconnected state — connecting happens beside the calendar
+ *  grid, and this row is only rendered for a provider that is linked. */
 function CalendarProviderRow({
-  label, connected, email, detailed, onConnect, onDisconnect,
+  label, email, detailed, onReconnect, onDisconnect,
 }: {
   label: string
-  connected: boolean
   email: string | null
   /** False for a grant that can see busy times but not event names. Only
    *  Google can be in that state, and only if it was connected before the
    *  detail scope existed. */
   detailed: boolean
-  onConnect: () => void
+  /** Re-runs the OAuth grant — the only way to widen an old busy-times-only
+   *  connection to event names. A RE-connect: the row exists only when the
+   *  provider is already linked. */
+  onReconnect: () => void
   onDisconnect: () => void
 }) {
-  if (!connected) {
-    return (
-      <button
-        type="button"
-        onClick={onConnect}
-        className="self-start rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-      >
-        Connect {label}
-      </button>
-    )
-  }
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-700">
@@ -1350,7 +1386,7 @@ function CalendarProviderRow({
           Busy times only — this connection predates event names.{' '}
           <button
             type="button"
-            onClick={onConnect}
+            onClick={onReconnect}
             className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-800"
           >
             Reconnect to show them
