@@ -676,12 +676,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           availability picker (calendar / date form / whole days) on the wider
           right. Below lg it stacks in DOM order.
 
-          The left column is the taller of the two — options plus the create
-          block outrun the picker in every view but Calendar — so the rows are
-          all auto and the left column sets the card's height. The right column
-          spans them and centres itself in that height, which stops the short
-          views (Manual, Whole days) from stranding their toggles at the
-          top of a tall empty column. */}
+          The right column starts on the SAME grid row as the poll title and
+          hugs the top of it, so "Availability" and "Poll title" always sit on
+          one line. It used to span every row and centre itself instead, which
+          floated the heading to a different height in all five states — and
+          made the whole block slide down as you typed a title, because the
+          left column growing re-centred the right one. */}
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7 pop-in lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-x-10">
         {/* The page's masthead — app mark + tagline, centred over the left
             column rather than a full-width hero above the card, so the form
@@ -733,7 +733,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         </div>
 
         {/* Availability (slots) — the right column from lg up */}
-        <div className="mt-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:self-center">
+        <div className="mt-6 lg:mt-0 lg:col-start-2 lg:row-start-2 lg:row-span-2 lg:self-start">
           <span className="text-sm font-semibold text-slate-800">Availability</span>
           <p className="text-xs text-slate-500 mt-0.5">
             {view === null ? (
