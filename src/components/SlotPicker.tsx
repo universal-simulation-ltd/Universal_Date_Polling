@@ -225,7 +225,12 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
                   aria-label={`Remove ${fmtDay(dateStr)}`}
                   className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 hover:text-[var(--accent-strong)]"
                 >
-                  ✕
+                  {/* ⚠️ An SVG, not `✕`: U+2715 has no glyph in iOS's system
+                      font, so the way to take a date back off the poll was a
+                      hollow ▯?▯ box. See the suite landmines. */}
+                  <svg viewBox="0 0 16 16" aria-hidden="true" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="m4 4 8 8M12 4l-8 8" />
+                  </svg>
                 </button>
               </span>
             ))}
@@ -358,7 +363,10 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
                       aria-label={`Remove ${day} ${s.start.slice(11)}`}
                       className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 hover:text-[var(--accent-strong)]"
                     >
-                      ✕
+                      {/* SVG, not `✕` — see the note on the date chip above. */}
+                      <svg viewBox="0 0 16 16" aria-hidden="true" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <path d="m4 4 8 8M12 4l-8 8" />
+                      </svg>
                     </button>
                   </span>
                 ))}

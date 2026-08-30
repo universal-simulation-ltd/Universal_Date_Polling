@@ -473,7 +473,12 @@ export default function CalendarWeekView({
                     >
                       <span className="flex items-center justify-between gap-1">
                         <span className="truncate">{minToHHMM(sMin)}</span>
-                        <span aria-hidden className="opacity-0 group-hover:opacity-100">✕</span>
+                        {/* ⚠️ An SVG, not `✕` — U+2715 has no glyph in iOS's
+                            system font and WebKit does not fall back, so it
+                            drew as a hollow ▯?▯ box. See the suite landmines. */}
+                        <svg viewBox="0 0 16 16" aria-hidden className="h-2.5 w-2.5 shrink-0 opacity-0 group-hover:opacity-100" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <path d="m4 4 8 8M12 4l-8 8" />
+                        </svg>
                       </span>
                       <span className="block text-[10px] opacity-80">{durationLabel(s.durationMins)}</span>
                     </button>
