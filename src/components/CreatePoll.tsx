@@ -708,8 +708,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           />
         </label>
 
-        {/* Location / meeting link (whole-event, optional) */}
-        <div className="mt-6">
+        {/* Location / meeting link (whole-event, optional) — held back until the
+            poll has a title, so the first thing on an empty page is the one
+            field that has to be filled in. It fades in on the first keystroke
+            (`pop-in`, the card's own entrance) rather than appearing hard. */}
+        {title.trim() !== '' && (
+        <div className="mt-6 pop-in">
           <label className="block">
             <span className="text-sm font-semibold text-slate-800">Location or meeting link <span className="font-normal text-slate-400">(optional)</span></span>
             <input
@@ -723,6 +727,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           </label>
           <p className="mt-1 text-xs text-slate-500">Shown to everyone on the poll and added to the calendar invite.</p>
         </div>
+        )}
         </div>
 
         {/* Availability (slots) — the right column from lg up */}
