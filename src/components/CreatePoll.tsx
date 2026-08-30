@@ -48,10 +48,12 @@ type Phase = 'edit' | 'sending' | 'code' | 'creating' | 'done'
 export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [title, setTitle] = useState('')
   // `view` drives the slot picker's segmented selector; the stored poll `mode`
-  // is derived from it (only "Whole days" is a days poll). The drag-to-pick
-  // calendar is the default since 2026-08-11 — it's the view the host-calendar
-  // busy overlay lives in; the quick form remains a tab away.
-  const [view, setView] = useState<SlotView>('calendar')
+  // is derived from it (only "Whole days" is a days poll). It starts null —
+  // no view is chosen and no picker is shown until the host picks one, so all
+  // three ways of proposing availability are offered evenly. (Before
+  // 2026-08-30 it defaulted to the drag-to-pick calendar, which read as the
+  // only option with two tabs above it.)
+  const [view, setView] = useState<SlotView | null>(null)
   const mode: PollMode = view === 'days' ? 'days' : 'times'
   const [slots, setSlots] = useState<Slot[]>([])
   const [theme, setTheme] = useState<Theme>('orange')
@@ -734,7 +736,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         <div className="mt-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:self-center">
           <span className="text-sm font-semibold text-slate-800">Availability</span>
           <p className="text-xs text-slate-500 mt-0.5">
-            {mode === 'days' ? (
+            {view === null ? (
+              <>Choose how you'd like to propose times — type them in, drag them on a calendar, or offer whole days.</>
+            ) : mode === 'days' ? (
               <>Respondents tick whole days they're free — good for trips and multi-day plans.</>
             ) : (
               <>Times are in <span className="font-medium">{tzAbbrev(timezone)}</span> ({timezone}). Change the timezone under More options.</>

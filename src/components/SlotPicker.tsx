@@ -38,11 +38,15 @@ function durationLabel(mins: number): string {
 /** Builds the candidate list for a poll. The segmented selector chooses between
  *  two timed views (quick form / drag calendar) and whole-day mode; `view` is
  *  owned by the parent so it can derive the poll mode and clear incompatible
- *  slots when crossing the timed↔days boundary. */
+ *  slots when crossing the timed↔days boundary.
+ *
+ *  `view` starts as null — nothing is chosen, and no picker is shown until one
+ *  is. Opening straight into a calendar grid made the other two tabs read as
+ *  decoration above it. */
 export default function SlotPicker({
   view, onViewChange, slots, onChange, timezone, busyByDay, busySyncing, onWeekChange, focus,
 }: {
-  view: SlotView
+  view: SlotView | null
   onViewChange: (v: SlotView) => void
   slots: Slot[]
   onChange: (s: Slot[]) => void
@@ -71,12 +75,16 @@ export default function SlotPicker({
         </div>
       </div>
 
-      {view === 'days' ? (
-        <DayPicker slots={slots} onChange={onChange} />
-      ) : view === 'calendar' ? (
-        <CalendarWeekView slots={slots} onChange={onChange} busyByDay={busyByDay} busySyncing={busySyncing} onWeekChange={onWeekChange} focus={focus} />
-      ) : (
-        <FormPicker slots={slots} onChange={onChange} timezone={timezone} />
+      {view !== null && (
+        <div className="pop-in">
+          {view === 'days' ? (
+            <DayPicker slots={slots} onChange={onChange} />
+          ) : view === 'calendar' ? (
+            <CalendarWeekView slots={slots} onChange={onChange} busyByDay={busyByDay} busySyncing={busySyncing} onWeekChange={onWeekChange} focus={focus} />
+          ) : (
+            <FormPicker slots={slots} onChange={onChange} timezone={timezone} />
+          )}
+        </div>
       )}
     </div>
   )
@@ -85,7 +93,7 @@ export default function SlotPicker({
 function SelectorTab({
   view, value, onSelect, children,
 }: {
-  view: SlotView
+  view: SlotView | null
   value: SlotView
   onSelect: (v: SlotView) => void
   children: React.ReactNode
