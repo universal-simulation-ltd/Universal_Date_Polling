@@ -678,7 +678,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           block outrun the picker in every view but Calendar — so the rows are
           all auto and the left column sets the card's height. The right column
           spans them and centres itself in that height, which stops the short
-          views (Date & time, Whole days) from stranding their toggles at the
+          views (Manual, Whole days) from stranding their toggles at the
           top of a tall empty column. */}
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7 pop-in lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-x-10">
         {/* The page's masthead — app mark + tagline, centred over the left
