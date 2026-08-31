@@ -28,6 +28,16 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
   respondent who left an address** the confirmed time, with a `.ics` invite
   attached (the `notify-poll-respondents` Edge Function; never sent
   automatically — always an explicit host click).
+- **Come back to it** — signed in as the host, the create page lists **your
+  active polls** above the form (collapsible, and collapsed to a one-line header
+  from three polls up), each with how many people have replied, the
+  confirmed time if you've picked one, when the link expires, and a copy-link
+  button — and a **Delete**, with "delete all" for the expired ones in a single
+  step. A poll id is ten random characters, so before this the only route back
+  to a poll was the link you kept.
+- **Your logo, up front** — a signed-in host's square company mark (or a logo
+  picked in the Branding box) sits beside the app mark at the top of the create
+  page, so you can see whose brand the poll will carry before you send it.
 - **Suggest times** — with a calendar connected, one click fills the poll in
   from the host's own free time: 4 options, weekdays only, between 10:00 and
   16:00 in the poll's timezone, and at most one morning and one afternoon on any
@@ -43,7 +53,9 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
 A collapsible "More options" panel on the create screen covers:
 
 - **Booking-page colour** — pastel orange / blue / pink / green themes.
-- **Link validity** — 7 / 30 / 90 days, or never expires.
+- **Link validity** — 7 / 30 / 90 / 180 days. There is deliberately no
+  "never expires": polls are public and link-shared, so respondents' answers
+  shouldn't live on the server forever.
 - **Timezone** — defaults to the host's, override to any IANA zone.
 
 > Host calendar integration (check the host's own availability while building a

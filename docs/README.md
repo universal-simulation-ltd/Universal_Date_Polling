@@ -35,6 +35,57 @@ an address. It sends the confirmed date with a `.ics` attachment built by
 can show "respondents emailed ✓". Always an explicit host click; confirming a
 slot never auto-sends.
 
+## "Your polls" — the way back to a poll you made
+
+A poll id is ten random URL-safe characters and nothing ever listed them, so
+until 2026-08-31 the only route back to a poll you created was the link you
+copied at the time. `src/components/MyPolls.tsx` renders the list above the
+create form for a signed-in host; `src/lib/myPolls.ts` holds the pure parts
+(merging, the active/expired split, and every label), unit-tested in
+`myPolls.test.ts`.
+
+Three things are worth knowing about it:
+
+- **It reads through an RPC, not the table.** `polls_owner_read` (migration
+  0122) would in fact allow `from('polls').select()` for the host's own rows —
+  the RPC exists for the **response count**. 0122 revoked `poll_responses` from
+  client roles entirely so respondents can't be enumerated, so "4 responses" has
+  to be counted server-side. `list_my_polls()` (migration
+  `0130_poll_list_mine.sql`) returns each poll plus a `response_count`, minus
+  `host_email`, scoped to `auth.uid()` — one round trip, no id argument, and no
+  way to ask for somebody else's polls. Note that Postgres grants EXECUTE to
+  PUBLIC by default, so `anon` *can* call it; it gets `[]`, because `auth.uid()`
+  is null and the function's own `where` clause is the boundary.
+- **It queries BOTH sessions.** A host can hold a Universal ID (suite SSO)
+  session and this app's own email-code session at the same time; they are
+  different `auth.uid()`s and polls made under either are equally "yours".
+  `MyPolls` takes both clients, calls each, and merges (`mergeMyPolls`
+  deduplicates by id) — the same pair `PollPage` already reasons about to decide
+  who the host is. One session erroring doesn't blank out the other's polls.
+- **Deleting needed no new backend at all.** `polls_owner_delete` (0025) has
+  always scoped a DELETE to the host, responses / respondent emails / calendar
+  links cascade off it, the `polls_after_delete` trigger (0042) refunds a
+  credit-funded poll, and a free-token-funded one releases the org's free token
+  the moment the row goes (0045 derives the holder from the live rows). So
+  `deletePolls` is a plain `.delete().in('id', ids)` — with a `.select()`,
+  which is the part that matters: RLS *filters* rather than raises, so deleting
+  a poll you don't own is not an error, it silently removes nothing. Reading
+  back the ids that actually went is what stops the panel striking off a row
+  that is still there. Rows are deleted through the client that returned them
+  (see the previous point), the confirm is a two-step strip in the page rather
+  than `window.confirm`, and the expired section has a "delete all". `onDeleted`
+  tells the create page to re-read the free-token gate, or its "1 token per
+  poll" banner keeps claiming the token you just got back is in use.
+- **It renders nothing when there's nothing to say.** No polls, or still
+  loading, means no card at all — a permanent empty "you have no polls" box
+  above the create form would be the first thing every new host saw. **From
+  three active polls the panel is collapsible and starts collapsed** — the
+  header keeps the count, so "you have 5 waiting" survives the fold, and a host
+  with a dozen live polls doesn't scroll past all of them to make the next one.
+  Expired ones sit behind their own toggle rather than vanishing (a host looking
+  for last week's poll should find it saying "Expired"), and they lose their
+  Copy link, since nobody can answer them.
+
 ## The host's own calendar (Phase 3)
 
 A host can connect their **Google or Microsoft calendar**, which does two
@@ -214,6 +265,10 @@ so the shapes aren't re-derived by hand:
   display zone; the timezone-aware twin of `formatCalendarDay` (which takes a
   bare date string and does no conversion). Spells the year out for the
   plain-text export, which is read in an email with no page around it.
+- **`formatCalendarDayShort(dateStr)`** — `formatCalendarDay` minus the year,
+  for the compact rows in "Your polls". Built from local numeric parts the same
+  way, so it keeps the same guarantee: a whole-day date reads identically in
+  every zone.
 - **`wallClockExists(local, tz)`** — false when a wall-clock time falls in a DST
   spring-forward gap (e.g. London `01:30` on switch night, which never occurs).
   The create form (`SlotPicker` → `FormPicker`) warns the host at creation

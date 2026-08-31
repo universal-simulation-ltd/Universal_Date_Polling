@@ -174,6 +174,17 @@ export function formatCalendarDay(dateStr: string): string {
   }).format(new Date(y, m - 1, d))
 }
 
+/** "Mon 2 Jun" — `formatCalendarDay` without the year, for the compact
+ *  summaries in "Your polls" where the row has no space for one. Built the same
+ *  way (local numeric parts, formatted with no `timeZone`) so it keeps the same
+ *  guarantee: a whole-day date reads identically in every zone. */
+export function formatCalendarDayShort(dateStr: string): string {
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short', day: 'numeric', month: 'short',
+  }).format(new Date(y, m - 1, d))
+}
+
 /** "Wed, 10 Jun 2026" for a slot instant, in the given display tz — the same
  *  shape `formatCalendarDay` gives a whole-day slot, but timezone-aware and fed
  *  a real instant, so the two modes' exports read alike. The year is spelled out

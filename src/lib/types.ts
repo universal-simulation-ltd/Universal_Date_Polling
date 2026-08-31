@@ -112,3 +112,12 @@ export interface NewPoll {
   booking_mode: boolean
   expires_at: string | null
 }
+
+/** One of the caller's own polls as `list_my_polls` returns it (migration
+ *  0130): every column `Poll` has except `host_email`, plus how many people
+ *  have answered. The count comes back with the list because the respondents
+ *  themselves don't: 0122 revoked `poll_responses` from client roles, so a
+ *  host's "3 replies so far" has to be a number computed server-side. */
+export interface MyPoll extends Omit<Poll, 'host_email'> {
+  response_count: number
+}

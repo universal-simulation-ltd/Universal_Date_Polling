@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { downscaleImage } from '@unisim/sdk'
 import { supabase } from './supabase'
 import { emailReturnUrl } from './appUrl'
-import type { Availability, NewPoll, Poll, PollResponse } from './types'
+import type { Availability, MyPoll, NewPoll, Poll, PollResponse } from './types'
 
 // ---- Short, URL-safe poll ids (no ambiguous characters) --------------------
 const ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789'
@@ -351,6 +351,47 @@ export async function getPoll(id: string): Promise<Poll | null> {
   const { data, error } = await supabase.rpc('get_poll', { p_id: id })
   if (error) throw error
   return (data as Poll | null) ?? null
+}
+
+/** Every poll the caller hosts, newest first, each with a `response_count`.
+ *
+ *  `client` must be the one holding the host's session — the SDK's suite-SSO
+ *  client for a Universal ID user, this app's own OTP client for a guest host.
+ *  There is no id argument and none is wanted: `list_my_polls` (migration 0130)
+ *  scopes itself to `auth.uid()`, so an unauthenticated caller gets `[]` rather
+ *  than an error, and no caller can ask for somebody else's polls.
+ *
+ *  An RPC rather than `from('polls').select()` — which the `polls_owner_read`
+ *  policy would in fact allow — because of the RESPONSE COUNT: 0122 revoked
+ *  `poll_responses` from client roles entirely, so the count has to be computed
+ *  server-side. See the migration.
+ */
+export async function listMyPolls(client: SupabaseClient): Promise<MyPoll[]> {
+  const { data, error } = await client.rpc('list_my_polls')
+  if (error) throw error
+  return (data as MyPoll[] | null) ?? []
+}
+
+/** Host-only: delete polls, and with them every response, respondent email and
+ *  calendar link that hangs off them (all `on delete cascade` from 0025/0115).
+ *  `client` must hold the host's session — `polls_owner_delete` (0025) gates it.
+ *
+ *  Returns the ids that were ACTUALLY deleted, which is the point of the
+ *  `.select()`: RLS filters rows rather than raising, so a delete the caller
+ *  doesn't own is not an error — it silently removes nothing. Reading back what
+ *  went lets the caller tell "deleted" from "quietly did nothing", instead of
+ *  striking a poll off the list that is still there on the next load.
+ *
+ *  Deleting is also how a token comes back: the `polls_after_delete` trigger
+ *  (0042) refunds a credit-funded poll, and a free-token-funded one stops
+ *  holding the org's free token the moment the row is gone (0045 derives the
+ *  holder from the live rows). Neither needs a call from here.
+ */
+export async function deletePolls(client: SupabaseClient, ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return []
+  const { data, error } = await client.from('polls').delete().in('id', ids).select('id')
+  if (error) throw error
+  return (data ?? []).map((r) => (r as { id: string }).id)
 }
 
 /** Fetch a poll, retrying a few times on a *thrown* error before giving up.

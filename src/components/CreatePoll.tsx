@@ -13,6 +13,7 @@ import {
 import { suggestFreeSlots, SUGGEST_COUNT } from '../lib/autoSlots'
 import type { TextListPoll } from '../lib/textExport'
 import CopyAsText from './CopyAsText'
+import MyPolls from './MyPolls'
 import SlotPicker from './SlotPicker'
 import ProductLogo from './ProductLogo'
 import type { SlotView } from './SlotPicker'
@@ -115,7 +116,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   // Every org has one free returnable Polling token (migration 0045) —
   // create_poll_gated spends it before the purchased wallet, so the banner
   // shouldn't read "0 tokens" while the free one is still available.
-  const { status: pollFreeToken } = useAppFreeToken('polling')
+  const { status: pollFreeToken, refresh: refreshPollToken } = useAppFreeToken('polling')
 
   // Temporary diagnostic: visit the create page with ?diag=1 to see exactly
   // where enterprise detection stops (session → org → subscription tier).
@@ -492,6 +493,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const orgLogoSrc = orgBranding.logo_url ?? orgBranding.icon_url
   const shownLogo = logoPreview ?? (suiteLoggedIn && !dropOrgLogo ? orgLogoSrc : null)
 
+  // The mark shown beside the app logo at the top of the page. Same sources as
+  // `shownLogo`, but the SQUARE icon is preferred over the wide logo, because
+  // this one sits next to a 24px app tile rather than in a branding row.
+  const mastheadMark = logoPreview
+    ?? (suiteLoggedIn && !dropOrgLogo ? (orgBranding.icon_url ?? orgBranding.logo_url) : null)
+
   // The picked file is shrunk in the browser at upload time (uploadPollLogo),
   // so a camera-sized original is fine — this gate only stops files so big
   // that decoding one would be the problem.
@@ -693,6 +700,21 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         </pre>
       )}
 
+      {/* Your existing polls, above the form — a poll id is ten random
+          characters, so a host coming back to the site has no other way to
+          reach one they didn't keep the link to. It renders nothing at all
+          until it has polls to show, so the create form stays at the top of
+          the page for everybody making their first one. */}
+      <MyPolls
+        pollBase={pollBase}
+        suiteClient={suiteLoggedIn ? suiteClient : null}
+        otpClient={verified ? supabase : null}
+        // Deleting a poll hands the free token straight back (the row is what
+        // holds it — migration 0045), so the "1 token per poll" banner below
+        // has to be re-read or it keeps saying the token is in use.
+        onDeleted={refreshPollToken}
+      />
+
       {/* ONE column at every width, in the order the poll is actually built:
           title → where → availability → options → who you are and create.
           Until 2026-08-30 this was a two-column grid from lg up (fields left,
@@ -706,7 +728,25 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             starts at the top of the viewport and the calendar sits alongside
             it. */}
         <div className="mb-6 lg:mb-8 text-center">
-          <ProductLogo />
+          {/* The app's mark, and beside it the host's own — so a signed-in host
+              can see whose brand this poll will carry without opening the
+              Branding box. `icon_url` is the 1:1 square mark (`logo_url` is the
+              wide one), which is what belongs next to a 24px app tile; an org
+              that only has the wide logo falls back to it, sized by HEIGHT so
+              it keeps its aspect instead of being squashed into a square. */}
+          <div className="flex items-center justify-center gap-2.5">
+            <ProductLogo />
+            {mastheadMark && (
+              <>
+                <span aria-hidden="true" className="h-5 w-px bg-slate-200" />
+                <img
+                  src={mastheadMark}
+                  alt={`${brandName || org?.name || 'Your'} logo`}
+                  className="h-6 max-w-[120px] rounded-md object-contain"
+                />
+              </>
+            )}
+          </div>
           <h1 className="mt-2 text-2xl font-extrabold leading-tight text-slate-900">
             Find a time that<br />
             <span className="text-orange-600">works for everyone</span>
