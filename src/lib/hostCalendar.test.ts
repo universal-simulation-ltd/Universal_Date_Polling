@@ -181,8 +181,38 @@ describe('event titles', () => {
 
 describe('providerStatusOf', () => {
   it('reads a full status verbatim', () => {
-    expect(providerStatusOf({ connected: true, email: 'a@b.com', writable: true, detailed: true }))
-      .toEqual({ connected: true, email: 'a@b.com', writable: true, detailed: true })
+    const wire = {
+      connected: true, email: 'a@b.com', writable: true, detailed: true,
+      ceiling: { writable: true, detailed: true },
+    }
+    expect(providerStatusOf(wire)).toEqual(wire)
+  })
+
+  // The state every Google host is in while the server holds the sensitive
+  // scopes back: connected and useful, but permanently anonymous and
+  // unwritable. The UI reads the ceiling to know not to offer a reconnect.
+  it('a capped provider is connected with a floor-level ceiling', () => {
+    expect(providerStatusOf({
+      connected: true, email: 'a@b.com', writable: false, detailed: false,
+      ceiling: { writable: false, detailed: false },
+    })).toEqual({
+      connected: true, email: 'a@b.com', writable: false, detailed: false,
+      ceiling: { writable: false, detailed: false },
+    })
+  })
+
+  // ⚠️ Missing means TRUE for both halves, unlike `writable` above. A server
+  // with no ceiling field predates the hold, when the widest connect really
+  // did grant titles and writes — defaulting to false there would hide a
+  // working "Add to my calendar" button behind nothing at all.
+  it('an absent `ceiling` is wide open — a pre-hold server could grant both', () => {
+    expect(providerStatusOf({ connected: true, email: null }).ceiling)
+      .toEqual({ writable: true, detailed: true })
+  })
+
+  it('a half-specified ceiling keeps the specified half', () => {
+    expect(providerStatusOf({ connected: true, email: null, ceiling: { writable: false } }).ceiling)
+      .toEqual({ writable: false, detailed: true })
   })
 
   // A grant that cannot write must not be offered a button that 403s.
@@ -202,6 +232,9 @@ describe('providerStatusOf', () => {
   })
 
   it('an empty object is a disconnected provider', () => {
-    expect(providerStatusOf({})).toEqual({ connected: false, email: null, writable: false, detailed: true })
+    expect(providerStatusOf({})).toEqual({
+      connected: false, email: null, writable: false, detailed: true,
+      ceiling: { writable: true, detailed: true },
+    })
   })
 })

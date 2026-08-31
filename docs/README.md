@@ -75,14 +75,44 @@ for. The calendar view then jumps to the week the first suggestion landed in
 (`focus` prop on `CalendarWeekView`), since slots off-screen look like nothing
 happened.
 
-**Write — put the confirmed time in the host's diary** (added 2026-08-13).
-Once a slot is confirmed, the banner offers "Add to my Google Calendar /
-Outlook", which creates a real event via the `calendar-event` Edge Function.
-Un-confirming removes it again. Distinct from the "Add to calendar" menu
-everyone sees: that one is client-side deep-links and an `.ics` download, this
-one writes through the host's OAuth grant.
+**Write — put the confirmed time in the host's diary** (added 2026-08-13,
+**Outlook only since 2026-08-31**). Once a slot is confirmed, the banner offers
+"Add to my Outlook / Microsoft 365", which creates a real event via the
+`calendar-event` Edge Function. Un-confirming removes it again. Distinct from
+the "Add to calendar" menu everyone sees: that one is client-side deep-links
+and an `.ics` download, this one writes through the host's OAuth grant.
+
+⚠️ **Google is read-only, and busy blocks connected to Google are anonymous.**
+This is a deliberate hold, not a missing feature. `calendar.events.readonly`
+(names) and `calendar.events` (writes) are **sensitive** scopes, and an app
+requesting either is capped at 100 hand-added test users behind an "unverified
+app" screen until it passes Google's verification review — and, the part that
+actually bit, Google revokes the refresh token of any External app in *Testing*
+after **7 days**, so every Google host silently lost their connection weekly.
+Asking only for `calendar.freebusy` + `calendar.calendarlist.readonly` takes
+the app out of that regime, so anyone can connect Google and stay connected.
+Microsoft has no equivalent gate and keeps both names and writes.
+
+The switch is `GOOGLE_SENSITIVE_HOLD` in the platform's
+`supabase/functions/_shared/calendar-providers.ts`; the whole restore is one
+flag, but it **must** move in the same change as the Google console work —
+see the Date Polling section of `backlog-unisim.md`.
 
 Things worth knowing before touching it:
+
+- **`status.ceiling` is not `status.writable`.** `writable`/`detailed` say what
+  the STORED grant carries; `ceiling` says what a FRESH connect would grant.
+  The UI needs both to tell "reconnect and this gets better" apart from
+  "reconnect changes nothing" — under the hold every Google grant is
+  permanently the latter, so `CreatePoll`'s "reconnect to show event names" and
+  `PollPage`'s "Reconnect Google to add it" hide themselves rather than nagging
+  forever. Both flags default to TRUE when a server omits them, because a
+  server that predates the field is one from before the hold.
+- **Hosts who connected before the narrowing keep what they were granted.** The
+  hold changes what is *requested*, not what is stored, so a grant carrying the
+  detail or write scope still reads titles and still writes. `hasDetailScope` /
+  `hasWriteScope` read the row, not the constants — don't "simplify" them into
+  reading the current scope set.
 
 - **Tokens never reach this app.** They live in `poll_calendar_tokens`
   (migrations 0117/0118), service-role only, RLS on with zero policies and

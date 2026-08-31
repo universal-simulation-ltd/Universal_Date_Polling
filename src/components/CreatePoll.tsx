@@ -1002,7 +1002,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 <div className="sm:col-span-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Your calendar</span>
                   <p className="mt-1 text-xs text-slate-500">
-                    Connect a calendar and the <span className="font-medium">Calendar</span> view shades the times you're already busy, labelled with each event's name so you can tell them apart. We read when you're busy and what it's called — never who else is invited, where it is, or anything in the description. Nothing is shown to the people you send the poll to.
+                    Connect a calendar and the <span className="font-medium">Calendar</span> view shades the times you're already busy. Only you ever see the shading — nothing is shown to the people you send the poll to. <span className="font-medium">Outlook / Microsoft 365</span> also labels each block with the event's name; <span className="font-medium">Google Calendar</span> shades busy times only, and we never read your event names, guests, locations or descriptions there.
                   </p>
                   {/* What is connected, and how to undo it. NOT where you
                       connect: that is offered beside the calendar, in the one
@@ -1014,7 +1014,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                       <CalendarProviderRow
                         label="Google Calendar"
                         email={calStatus.google.email}
-                        detailed={calStatus.google.detailed}
+                        titlesOffer={!calStatus.google.detailed && calStatus.google.ceiling.detailed}
                         onReconnect={() => connectCalendar('google')}
                         onDisconnect={() => disconnectCal('google')}
                       />
@@ -1023,7 +1023,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                       <CalendarProviderRow
                         label="Outlook / Microsoft 365"
                         email={calStatus.microsoft.email}
-                        detailed={calStatus.microsoft.detailed}
+                        titlesOffer={!calStatus.microsoft.detailed && calStatus.microsoft.ceiling.detailed}
                         onReconnect={() => connectCalendar('microsoft')}
                         onDisconnect={() => disconnectCal('microsoft')}
                       />
@@ -1349,14 +1349,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
  *  deliberately no disconnected state — connecting happens beside the calendar
  *  grid, and this row is only rendered for a provider that is linked. */
 function CalendarProviderRow({
-  label, email, detailed, onReconnect, onDisconnect,
+  label, email, titlesOffer, onReconnect, onDisconnect,
 }: {
   label: string
   email: string | null
-  /** False for a grant that can see busy times but not event names. Only
-   *  Google can be in that state, and only if it was connected before the
-   *  detail scope existed. */
-  detailed: boolean
+  /** Whether to offer "reconnect to show event names" — true only when this
+   *  grant cannot read titles AND a fresh connect could. Both halves matter:
+   *  under the server's Google sensitive-scope hold no Google grant can read
+   *  titles and no reconnect will change that, so the offer must disappear
+   *  rather than nag forever. */
+  titlesOffer: boolean
   /** Re-runs the OAuth grant — the only way to widen an old busy-times-only
    *  connection to event names. A RE-connect: the row exists only when the
    *  provider is already linked. */
@@ -1381,7 +1383,7 @@ function CalendarProviderRow({
           this app will change that except reconnecting. Mirrors the confirmed
           banner's "Reconnect … to add it" rather than erroring, which is the
           pattern for a grant that is narrower than the current one. */}
-      {!detailed && (
+      {titlesOffer && (
         <p className="text-xs text-slate-500">
           Busy times only — this connection predates event names.{' '}
           <button

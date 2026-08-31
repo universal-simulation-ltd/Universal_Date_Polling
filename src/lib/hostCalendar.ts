@@ -38,6 +38,16 @@ export interface ProviderStatus {
    *  anonymous, and only a reconnect changes that. Always true for Microsoft —
    *  Calendars.Read has always permitted `subject`. */
   detailed: boolean
+  /** What a FRESH connect to this provider would grant — the ceiling, which is
+   *  a different question from what the stored grant carries above.
+   *
+   *  It exists so the UI can tell "reconnect and this gets better" apart from
+   *  "reconnect changes nothing". Google is capped at free/busy while the
+   *  server's `GOOGLE_SENSITIVE_HOLD` stands (the sensitive scopes cost us
+   *  Google verification, a 100-user cap and 7-day refresh tokens), so every
+   *  Google grant is permanently un-writable and anonymous — and a "reconnect
+   *  to enable" offer there would nag forever and fix nothing. */
+  ceiling: { writable: boolean; detailed: boolean }
 }
 
 export interface CalendarStatus {
@@ -86,6 +96,14 @@ export function providerStatusOf(raw: unknown): ProviderStatus {
     // reconnect would not solve. `writable` defaults the other way because
     // there the wrong guess offers a button that 403s.
     detailed: r.detailed === undefined ? true : !!r.detailed,
+    // ⚠️ Missing means TRUE for BOTH halves — a server that predates the
+    // ceiling is one from before the hold, where the widest connect really did
+    // grant titles and writes. Defaulting to false there would hide a working
+    // "Add to my calendar" button behind nothing at all.
+    ceiling: {
+      writable: r.ceiling?.writable === undefined ? true : !!r.ceiling.writable,
+      detailed: r.ceiling?.detailed === undefined ? true : !!r.ceiling.detailed,
+    },
   }
 }
 

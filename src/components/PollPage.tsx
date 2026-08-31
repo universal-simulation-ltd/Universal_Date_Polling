@@ -928,7 +928,14 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
   // connect one, and nagging on a finished poll would be noise).
   const connected = (['google', 'microsoft'] as CalendarProvider[]).filter((p) => calStatus?.[p].connected)
   const writable = connected.filter((p) => calStatus?.[p].writable)
-  const staleOnly = connected.length > 0 && writable.length === 0
+  // ⚠️ Connected-but-not-writable splits in two, and only one half is worth a
+  // button. `upgradable` is the half a reconnect actually fixes — an old grant
+  // from before the write scope. The other half is a provider that CANNOT be
+  // written to at all right now (Google, while the server's sensitive-scope
+  // hold stands): offering it "reconnect to add it" would send the host round
+  // a consent screen that comes back exactly as narrow as it went in.
+  const upgradable = connected.filter((p) => !calStatus?.[p].writable && calStatus?.[p].ceiling.writable)
+  const staleOnly = upgradable.length > 0 && writable.length === 0
   return (
     <div className="mt-6 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1000,7 +1007,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
           plain re-add carries no attendees, which would quietly patch the
           guest's invitation without telling them. The "Add to calendar" menu
           above is still there for everyone. */}
-      {isHost && !isBooking && connected.length > 0 && (
+      {isHost && !isBooking && (writable.length > 0 || upgradable.length > 0) && (
         <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-emerald-200/70 pt-2.5">
           {writable.length > 0 ? (
             <button
@@ -1018,10 +1025,10 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
           ) : (
             <button
               type="button"
-              onClick={() => onReconnectCalendar(connected[0])}
+              onClick={() => onReconnectCalendar(upgradable[0])}
               className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-white hover:ring-emerald-400 transition"
             >
-              📅 Reconnect {PROVIDER_LABEL[connected[0]]} to add it
+              📅 Reconnect {PROVIDER_LABEL[upgradable[0]]} to add it
             </button>
           )}
           <span className="text-xs text-slate-600">
