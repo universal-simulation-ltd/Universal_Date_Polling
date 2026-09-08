@@ -125,4 +125,4 @@ it falls back to the git short SHA (or `dev`).
 
 ## Licence
 
-MIT © Universal Simulation Ltd.
+[AGPL-3.0-or-later](LICENSE), with an added permission for app-store distribution. © Universal Simulation Ltd.

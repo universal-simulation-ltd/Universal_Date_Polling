@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "description": "Universal Date Polling — a free group scheduler. Create a poll, share a link, find the time that works for everyone.",
   "scripts": {
     "dev": "vite",
