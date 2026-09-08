@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
 import { AdvancedMenu, UniversalAppsNavBar, UpdateNotice } from '@unisim/sdk'
+// Generated — `npm run credits` after any dependency change. Never edit it by
+// hand: it is read off the installed tree, so a hand-kept list drifts from the
+// lockfile the first time anyone upgrades anything, and a credits list naming a
+// package we removed is worse than no list at all.
+import credits from './generated/credits.json'
 import ProductLogo from './components/ProductLogo'
 import CreatePoll from './components/CreatePoll'
 import PollPage from './components/PollPage'
@@ -57,6 +62,8 @@ export default function App() {
               // Server-backed: the local-first claim is not true here.
               privacy: false,
               version: __APP_VERSION__,
+              credits,
+              noticesHref: 'https://github.com/universal-simulation-ltd/Universal_Date_Polling/blob/main/THIRD-PARTY-NOTICES.md',
             }}
           />
         }
