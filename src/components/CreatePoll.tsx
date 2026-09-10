@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useAppFreeToken, useFileDrop, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
@@ -86,6 +86,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
   const [showMore, setShowMore] = useState(false)
   const [showBranding, setShowBranding] = useState(false)
+  const moreId = useId()
+  const brandingId = useId()
   const [phase, setPhase] = useState<Phase>('edit')
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -952,6 +954,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             type="button"
             onClick={() => setShowMore((s) => !s)}
             aria-expanded={showMore}
+            aria-controls={moreId}
             className="flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-[var(--accent-strong)]"
           >
             <svg viewBox="0 0 12 12" className={`w-3 h-3 transition-transform ${showMore ? 'rotate-90' : ''}`} aria-hidden="true">
@@ -966,7 +969,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           </button>
 
           {showMore && (
-            <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            <div id={moreId} className="mt-4 grid gap-5 sm:grid-cols-2">
               {/* Just the two of us — a booking page rather than a poll. First in
                   the list because it changes what every other option means. */}
               <div className="sm:col-span-2">
@@ -1217,6 +1220,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               type="button"
               onClick={() => setShowBranding((s) => !s)}
               aria-expanded={showBranding}
+              aria-controls={brandingId}
               className="group flex items-start gap-2 text-left"
             >
               <svg viewBox="0 0 12 12" className={`mt-1 w-3 h-3 shrink-0 text-slate-400 transition-transform ${showBranding ? 'rotate-90' : ''}`} aria-hidden="true">
@@ -1240,7 +1244,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
           {/* Logged-in, not overriding: what the poll will carry, read-only. */}
           {showBranding && suiteLoggedIn && !brandOverride && (
-            <div className="mt-4 flex flex-wrap items-center gap-4">
+            <div id={brandingId} className="mt-4 flex flex-wrap items-center gap-4">
               {(orgBranding.logo_url || orgBranding.icon_url) && (
                 <img
                   src={orgBranding.logo_url ?? orgBranding.icon_url ?? ''}
@@ -1270,7 +1274,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           )}
 
           {showBranding && !(suiteLoggedIn && !brandOverride) && (
-          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+          <div id={brandingId} className="mt-4 grid gap-5 sm:grid-cols-2">
             {/* Booking-page colour */}
             <div className="sm:col-span-2">
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Booking-page colour</span>

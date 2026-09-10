@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { deletePolls, listMyPolls } from '../lib/api'
 import { pollLink } from '../lib/appUrl'
@@ -57,6 +57,8 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
   // COLLAPSE_FROM) — a short list is always open.
   const [open, setOpen] = useState(false)
   const [showExpired, setShowExpired] = useState(false)
+  const listId = useId()
+  const expiredId = useId()
   const [copiedId, setCopiedId] = useState<string | null>(null)
   // Which row (or the expired batch) is asking "are you sure?", and what is
   // mid-delete. Two-step in the page rather than `window.confirm`, which reads
@@ -192,6 +194,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
         collapsible={collapsible}
         open={expanded}
         onToggle={() => setOpen((o) => !o)}
+        panelId={listId}
       />
 
       {active.length === 0 && (
@@ -201,7 +204,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
       )}
 
       {expanded && (
-        <ul className="mt-1">
+        <ul id={listId} className="mt-1">
           {active.map((p) => <PollRow key={p.id} {...rowProps(p)} />)}
         </ul>
       )}
@@ -213,6 +216,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
               type="button"
               onClick={() => setShowExpired((s) => !s)}
               aria-expanded={showExpired}
+              aria-controls={expiredId}
               className="text-sm font-medium text-slate-500 hover:text-slate-700 underline underline-offset-2"
             >
               {showExpired ? 'Hide' : 'Show'} {expired.length} expired
@@ -241,7 +245,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
           )}
 
           {showExpired && (
-            <ul className="mt-1">
+            <ul id={expiredId} className="mt-1">
               {expired.map((p) => <PollRow key={p.id} {...rowProps(p)} />)}
             </ul>
           )}
@@ -267,12 +271,14 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
   )
 }
 
-function Heading({ title, count, collapsible, open, onToggle }: {
+function Heading({ title, count, collapsible, open, onToggle, panelId }: {
   title: string
   count: number
   collapsible: boolean
   open: boolean
   onToggle: () => void
+  /** The id of the list this heading folds, for `aria-controls`. */
+  panelId: string
 }) {
   const badge = count > 0 && (
     <span className="ml-2 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-bold text-orange-700 ring-1 ring-orange-200">
@@ -288,6 +294,7 @@ function Heading({ title, count, collapsible, open, onToggle }: {
         type="button"
         onClick={onToggle}
         aria-expanded={open}
+        aria-controls={panelId}
         className="flex w-full items-center gap-1.5 text-left text-base font-extrabold text-slate-900 hover:text-orange-700"
       >
         <svg viewBox="0 0 12 12" className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} aria-hidden="true">

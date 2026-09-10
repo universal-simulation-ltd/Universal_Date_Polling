@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { buildPollTextList, type TextListPoll } from '../lib/textExport'
 
 /** "Copy a list for an email" — the poll's dates as plain text, for hosts whose
@@ -17,6 +17,7 @@ export default function CopyAsText({ poll, url, displayTz, defaultOpen = false }
   defaultOpen?: boolean
 }) {
   const [open, setOpen] = useState(defaultOpen)
+  const panelId = useId()
   const [includeLink, setIncludeLink] = useState(true)
   const [copied, setCopied] = useState(false)
 
@@ -44,13 +45,14 @@ export default function CopyAsText({ poll, url, displayTz, defaultOpen = false }
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-controls={panelId}
         className="text-sm font-medium text-[var(--accent-strong)] hover:underline underline-offset-2"
       >
         {open ? 'Hide the email text' : 'Copy a list for an email →'}
       </button>
 
       {open && (
-        <div className="mt-3">
+        <div id={panelId} className="mt-3">
           <p className="text-xs text-slate-500">
             Paste this straight into an email for anyone who'd rather reply than click.
           </p>
