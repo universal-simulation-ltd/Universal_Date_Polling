@@ -11,7 +11,7 @@
 
 import type { Poll, Slot } from './types'
 import { addCalendarDays, slotDayKey, slotEnd, slotInstant } from './time'
-import { saveBlob } from './saveFile'
+import { saveBlob } from '@unisim/media/save'
 
 interface CalendarEventBase {
   title: string
@@ -104,7 +104,7 @@ export function buildIcs(poll: Poll, slot: Slot, pollUrl: string, now: Date = ne
  *  ⚠️ The anchor's `download` attribute is IGNORED in a Capacitor WebView: no
  *  error, no console warning, nothing happens at all. Doing it directly here
  *  would leave "Download .ics" dead on the phone while passing every test that
- *  runs in a real browser. See src/lib/saveFile.ts. */
+ *  runs in a real browser. See @unisim/media/save. */
 export function downloadIcs(poll: Poll, slot: Slot, pollUrl: string): void {
   const ics = buildIcs(poll, slot, pollUrl)
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
