@@ -3,8 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { deletePolls, listMyPolls } from '../lib/api'
 import { pollLink } from '../lib/appUrl'
 import {
-  confirmedLabel, deleteAllPrompt, deletePrompt, expiryLabel, isExpired, mergeMyPolls, pollSummary,
-  responsesLabel, splitMyPolls,
+  confirmedLabel, deleteAllActivePrompt, deleteAllPrompt, deletePrompt, expiryLabel, isExpired,
+  mergeMyPolls, pollSummary, responsesLabel, splitMyPolls,
 } from '../lib/myPolls'
 import type { MyPoll } from '../lib/types'
 
@@ -64,7 +64,11 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
   // mid-delete. Two-step in the page rather than `window.confirm`, which reads
   // as a browser error and cannot be styled.
   const [confirmId, setConfirmId] = useState<string | null>(null)
-  const [confirmBatch, setConfirmBatch] = useState(false)
+  // Which batch is asking, if any. Two batches now (every live poll, every
+  // expired one) and they must not be one boolean: the two confirmations ask
+  // different questions about different polls, and the wrong one appearing is
+  // the worst possible bug in a delete.
+  const [confirmBatch, setConfirmBatch] = useState<'active' | 'expired' | null>(null)
   const [busyIds, setBusyIds] = useState<string[]>([])
   const [deleteError, setDeleteError] = useState<string | null>(null)
   // Bumped by Retry; the effect keys off it so a retry is one state change
@@ -141,7 +145,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
     }
     setBusyIds([])
     setConfirmId(null)
-    setConfirmBatch(false)
+    setConfirmBatch(null)
   }
 
   // Nothing loaded yet, and nothing to report: stay out of the way entirely.
@@ -177,7 +181,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
     confirming: confirmId === p.id,
     busy: busyIds.includes(p.id),
     onCopy: () => copy(p),
-    onAskDelete: () => { setDeleteError(null); setConfirmBatch(false); setConfirmId(p.id) },
+    onAskDelete: () => { setDeleteError(null); setConfirmBatch(null); setConfirmId(p.id) },
     onCancelDelete: () => setConfirmId(null),
     onDelete: () => remove([p.id]),
   })
@@ -203,6 +207,33 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
         </p>
       )}
 
+      {/* Delete every live poll at once. Only while the list is OPEN and only
+          from two polls up: a bulk delete of things the host cannot currently
+          see destroys the unseen, and on a one-poll list it is just the row's
+          own Delete a second time. It asks before it does anything — these
+          links are out with other people, unlike the expired batch. */}
+      {expanded && active.length > 1 && confirmBatch !== 'active' && (
+        <div className="mt-1 flex justify-end">
+          <button
+            type="button"
+            onClick={() => { setDeleteError(null); setConfirmId(null); setConfirmBatch('active') }}
+            className="text-xs font-medium text-slate-500 hover:text-red-700 underline underline-offset-2"
+          >
+            Delete all {active.length}
+          </button>
+        </div>
+      )}
+
+      {confirmBatch === 'active' && (
+        <ConfirmStrip
+          question={deleteAllActivePrompt(active)}
+          confirmLabel={`Delete all ${active.length}`}
+          busy={busyIds.length > 0}
+          onConfirm={() => remove(active.map((p) => p.id))}
+          onCancel={() => setConfirmBatch(null)}
+        />
+      )}
+
       {expanded && (
         <ul id={listId} className="mt-1">
           {active.map((p) => <PollRow key={p.id} {...rowProps(p)} />)}
@@ -223,10 +254,10 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
             </button>
             {/* Only offered while the list is open: a bulk delete of things the
                 host cannot currently see is a button that destroys the unseen. */}
-            {showExpired && !confirmBatch && (
+            {showExpired && confirmBatch !== 'expired' && (
               <button
                 type="button"
-                onClick={() => { setDeleteError(null); setConfirmId(null); setConfirmBatch(true) }}
+                onClick={() => { setDeleteError(null); setConfirmId(null); setConfirmBatch('expired') }}
                 className="text-xs font-medium text-slate-500 hover:text-red-700 underline underline-offset-2"
               >
                 {expired.length === 1 ? 'Delete it' : `Delete all ${expired.length}`}
@@ -234,13 +265,13 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
             )}
           </div>
 
-          {confirmBatch && (
+          {confirmBatch === 'expired' && (
             <ConfirmStrip
               question={deleteAllPrompt(expired.length)}
               confirmLabel={expired.length === 1 ? 'Delete' : `Delete all ${expired.length}`}
               busy={busyIds.length > 0}
               onConfirm={() => remove(expired.map((p) => p.id))}
-              onCancel={() => setConfirmBatch(false)}
+              onCancel={() => setConfirmBatch(null)}
             />
           )}
 

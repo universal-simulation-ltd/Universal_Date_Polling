@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AdvancedMenu, UniversalAppsNavBar, UpdateNotice } from '@unisim/sdk'
+import { AdvancedMenu, AdvancedMenuItem, UniversalAppsNavBar, UpdateNotice, useCloseAppMenu } from '@unisim/sdk'
 // Generated — `npm run credits` after any dependency change. Never edit it by
 // hand: it is read off the installed tree, so a hand-kept list drifts from the
 // lockfile the first time anyone upgrades anything, and a credits list naming a
@@ -9,6 +9,7 @@ import ProductLogo from './components/ProductLogo'
 import CreatePoll from './components/CreatePoll'
 import PollPage from './components/PollPage'
 import { CONTAINER_CREATE, CONTAINER_POLL } from './lib/layout'
+import { openAppSettings } from './lib/appSettings'
 
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_Date_Polling'
 const BASE = import.meta.env.BASE_URL // '/' in dev, '/polling/' in production
@@ -53,9 +54,17 @@ export default function App() {
         product="polling"
         productLogo={<ProductLogo />}
         actions={
-          /* Advanced — the SDK's own category, so every app in the suite has
+          <>
+          {/* App Settings — the ONLY way to a poll's options. They used to be a
+              "More options" fold on the create form; a host now reaches them
+              here, where every app in the suite keeps its settings. Offered on
+              the create screen alone, because that is the screen that owns the
+              draft the options belong to — a poll page would open nothing. */}
+          {loc.view === 'create' && <AppSettingsRow />}
+
+          {/* Advanced — the SDK's own category, so every app in the suite has
              one in the same place, and whatever goes in it next is one change
-             rather than nineteen. "About this app" is always its last row. */
+             rather than nineteen. "About this app" is always its last row. */}
           <AdvancedMenu
             about={{
               repo:    'https://github.com/universal-simulation-ltd/Universal_Date_Polling',
@@ -66,6 +75,7 @@ export default function App() {
               noticesHref: 'https://github.com/universal-simulation-ltd/Universal_Date_Polling/blob/main/THIRD-PARTY-NOTICES.md',
             }}
           />
+          </>
         }
         productHomeHref={BASE}
         suiteSwitcherIconSrc={`${BASE}unisim-icon.png`}
@@ -112,5 +122,29 @@ export default function App() {
         </div>
       </footer>
     </div>
+  )
+}
+
+/** The "App Settings" row of the navbar's Actions menu.
+ *
+ *  Its own component only so it can call `useCloseAppMenu` — the hook reads the
+ *  context the SDK wraps `actions` in, so it has to run inside those rows
+ *  rather than in App itself. Closing matters here: the panel it opens is a
+ *  dialog, and leaving the dropdown hanging over it would put two layers of
+ *  menu on the screen at once. */
+function AppSettingsRow() {
+  const closeMenu = useCloseAppMenu()
+  return (
+    <AdvancedMenuItem
+      label="App Settings"
+      info="Booking page, link expiry, response alerts, calendar and timezone"
+      icon={
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 8.8a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+        </svg>
+      }
+      onSelect={() => { closeMenu(); openAppSettings() }}
+    />
   )
 }

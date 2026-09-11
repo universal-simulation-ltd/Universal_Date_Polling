@@ -119,6 +119,28 @@ export function deleteAllPrompt(n: number): string {
     : `Delete all ${n} expired polls and their responses? This can't be undone.`
 }
 
+/** And for every LIVE poll at once — a heavier question than the expired batch,
+ *  so it is asked with more of the detail it turns on.
+ *
+ *  These links are out in the world: deleting them breaks a page other people
+ *  still have open, and takes the answers they have already given with it. So
+ *  the count of responses about to go is named (it is the part that cannot be
+ *  undone), and a booking that has been taken gets the warning the single
+ *  delete gives — the invite stays in both calendars, so the other person is
+ *  still expecting the meeting. */
+export function deleteAllActivePrompt(polls: MyPoll[]): string {
+  if (polls.length === 1) return `${deletePrompt(polls[0])} This can't be undone.`
+  const responses = polls.reduce((sum, p) => sum + p.response_count, 0)
+  const answers = responses > 0
+    ? ` and their ${responses} response${responses === 1 ? '' : 's'}`
+    : ''
+  const booked = polls.some((p) => p.booking_mode && p.final_slot_id)
+  const bookings = booked
+    ? ' A booking already taken is NOT cancelled — that invite stays in both calendars.'
+    : ''
+  return `Delete all ${polls.length} active polls${answers}? Their links stop working immediately and this can't be undone.${bookings}`
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000
 
 /** "Expires today" / "Expires tomorrow" / "Expires in 12 days" / "Expired", or
