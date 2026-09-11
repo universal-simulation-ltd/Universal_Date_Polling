@@ -21,16 +21,19 @@ body {
    A poll carries a pastel theme. We expose it as CSS variables on the element
    tagged with `data-theme`, and Tailwind utility classes read them via
    arbitrary values (e.g. bg-[var(--accent)]). Default is orange (suite brand).
+   --accent is a fill under white text, so every preset's --accent reaches
+   4.5:1 against white (orange-600 #ea580c was 3.56:1, green-600 #16a34a
+   3.30:1; both are the nearest same-hue shade that passes).
    ------------------------------------------------------------------------- */
 [data-theme] {
-  --accent: #ea580c;
+  --accent: #cf4b00;
   --accent-strong: #c2410c;
   --accent-soft: #ffedd5;
   --accent-softer: #fff7ed;
   --accent-text: #9a3412;
 }
 [data-theme="orange"] {
-  --accent: #ea580c; --accent-strong: #c2410c;
+  --accent: #cf4b00; --accent-strong: #c2410c;
   --accent-soft: #ffedd5; --accent-softer: #fff7ed; --accent-text: #9a3412;
 }
 [data-theme="blue"] {
@@ -42,7 +45,7 @@ body {
   --accent-soft: #fce7f3; --accent-softer: #fdf2f8; --accent-text: #9d174d;
 }
 [data-theme="green"] {
-  --accent: #16a34a; --accent-strong: #15803d;
+  --accent: #00893a; --accent-strong: #15803d;
   --accent-soft: #dcfce7; --accent-softer: #f0fdf4; --accent-text: #166534;
 }
 
