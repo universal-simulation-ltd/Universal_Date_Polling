@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { MyPoll, Slot } from './types'
 import {
-  confirmedLabel, deleteAllPrompt, deletePrompt, expiryLabel, isExpired, mergeMyPolls, pollSummary, responsesLabel,
-  splitMyPolls,
+  confirmedLabel, deleteAllActivePrompt, deleteAllPrompt, deletePrompt, expiryLabel, isExpired, mergeMyPolls,
+  pollSummary, responsesLabel, splitMyPolls,
 } from './myPolls'
 
 const NOW = Date.parse('2026-06-01T12:00:00.000Z')
@@ -145,5 +145,34 @@ describe('deleteAllPrompt', () => {
 
   it('asks about several in the plural', () => {
     expect(deleteAllPrompt(3)).toBe("Delete all 3 expired polls and their responses? This can't be undone.")
+  })
+})
+
+describe('deleteAllActivePrompt', () => {
+  it('falls back to the single-poll question for a list of one', () => {
+    expect(deleteAllActivePrompt([poll({ response_count: 2 })]))
+      .toBe("Delete this poll and its 2 responses? This can't be undone.")
+  })
+
+  it('counts the responses across every poll about to go', () => {
+    expect(deleteAllActivePrompt([poll({ id: 'a', response_count: 2 }), poll({ id: 'b', response_count: 5 })]))
+      .toBe("Delete all 2 active polls and their 7 responses? Their links stop working immediately and this can't be undone.")
+  })
+
+  it('says nothing about responses when there are none to lose', () => {
+    expect(deleteAllActivePrompt([poll({ id: 'a' }), poll({ id: 'b' })]))
+      .toBe("Delete all 2 active polls? Their links stop working immediately and this can't be undone.")
+  })
+
+  it('warns that a booking already taken is not cancelled', () => {
+    const booked = poll({ id: 'b', booking_mode: true, final_slot_id: 's1' })
+    expect(deleteAllActivePrompt([poll({ id: 'a' }), booked]))
+      .toContain('A booking already taken is NOT cancelled')
+  })
+
+  it('leaves the booking warning out when nothing has been booked', () => {
+    const openBooking = poll({ id: 'b', booking_mode: true })
+    expect(deleteAllActivePrompt([poll({ id: 'a' }), openBooking]))
+      .not.toContain('NOT cancelled')
   })
 })

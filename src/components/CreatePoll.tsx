@@ -5,7 +5,7 @@ import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
 import { createPoll, createPollGated, currentUser, sendHostCode, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollLocation as apiSetLocation, shortId, signOut, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
-import { addLocalDays, listTimezones, localTimezone, tzAbbrev, zonedDayAndMinute } from '../lib/time'
+import { addLocalDays, formatTime, listTimezones, localTimezone, tzAbbrev, zonedDayAndMinute } from '../lib/time'
 import {
   busySegmentsByDay, calendarConfigured, calendarStatus, disconnectCalendar, fetchFreeBusy, startCalendarConnect,
   type BusyInterval, type CalendarProvider, type CalendarStatus, type ProviderFetchStatus,
@@ -16,9 +16,13 @@ import CopyAsText from './CopyAsText'
 import MyPolls from './MyPolls'
 import SlotPicker from './SlotPicker'
 import ProductLogo from './ProductLogo'
+import SettingsDialog from './SettingsDialog'
 import type { SlotView } from './SlotPicker'
-import { CONTAINER_CREATE } from '../lib/layout'
+import { CONTAINER_CREATE, centreScrollTop } from '../lib/layout'
 import { pollLink } from '../lib/appUrl'
+import {
+  calendarPromptHidden, onOpenAppSettings, setCalendarPromptHidden, type SettingsSection,
+} from '../lib/appSettings'
 
 const VALIDITY = [
   { label: '7 days', days: 7 },
@@ -84,9 +88,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   // from "no new file picked, keep the account one".
   const [dropOrgLogo, setDropOrgLogo] = useState(false)
 
-  const [showMore, setShowMore] = useState(false)
+  // The settings panel: which section it opened on, or null while it is shut.
+  // Everything that used to live in the create form's "More options" fold is in
+  // here now, reached from the navbar's Actions → App Settings (App.tsx) — or
+  // from the one in-page shortcut, "Change timezone?" beside the picker.
+  const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null)
   const [showBranding, setShowBranding] = useState(false)
-  const moreId = useId()
   const brandingId = useId()
   const [phase, setPhase] = useState<Phase>('edit')
   const [code, setCode] = useState('')
@@ -94,10 +101,37 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [createdId, setCreatedId] = useState<string | null>(null)
 
   const colorRef = useRef<HTMLInputElement>(null)
-  // The availability block, so More options can send the host up to it rather
-  // than silently changing something off the bottom of the screen.
+  // The availability block — its heading is the hard stop when the calendar is
+  // scrolled into the middle of the screen (see centreCalendar below).
   const availabilityRef = useRef<HTMLDivElement>(null)
-  const zones = listTimezones()
+  // The picker itself, which is the thing being centred.
+  const pickerRef = useRef<HTMLDivElement>(null)
+  // The zone the poll is actually in always has a row of its own. The platform
+  // list leaves some resolvable zones out — a browser reporting plain 'UTC' is
+  // the one everybody meets — and a <select> whose value matches no option
+  // silently shows the FIRST one instead, so the settings panel would claim the
+  // poll was in Africa/Abidjan while the page said UTC.
+  const zones = useMemo(() => {
+    const all = listTimezones()
+    return all.includes(timezone) ? all : [timezone, ...all]
+  }, [timezone])
+
+  // Opened from the navbar's Actions menu, which is rendered by App and has no
+  // way to reach this component's state — hence the window event in between.
+  useEffect(() => onOpenAppSettings(setSettingsSection), [])
+
+  // "Change timezone?" opens the panel ON the timezone control rather than at
+  // the top of it: the host asked one question, and answering it should not
+  // start with reading the booking-page checkbox.
+  const tzSelectRef = useRef<HTMLSelectElement>(null)
+  useEffect(() => {
+    if (settingsSection !== 'timezone') return
+    const frame = requestAnimationFrame(() => {
+      tzSelectRef.current?.focus()
+      tzSelectRef.current?.scrollIntoView({ block: 'center' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [settingsSection])
 
   // --- Enterprise detection via the suite SDK (cookie SSO in production) ------
   const { user: suiteUser, loading: userLoading } = useUser()
@@ -211,13 +245,27 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const fetchedWeeksRef = useRef(new Set<string>())
   const lastWeekRef = useRef<Date | null>(null)
 
+  // "Don't show again" on the connect-a-calendar prompt. It is an offer, not a
+  // step, so a host who has decided against it says so once and never sees it
+  // again — on this browser, on every poll. Nothing is taken away: App Settings
+  // connects a calendar too, and offers this prompt back.
+  const [calPromptHidden, setCalPromptHidden] = useState(calendarPromptHidden)
+  function hideCalPrompt() {
+    setCalendarPromptHidden(true)
+    setCalPromptHidden(true)
+  }
+  function restoreCalPrompt() {
+    setCalendarPromptHidden(false)
+    setCalPromptHidden(false)
+  }
+
   const anyConnected = !!calStatus && (calStatus.google.connected || calStatus.microsoft.connected)
   const anyConfigured = !!calStatus && (calStatus.configured.google || calStatus.configured.microsoft)
   // Providers you could still connect: configured server-side, not yet linked.
-  // Connecting is offered in ONE place — the prompt beside the calendar, where
-  // the shading it produces appears — so this drives that prompt, including the
-  // "Google connected, Outlook not" case that More options used to be the only
-  // route to. More options keeps what is already connected, and disconnecting.
+  // Drives both offers — the prompt beside the calendar, where the shading it
+  // produces appears, and the same buttons in App Settings for a host who has
+  // dismissed that prompt. Covers the "Google connected, Outlook not" case in
+  // each place, so a second calendar is added wherever the host is looking.
   const connectable = {
     google: !!calStatus && calStatus.configured.google && !calStatus.google.connected,
     microsoft: !!calStatus && calStatus.configured.microsoft && !calStatus.microsoft.connected,
@@ -522,15 +570,40 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     setLogoFile(file)
   }
 
-  /** More options is below the picker, so switching the view from there would
-   *  otherwise change something the host cannot see. Scrolls to it as well. */
-  function openCalendarView() {
-    changeView('calendar')
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    availabilityRef.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
-  }
+  // Bumped every time the host asks for the Calendar view; the effect below
+  // does the scrolling once React has actually put the grid on the page. A
+  // counter rather than a boolean, so picking Calendar again — the "I meant
+  // it, show me" click — scrolls again instead of doing nothing.
+  const [centreCalendar, setCentreCalendar] = useState(0)
+
+  useEffect(() => {
+    if (centreCalendar === 0 || view !== 'calendar') return
+    // One frame later: the grid is mounted by this effect's own render, but its
+    // height is only measurable once the browser has laid it out.
+    const frame = requestAnimationFrame(() => {
+      const picker = pickerRef.current
+      const section = availabilityRef.current
+      if (!picker || !section) return
+      const pickerBox = picker.getBoundingClientRect()
+      const top = centreScrollTop({
+        targetTop: window.scrollY + pickerBox.top,
+        targetHeight: pickerBox.height,
+        titleTop: window.scrollY + section.getBoundingClientRect().top,
+        viewportHeight: window.innerHeight,
+        stickyHeight: stickyBarHeight(),
+      })
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [centreCalendar, view])
 
   function changeView(next: SlotView) {
+    // Asked for the calendar → bring it to the middle of the screen, whether or
+    // not this is a change of view. The grid is the tall one, it opens below
+    // the fold on a laptop, and a tab that appears to do nothing is a tab
+    // people press twice.
+    if (next === 'calendar') setCentreCalendar((n) => n + 1)
     if (next === view) return
     // Clear only when crossing the timed↔days boundary — those slot shapes
     // aren't interchangeable. Switching form↔calendar keeps the same slots.
@@ -801,10 +874,15 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             ) : mode === 'days' ? (
               <>Respondents tick whole days they're free — good for trips and multi-day plans.</>
             ) : (
-              <>Times are in <span className="font-medium">{tzAbbrev(timezone)}</span> ({timezone}). Change the timezone under More options.</>
+              /* The whole of what a host needs to know about the timezone: what
+                 the clock says where the poll's times will land, and a way to
+                 change it. It used to spell out the abbreviation, the IANA name
+                 and where the setting lived; the time itself is the check that
+                 actually catches a wrong zone. */
+              <TimezoneLine timezone={timezone} onChange={() => setSettingsSection('timezone')} />
             )}
           </p>
-          <div className="mt-3">
+          <div ref={pickerRef} className="mt-3">
             <SlotPicker
               view={view}
               onViewChange={changeView}
@@ -847,12 +925,13 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             {suggesting ? 'Finding free time in your calendar.' : suggestNote ?? ''}
           </span>
 
-          {/* The ONE place a calendar is connected — beside the grid the
-              shading lands in. More options used to offer the same buttons a
-              second time; it now shows only what is connected (see below).
-              Shown while ANY configured provider is unlinked, so adding a
-              second calendar to a first one lives here too. */}
-          {view === 'calendar' && hasSession && calStatus && anyConnectable && (
+          {/* Where a calendar is connected in passing — beside the grid the
+              shading lands in. App Settings offers the same buttons for a host
+              who would rather go and look for them (and for one who has
+              dismissed this prompt). Shown while ANY configured provider is
+              unlinked, so adding a second calendar to a first one lives here
+              too, and only until the host says "don't show again". */}
+          {view === 'calendar' && hasSession && calStatus && anyConnectable && !calPromptHidden && (
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5">
               <span className="text-xs text-slate-600">
                 {anyConnected ? (
@@ -880,13 +959,25 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     Connect Outlook
                   </button>
                 )}
+                {/* Beside the Connect buttons, and quieter than them: "no"
+                    should be one click, but it is not the offer being made. */}
+                <button
+                  type="button"
+                  onClick={hideCalPrompt}
+                  className="px-1 text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
+                >
+                  Don't show again
+                </button>
+              </span>
+              <span className="basis-full text-[11px] text-slate-400">
+                You can still connect one any time under Actions → App Settings.
               </span>
             </div>
           )}
           {/* Guest (no session yet) variant: tokens key off a signed-in uid,
               so the same email OTP the create step runs happens here first —
               verify, and the connect buttons above take this prompt's place. */}
-          {view === 'calendar' && !hasSession && (calProviders?.google || calProviders?.microsoft) && (
+          {view === 'calendar' && !hasSession && !calPromptHidden && (calProviders?.google || calProviders?.microsoft) && (
             <div className="mt-3 rounded-lg bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5">
               <span className="block text-xs text-slate-600">
                 <span className="font-medium text-slate-700">See when you're already busy</span> — verify your email (the same one that saves your poll), then connect your calendar. Only you see the shading.
@@ -937,6 +1028,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   >
                     {calAuthPhase === 'sending' ? 'Sending…' : 'Email me a code'}
                   </button>
+                  {/* Same offer, same way out — a guest who does not want their
+                      calendar read should not have to verify an email to say
+                      so. */}
+                  <button
+                    type="button"
+                    onClick={hideCalPrompt}
+                    className="px-1 text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
+                  >
+                    Don't show again
+                  </button>
                 </div>
               )}
             </div>
@@ -948,28 +1049,37 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
         {/* Options + identity/create */}
         <div>
-        {/* More options */}
-        <div className="mt-6 border-t border-slate-100 pt-4">
-          <button
-            type="button"
-            onClick={() => setShowMore((s) => !s)}
-            aria-expanded={showMore}
-            aria-controls={moreId}
-            className="flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-[var(--accent-strong)]"
-          >
-            <svg viewBox="0 0 12 12" className={`w-3 h-3 transition-transform ${showMore ? 'rotate-90' : ''}`} aria-hidden="true">
-              <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            More options
-            {bookingMode && !showMore && (
-              <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-text)]">
-                Booking page
-              </span>
-            )}
-          </button>
+        {/* What the settings currently say, on the page the host is about to
+            press Create on. Deliberately NOT controls — the options live in
+            Actions → App Settings and nowhere else now — but this poll is about
+            to be created with them, and "Booking page" in particular changes
+            what the link does, so it cannot be silent. */}
+        <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 pt-4 text-xs text-slate-500">
+          {bookingMode && (
+            <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-text)]">
+              Booking page
+            </span>
+          )}
+          <span>
+            Link valid for {VALIDITY.find((v) => v.days === validityDays)?.label ?? 'a while'}
+            {!bookingMode && <> · {notifyOnResponse ? 'response alerts on' : 'no response alerts'}</>}
+            {mode === 'times' && <> · {timezone}</>}
+          </span>
+          <span className="text-slate-400">— change these under Actions → App Settings.</span>
+        </div>
 
-          {showMore && (
-            <div id={moreId} className="mt-4 grid gap-5 sm:grid-cols-2">
+        {/* The options themselves. Until 2026-09-11 this was a "More options"
+            fold on this card; it is a dialog now, opened from the navbar's
+            Actions → App Settings, so the create form is the poll and nothing
+            else. `SettingsDialog` renders fixed, so it sits here in the tree
+            (inheriting the theme variables) without occupying the layout. */}
+        {settingsSection !== null && (
+          <SettingsDialog
+            title="App Settings"
+            description="These apply to the poll you're creating now."
+            onClose={() => setSettingsSection(null)}
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
               {/* Just the two of us — a booking page rather than a poll. First in
                   the list because it changes what every other option means. */}
               <div className="sm:col-span-2">
@@ -1047,11 +1157,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   <p className="mt-1 text-xs text-slate-500">
                     Connect a calendar and the <span className="font-medium">Calendar</span> view shades the times you're already busy. Only you ever see the shading — nothing is shown to the people you send the poll to. <span className="font-medium">Outlook / Microsoft 365</span> also labels each block with the event's name; <span className="font-medium">Google Calendar</span> shades busy times only, and we never read your event names, guests, locations or descriptions there.
                   </p>
-                  {/* What is connected, and how to undo it. NOT where you
-                      connect: that is offered beside the calendar, in the one
-                      view the shading appears in — a host working in Manual or
-                      Whole days gets nothing from the overlay, and two Connect
-                      buttons for the same account is one too many. */}
+                  {/* What is connected, how to undo it — and, since the prompt
+                      beside the grid can be dismissed for good, how to connect
+                      one from here. Settings is the place a host goes looking
+                      for a setting they have turned off, so the offer has to
+                      survive the dismissal that sent them here. */}
                   <div className="mt-2 flex flex-col gap-2">
                     {calStatus.google.connected && (
                       <CalendarProviderRow
@@ -1071,15 +1181,40 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                         onDisconnect={() => disconnectCal('microsoft')}
                       />
                     )}
-                    {!anyConnected && (
+                    {anyConnectable && (
                       <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                        Nothing connected yet.
+                        {anyConnected ? 'Add another:' : 'Nothing connected yet.'}
+                        {connectable.google && (
+                          <button
+                            type="button"
+                            onClick={() => connectCalendar('google')}
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                          >
+                            Connect Google Calendar
+                          </button>
+                        )}
+                        {connectable.microsoft && (
+                          <button
+                            type="button"
+                            onClick={() => connectCalendar('microsoft')}
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                          >
+                            Connect Outlook
+                          </button>
+                        )}
+                      </span>
+                    )}
+                    {/* The way back from "Don't show again" — a dismissal you
+                        cannot undo is a setting the host has lost. */}
+                    {calPromptHidden && anyConnectable && (
+                      <span className="text-xs text-slate-500">
+                        The connect prompt beside the calendar is hidden.{' '}
                         <button
                           type="button"
-                          onClick={openCalendarView}
+                          onClick={restoreCalPrompt}
                           className="font-medium text-[var(--accent-strong)] underline underline-offset-2 hover:no-underline"
                         >
-                          Connect one in the Calendar view →
+                          Show it again
                         </button>
                       </span>
                     )}
@@ -1093,6 +1228,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 <div className="sm:col-span-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Timezone</span>
                   <select
+                    ref={tzSelectRef}
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
                     className="mt-2 w-full h-10 rounded-lg border border-slate-300 px-2 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
@@ -1101,12 +1237,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                       <option key={z} value={z}>{z}</option>
                     ))}
                   </select>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Every time on this poll is written in this zone; each guest sees it converted to theirs. It's{' '}
+                    <span className="font-medium text-slate-600">{formatTime(new Date(), timezone)}</span> there now.
+                  </p>
                 </div>
               )}
 
             </div>
-          )}
-        </div>
+          </SettingsDialog>
+        )}
 
         {/* Identity + create */}
         <div className="mt-6 border-t border-slate-100 pt-5">
@@ -1159,7 +1299,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 We'll send a quick code to confirm it's you — that's how you'll manage this poll later
                 {notifyOnResponse
                   ? <> and where we'll send your response alerts.</>
-                  : <>. Want an email each time a guest responds? Turn that on under More options.</>}
+                  : <>. Want an email each time a guest responds? Turn that on under Actions → App Settings.</>}
               </p>
             </label>
           )}
@@ -1513,6 +1653,59 @@ function CreatedPanel({ pollBase, id, theme, poll }: {
       </div>
     </div>
   )
+}
+
+/** "It's 14:32. You are in Europe/London. Change timezone?"
+ *
+ *  The clock is the point. A poll's times are written in ONE zone and every
+ *  guest reads them converted, so a host who is in the wrong zone here proposes
+ *  the wrong times for everyone — and the fastest way to notice is a time that
+ *  isn't the time it is. It ticks (every 15 seconds, so it is never more than a
+ *  quarter-minute stale) rather than freezing at whatever it said on load.
+ *
+ *  "Change timezone?" opens App Settings on the timezone control — the one
+ *  shortcut into settings from the page, because this line raises the question
+ *  and a line that raises a question should answer it. */
+function TimezoneLine({ timezone, onChange }: { timezone: string; onChange: () => void }) {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 15_000)
+    return () => window.clearInterval(timer)
+  }, [])
+  return (
+    <>
+      It's <span className="font-medium text-slate-700">{formatTime(now, timezone)}</span>. You are in{' '}
+      <span className="font-medium text-slate-700">{timezone}</span>.{' '}
+      <button
+        type="button"
+        onClick={onChange}
+        className="font-medium text-[var(--accent-strong)] underline underline-offset-2 hover:no-underline"
+      >
+        Change timezone?
+      </button>
+    </>
+  )
+}
+
+/** How much of the top of the screen the suite navbar is sitting on. The bar is
+ *  `position: sticky`, so anything scrolled to the very top of the document is
+ *  scrolled UNDERNEATH it — which is the difference between a heading "at the
+ *  top of the screen" and a heading nobody can see. Measured rather than
+ *  guessed (it is the SDK's markup, and it is taller on a phone), and 0 when
+ *  there is no pinned bar to allow for. */
+function stickyBarHeight(): number {
+  // ⚠️ The <header> is NOT the element doing the pinning — the SDK wraps the bar
+  // in a sticky div and leaves the header itself static. Reading the position
+  // off the header alone therefore answers 0, and the calendar scrolls a
+  // barful too far, hiding the very heading this is here to protect. So walk up
+  // from the bar to whichever ancestor is actually pinned.
+  let el: HTMLElement | null = document.querySelector('header')
+  while (el && el !== document.body) {
+    const { position } = window.getComputedStyle(el)
+    if (position === 'sticky' || position === 'fixed') return el.getBoundingClientRect().height
+    el = el.parentElement
+  }
+  return 0
 }
 
 function messageOf(e: unknown): string {
