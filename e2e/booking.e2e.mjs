@@ -294,16 +294,24 @@ try {
   }
 
   // 4. The create screen's opt-in --------------------------------------------
+  // Since 068da56 (2026-09-11) the poll's options are a dialog behind the
+  // navbar's Actions → App Settings; the card's "More options" fold is gone.
   {
     const page = await browser.newPage()
     const bookings = []
     await stubBackend(page, { row: poll(), bookings })
     await page.goto(base, { waitUntil: 'networkidle' })
     const before = await page.locator('body').innerText()
-    check('the booking toggle is behind More options', !before.includes('Just the two of us'))
-    await page.getByRole('button', { name: 'More options' }).click()
+    check('the booking toggle is behind App Settings', !before.includes('Just the two of us'))
+    // HOVER, not click: the pill opens on hover, and a click lands after the
+    // hover has already opened it — so it toggles the menu shut again.
+    await page.getByRole('button', { name: /Actions/ }).first().hover()
+    // By role: the create card's "change these under Actions → App Settings"
+    // line carries the same words and is not the thing to click.
+    await page.getByRole('menuitem', { name: /App Settings/ }).click()
+    await page.getByText('Just the two of us').waitFor({ timeout: 5000 })
     const opened = await page.locator('body').innerText()
-    check('More options offers the booking page', opened.includes('Just the two of us'))
+    check('App Settings offers the booking page', opened.includes('Just the two of us'))
     check('and explains what it does', opened.includes('They pick a time, it books itself'))
 
     const toggle = page.getByRole('checkbox').first()
