@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useUser, useUniversal } from '@unisim/sdk'
+import { Chip, useUser, useUniversal, ValueChip } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
 import { bookSlot, BookingError, cancelBooking, currentUser, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, submitResponse } from '../lib/api'
 import { supabase } from '../lib/supabase'
@@ -934,10 +934,14 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                           <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{dayMode ? 'All day' : formatRange(inst, s.durationMins, activeTz)}</span>
                           {tzNote && <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</span>}
                           {isFinal && (
-                            <span className="ml-2 inline-block rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white align-middle">✓ Confirmed</span>
+                            <span className="ml-2 inline-block align-middle">
+                              <ValueChip size="sm" tone="good">✓ Confirmed</ValueChip>
+                            </span>
                           )}
                           {best && !isFinal && (
-                            <span className="ml-2 inline-block rounded-full bg-[var(--accent)] px-2 py-0.5 text-[11px] font-bold text-white align-middle">Best</span>
+                            <span className="ml-2 inline-block align-middle">
+                              <Chip size="sm">Best</Chip>
+                            </span>
                           )}
                         </div>
                         <div className="shrink-0 text-sm text-slate-600 dark:text-slate-300">

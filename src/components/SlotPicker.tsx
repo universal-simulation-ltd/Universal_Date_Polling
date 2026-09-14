@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Chip } from '@unisim/sdk'
 import type { Slot } from '../lib/types'
 import type { DaySegment } from '../lib/hostCalendar'
 import { shortId } from '../lib/api'
@@ -214,16 +215,13 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{chosen.length} day{chosen.length > 1 ? 's' : ''} selected</div>
           <div className="mt-1.5 flex flex-wrap gap-2">
             {chosen.map((dateStr) => (
-              <span
-                key={dateStr}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text)]"
-              >
+              <Chip key={dateStr}>
                 {fmtDay(dateStr)}
                 <button
                   type="button"
                   onClick={() => toggle(dateStr)}
                   aria-label={`Remove ${fmtDay(dateStr)}`}
-                  className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 dark:hover:bg-white/10 hover:text-[var(--accent-strong)] dark:hover:text-[var(--accent-text)]"
+                  className="-mr-1 grid h-4 w-4 place-items-center rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-slate-100"
                 >
                   {/* ⚠️ An SVG, not `✕`: U+2715 has no glyph in iOS's system
                       font, so the way to take a date back off the poll was a
@@ -232,7 +230,7 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
                     <path d="m4 4 8 8M12 4l-8 8" />
                   </svg>
                 </button>
-              </span>
+              </Chip>
             ))}
           </div>
         </div>
@@ -352,23 +350,20 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{fmtDay(day)}</div>
               <div className="mt-1.5 flex flex-wrap gap-2">
                 {list.map((s) => (
-                  <span
-                    key={s.id}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text)]"
-                  >
+                  <Chip key={s.id}>
                     {s.start.slice(11)} · {durationLabel(s.durationMins)}
                     <button
                       type="button"
                       onClick={() => remove(s.id)}
                       aria-label={`Remove ${day} ${s.start.slice(11)}`}
-                      className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 dark:hover:bg-white/10 hover:text-[var(--accent-strong)] dark:hover:text-[var(--accent-text)]"
+                      className="-mr-1 grid h-4 w-4 place-items-center rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-slate-100"
                     >
                       {/* SVG, not `✕` — see the note on the date chip above. */}
                       <svg viewBox="0 0 16 16" aria-hidden="true" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                         <path d="m4 4 8 8M12 4l-8 8" />
                       </svg>
                     </button>
-                  </span>
+                  </Chip>
                 ))}
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { useAppFreeToken, useFileDrop, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
+import { Chip, useAppFreeToken, useFileDrop, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
@@ -1158,9 +1158,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             what the link does, so it cannot be silent. */}
         <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 dark:border-slate-800 pt-4 text-xs text-slate-500 dark:text-slate-400">
           {bookingMode && (
-            <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-text)]">
-              Booking page
-            </span>
+            <Chip size="sm">Booking page</Chip>
           )}
           <span>
             Link valid for {VALIDITY.find((v) => v.days === validityDays)?.label ?? 'a while'}

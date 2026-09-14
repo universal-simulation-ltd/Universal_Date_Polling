@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useState } from 'react'
+import { ValueChip } from '@unisim/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { deletePolls, listMyPolls } from '../lib/api'
 import { pollLink } from '../lib/appUrl'
@@ -368,15 +369,13 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
         <a href={href} className="min-w-0 font-semibold text-slate-900 dark:text-slate-100 hover:text-orange-700 dark:hover:text-orange-400 underline-offset-2 hover:underline">
           {poll.title}
         </a>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${
-            poll.response_count > 0 || (poll.booking_mode && poll.final_slot_id)
-              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 ring-emerald-200 dark:ring-emerald-800'
-              : 'bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 ring-slate-200 dark:ring-slate-700'
-          }`}
+        <ValueChip
+          size="sm"
+          className="shrink-0"
+          tone={poll.response_count > 0 || (poll.booking_mode && poll.final_slot_id) ? 'good' : undefined}
         >
           {responsesLabel(poll)}
-        </span>
+        </ValueChip>
       </div>
 
       {/* Summary and actions share a line — this panel sits ABOVE the create
