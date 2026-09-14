@@ -17,9 +17,9 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
 - **Share** the generated link. Anyone with it can respond — no account needed.
 - **Respond** — tick each slot you're *free* or *if-need-be*. Times are shown in
   the poll's timezone, with your own local time alongside if they differ.
-  Optionally leave an email to be notified when the host confirms a time — it's
-  stored write-only (client roles can never read it back) and never shown to
-  other respondents.
+  Optionally leave an email to be notified when the host confirms a time — only
+  the poll's host can read it back (for their calendar guests and "Copy
+  email"), and it's never shown to other respondents.
 - **Decide** — the results view tallies every slot, shades it by how many people
   are free, and badges the winner(s).
 - **Confirm** — the host (and only the host) can click **"Confirm this time"** on
@@ -27,7 +27,10 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
   banner with the chosen date/time. From that banner the host can **email every
   respondent who left an address** the confirmed time, with a `.ics` invite
   attached (the `notify-poll-respondents` Edge Function; never sent
-  automatically — always an explicit host click).
+  automatically — always an explicit host click) — or **Copy email** to send
+  it from their own mailbox: a preview with the recipients, subject and an
+  editable message, each with a copy button. Once a time is confirmed the
+  answer form and the results fold away, one click from open again.
 - **Come back to it** — signed in as the host, the create page lists **your
   active polls** above the form (collapsible, and collapsed to a one-line header
   from three polls up), each with how many people have replied, the
@@ -46,7 +49,8 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
 - **Add to calendar** — each result slot (and the confirmed banner) has an "Add
   to calendar" button: Google Calendar, Outlook, or an `.ics` download (Apple
   Calendar, Outlook desktop). Generated entirely client-side, in the poll's
-  timezone.
+  timezone. On the confirmed banner, the host's Google and Outlook links
+  pre-fill the guests with everyone who was free (or free if need be) then.
 
 ### More options
 

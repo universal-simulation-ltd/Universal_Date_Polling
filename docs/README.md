@@ -28,12 +28,31 @@ it. Clearing it (`final_slot_id = null`) is the "Change"/"Unconfirm" action.
 The host can then **email the confirmed time to respondents** (Phase 2 — this
 paragraph used to say emailing was a deliberate non-goal; it shipped). Anyone
 responding may optionally leave an address, stored in `poll_response_emails`
-(migration 0115), which client roles can write but never read — the
-`notify-poll-respondents` Edge Function's service-role read is the only path to
-an address. It sends the confirmed date with a `.ics` attachment built by
+(migration 0115), which client roles can neither read nor write directly
+(0170). It sends the confirmed date with a `.ics` attachment built by
 `_shared/poll-ics.ts`, then stamps `polls.final_notified_slot_id` so the page
 can show "respondents emailed ✓". Always an explicit host click; confirming a
 slot never auto-sends.
+
+The host can also **follow up from their own email and calendar**. On a
+confirmed poll the page reads the addresses through
+`get_poll_respondent_emails` (migration 0172) — a SECURITY DEFINER function
+scoped to `host_user_id = auth.uid()`, so it returns nothing to anyone else.
+They feed two things:
+- The banner's **Add to calendar** pre-fills Google (`add=`) and Outlook
+  (`to=`) with everyone who answered yes or if-need-be for the confirmed slot.
+  The `.ics` never carries attendees, because RFC 5546 forbids ATTENDEE on
+  `METHOD:PUBLISH`.
+- **Copy email** (`CopyEmail.tsx`) previews the confirmation email — To (every
+  address left), Subject, and an editable message — each with its own copy
+  button.
+
+The pure parts are in `src/lib/confirmedEmail.ts` (unit-tested), and the page
+is covered by `npm run test:confirmed`.
+
+Once a time is confirmed, the answer form and the results **fold** to one row
+each and open again on a click. The fold is derived from `final_slot_id`, so
+unconfirming opens them.
 
 ## "Your polls" — the way back to a poll you made
 
