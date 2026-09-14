@@ -73,7 +73,7 @@ export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-[var(--accent-text)] ring-1 ring-slate-200 hover:ring-[var(--accent)] hover:bg-[var(--accent-soft)] transition"
+        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-[var(--accent-text)] ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-[var(--accent)] hover:bg-[var(--accent-soft)] transition"
       >
         <CalendarIcon />
         Add to calendar
@@ -88,10 +88,10 @@ export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
           ref={menuRef}
           role="menu"
           style={{ position: 'fixed', top: pos.top, left: pos.left, width: MENU_WIDTH }}
-          className="z-[1100] overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-slate-200 pop-in"
+          className="z-[1100] overflow-hidden rounded-lg bg-white dark:bg-slate-800 shadow-lg ring-1 ring-slate-200 dark:ring-slate-700 pop-in"
         >
           {guests.length > 0 && (
-            <p className="border-b border-slate-100 px-3 py-2 text-xs text-slate-500">
+            <p className="border-b border-slate-100 dark:border-slate-700 px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
               Invites the {guests.length === 1 ? 'person' : `${guests.length} people`} free then — they're in the guests box, and nothing is sent until you save.
             </p>
           )}
@@ -117,7 +117,7 @@ function MenuItem({ onClick, children }: { onClick: () => void; children: React.
       type="button"
       role="menuitem"
       onClick={onClick}
-      className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+      className="block w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
     >
       {children}
     </button>

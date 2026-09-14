@@ -159,12 +159,12 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
     // not load is quietly told they have none.
     if (!failed) return null
     return (
-      <div className="mb-4 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 px-5 py-4 text-sm text-slate-600">
+      <div className="mb-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 px-5 py-4 text-sm text-slate-600 dark:text-slate-300">
         Couldn't load your polls.{' '}
         <button
           type="button"
           onClick={() => setAttempt((n) => n + 1)}
-          className="font-medium text-orange-700 underline underline-offset-2 hover:text-orange-800"
+          className="font-medium text-orange-700 dark:text-orange-400 underline underline-offset-2 hover:text-orange-800 dark:hover:text-orange-300"
         >
           Try again
         </button>
@@ -187,7 +187,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
   })
 
   return (
-    <section className="mb-4 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-6 pop-in">
+    <section className="mb-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-6 pop-in">
       {/* The heading is the toggle when there is a toggle, and a plain heading
           otherwise — rather than a chevron that does nothing on a two-poll
           list. Same chevron as the create form's "More options", so the two
@@ -202,7 +202,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
       />
 
       {active.length === 0 && (
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           Nothing active right now — your {expired.length === 1 ? 'poll has' : 'polls have'} expired.
         </p>
       )}
@@ -217,7 +217,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
           <button
             type="button"
             onClick={() => { setDeleteError(null); setConfirmId(null); setConfirmBatch('active') }}
-            className="text-xs font-medium text-slate-500 hover:text-red-700 underline underline-offset-2"
+            className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-red-700 dark:hover:text-red-400 underline underline-offset-2"
           >
             Delete all {active.length}
           </button>
@@ -241,14 +241,14 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
       )}
 
       {expanded && expired.length > 0 && (
-        <div className="mt-3 border-t border-slate-100 pt-3">
+        <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <button
               type="button"
               onClick={() => setShowExpired((s) => !s)}
               aria-expanded={showExpired}
               aria-controls={expiredId}
-              className="text-sm font-medium text-slate-500 hover:text-slate-700 underline underline-offset-2"
+              className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
             >
               {showExpired ? 'Hide' : 'Show'} {expired.length} expired
             </button>
@@ -258,7 +258,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
               <button
                 type="button"
                 onClick={() => { setDeleteError(null); setConfirmId(null); setConfirmBatch('expired') }}
-                className="text-xs font-medium text-slate-500 hover:text-red-700 underline underline-offset-2"
+                className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-red-700 dark:hover:text-red-400 underline underline-offset-2"
               >
                 {expired.length === 1 ? 'Delete it' : `Delete all ${expired.length}`}
               </button>
@@ -283,10 +283,10 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
         </div>
       )}
 
-      {deleteError && <p className="mt-3 text-xs text-red-600">{deleteError}</p>}
+      {deleteError && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{deleteError}</p>}
 
       {failed && (
-        <p className="mt-3 text-xs text-amber-700">
+        <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">
           Some of your polls may be missing from this list —{' '}
           <button
             type="button"
@@ -312,12 +312,12 @@ function Heading({ title, count, collapsible, open, onToggle, panelId }: {
   panelId: string
 }) {
   const badge = count > 0 && (
-    <span className="ml-2 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-bold text-orange-700 ring-1 ring-orange-200">
+    <span className="ml-2 rounded-full bg-orange-50 dark:bg-orange-950/40 px-2 py-0.5 text-xs font-bold text-orange-700 dark:text-orange-400 ring-1 ring-orange-200 dark:ring-orange-900">
       {count}
     </span>
   )
   if (!collapsible) {
-    return <h2 className="text-base font-extrabold text-slate-900">{title}{badge}</h2>
+    return <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-100">{title}{badge}</h2>
   }
   return (
     <h2>
@@ -326,7 +326,7 @@ function Heading({ title, count, collapsible, open, onToggle, panelId }: {
         onClick={onToggle}
         aria-expanded={open}
         aria-controls={panelId}
-        className="flex w-full items-center gap-1.5 text-left text-base font-extrabold text-slate-900 hover:text-orange-700"
+        className="flex w-full items-center gap-1.5 text-left text-base font-extrabold text-slate-900 dark:text-slate-100 hover:text-orange-700 dark:hover:text-orange-400"
       >
         <svg viewBox="0 0 12 12" className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} aria-hidden="true">
           <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -361,18 +361,18 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
   // answer any more.
   const dead = isExpired(poll)
   return (
-    <li className="border-t border-slate-100 py-3 first:border-t-0 last:pb-0">
+    <li className="border-t border-slate-100 dark:border-slate-800 py-3 first:border-t-0 last:pb-0">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         {/* A plain href, not a router push: App reads the route from the URL on
             load and on popstate, so a normal navigation is the whole story. */}
-        <a href={href} className="min-w-0 font-semibold text-slate-900 hover:text-orange-700 underline-offset-2 hover:underline">
+        <a href={href} className="min-w-0 font-semibold text-slate-900 dark:text-slate-100 hover:text-orange-700 dark:hover:text-orange-400 underline-offset-2 hover:underline">
           {poll.title}
         </a>
         <span
           className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${
             poll.response_count > 0 || (poll.booking_mode && poll.final_slot_id)
-              ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-              : 'bg-slate-50 text-slate-600 ring-slate-200'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 ring-emerald-200 dark:ring-emerald-800'
+              : 'bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 ring-slate-200 dark:ring-slate-700'
           }`}
         >
           {responsesLabel(poll)}
@@ -383,8 +383,8 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
           form, so every line it spends is one the form is pushed down by. It
           wraps to two on a narrow phone, which is the only place it needs to. */}
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <p className="text-xs text-slate-500">
-          {poll.booking_mode && <span className="font-medium text-slate-600">Booking page · </span>}
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {poll.booking_mode && <span className="font-medium text-slate-600 dark:text-slate-300">Booking page · </span>}
           {pollSummary(poll)}
           {expiry && <> · {expiry}</>}
         </p>
@@ -394,18 +394,18 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
               <button
                 type="button"
                 onClick={onCopy}
-                className="rounded-md px-2 py-1 font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                className="rounded-md px-2 py-1 font-medium text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60"
               >
                 {copied ? 'Copied!' : 'Copy link'}
               </button>
             )}
-            <a href={href} className="font-medium text-orange-700 hover:text-orange-800 hover:underline underline-offset-2">
+            <a href={href} className="font-medium text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline underline-offset-2">
               Open →
             </a>
             <button
               type="button"
               onClick={onAskDelete}
-              className="font-medium text-slate-400 hover:text-red-700 underline-offset-2 hover:underline"
+              className="font-medium text-slate-400 hover:text-red-700 dark:hover:text-red-400 underline-offset-2 hover:underline"
             >
               Delete
             </button>
@@ -414,7 +414,7 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
       </div>
 
       {confirmed && (
-        <p className="mt-1.5 text-xs font-medium text-emerald-700">
+        <p className="mt-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
           {poll.booking_mode ? 'Booked' : 'Confirmed'}: {confirmed}
         </p>
       )}
@@ -442,13 +442,13 @@ function ConfirmStrip({ question, confirmLabel, busy, onConfirm, onCancel }: {
   onCancel: () => void
 }) {
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-red-50 px-3 py-2 ring-1 ring-red-100">
-      <p className="text-xs text-slate-700">{question}</p>
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-red-50 dark:bg-red-950/40 px-3 py-2 ring-1 ring-red-100 dark:ring-red-900/60">
+      <p className="text-xs text-slate-700 dark:text-slate-300">{question}</p>
       <div className="ml-auto flex items-center gap-2">
         <button
           type="button"
           onClick={onCancel}
-          className="px-1 text-xs font-medium text-slate-500 hover:text-slate-700"
+          className="px-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
         >
           Cancel
         </button>

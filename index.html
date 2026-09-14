@@ -4,6 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
+    <!-- ⚠️ DARK MODE, BEFORE THE FIRST PIXEL — inline, here, rather than in the
+         app. `createThemeStore` (the SDK, src/stores/themeStore.ts) applies the
+         same class at import time, but that is after the module bundle has
+         parsed; `html.dark`'s ground in index.css only helps if the class is
+         already there when the stylesheet paints. This runs during head
+         parsing, so a dark-mode user never sees a light frame first.
+
+         ⚠️ THE KEY IS DUPLICATED — src/stores/themeStore.ts holds the other
+         copy, and renaming one silently resets everybody to light. They are
+         held together by src/lib/darkMode.test.ts. Do not "tidy" either away.
+
+         Light is the default (the suite rule), so this only ever ADDS `dark`.
+         A class, not `data-theme` — that attribute is the poll's accent. -->
+    <script>
+      try {
+        var pref = localStorage.getItem('unisim-polling-theme')
+        if (pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark')
+          document.documentElement.style.colorScheme = 'dark'
+        }
+      } catch (e) {
+        /* private mode, storage disabled: light, exactly as the store falls back. */
+      }
+    </script>
+
     <!-- Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon-180.png" />

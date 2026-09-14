@@ -50,7 +50,7 @@ export default function SettingsDialog({ title, description, onClose, children }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-6"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 dark:bg-slate-950/70 p-0 sm:items-center sm:p-6"
       // A click on the BACKDROP closes; one that started inside and drifted out
       // (a drag across a slider or a select) must not, hence the target check.
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
@@ -61,20 +61,20 @@ export default function SettingsDialog({ title, description, onClose, children }
         aria-modal="true"
         aria-labelledby={headingId}
         tabIndex={-1}
-        className="pop-in max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-white shadow-xl outline-none ring-1 ring-slate-200 sm:max-h-[86vh] sm:rounded-2xl"
+        className="pop-in max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-white dark:bg-slate-900 shadow-xl outline-none ring-1 ring-slate-200 dark:ring-slate-800 sm:max-h-[86vh] sm:rounded-2xl"
       >
         {/* The heading stays put while the settings scroll under it — this list
             is long enough on a phone to lose its title otherwise. */}
-        <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur sm:px-7">
+        <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-5 py-4 backdrop-blur sm:px-7">
           <div className="min-w-0 flex-1">
-            <h2 id={headingId} className="text-base font-extrabold text-slate-900">{title}</h2>
-            {description && <p className="mt-0.5 text-xs text-slate-500">{description}</p>}
+            <h2 id={headingId} className="text-base font-extrabold text-slate-900 dark:text-slate-100">{title}</h2>
+            {description && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{description}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="-mr-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="-mr-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300"
           >
             <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
               <path d="M5 5 L15 15 M15 5 L5 15" />
@@ -86,11 +86,11 @@ export default function SettingsDialog({ title, description, onClose, children }
 
         {/* Nothing to save: every control writes straight to the draft, so this
             is a way out, not a commit. Labelled as such. */}
-        <div className="sticky bottom-0 border-t border-slate-100 bg-white/95 px-5 py-3 backdrop-blur sm:px-7">
+        <div className="sticky bottom-0 border-t border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-5 py-3 backdrop-blur sm:px-7">
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto"
+            className="w-full rounded-lg bg-slate-900 dark:bg-slate-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white sm:w-auto"
           >
             Done
           </button>

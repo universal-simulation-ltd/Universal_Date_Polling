@@ -46,14 +46,14 @@ export default function CopyAsText({ poll, url, displayTz, defaultOpen = false }
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="text-sm font-medium text-[var(--accent-strong)] hover:underline underline-offset-2"
+        className="text-sm font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] hover:underline underline-offset-2"
       >
         {open ? 'Hide the email text' : 'Copy a list for an email →'}
       </button>
 
       {open && (
         <div id={panelId} className="mt-3">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Paste this straight into an email for anyone who'd rather reply than click.
           </p>
           <textarea
@@ -61,15 +61,15 @@ export default function CopyAsText({ poll, url, displayTz, defaultOpen = false }
             value={text}
             rows={rows}
             onFocus={(e) => e.currentTarget.select()}
-            className="mt-2 w-full resize-y rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs leading-relaxed text-slate-700"
+            className="mt-2 w-full resize-y rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 font-mono text-xs leading-relaxed text-slate-700 dark:text-slate-300"
           />
           <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
               <input
                 type="checkbox"
                 checked={includeLink}
                 onChange={(e) => setIncludeLink(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-[var(--accent)] focus:ring-[var(--accent-soft)]"
+                className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[var(--accent)] focus:ring-[var(--accent-soft)]"
               />
               Include the link to the poll
             </label>

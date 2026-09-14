@@ -4,6 +4,7 @@ import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../li
 import { bookSlot, BookingError, cancelBooking, currentUser, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, submitResponse } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
+import { useThemeStore } from '../stores/themeStore'
 import {
   formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, sameCalendarDay, slotDayKey, slotInstant, tzAbbrev,
 } from '../lib/time'
@@ -60,6 +61,8 @@ type BookingState =
 
 export default function PollPage({ id, pollBase }: { id: string; pollBase: string }) {
   const [state, setState] = useState<Load>('loading')
+  // The app's light/dark mode — a custom-hex accent renders differently in each.
+  const colorMode = useThemeStore((s) => s.effective)
   const [poll, setPoll] = useState<Poll | null>(null)
   const [responses, setResponses] = useState<PollResponse[]>([])
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) ?? '')
@@ -466,11 +469,11 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const recipients = contacts ? uniqueEmails(contacts) : []
 
   return (
-    <div data-theme={themeAttr(poll.theme)} style={themeVars(poll.theme)} className={`${CONTAINER_POLL} py-8 sm:py-10`}>
+    <div data-theme={themeAttr(poll.theme)} style={themeVars(poll.theme, colorMode)} className={`${CONTAINER_POLL} py-8 sm:py-10`}>
       {poll.branding && <BrandingHeader branding={poll.branding} />}
       <header className="text-center">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 break-words">{poll.title}</h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 break-words">{poll.title}</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {isBooking
             ? (poll.final_slot_id
                 ? 'This time is booked.'
@@ -493,9 +496,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       )}
 
       {editing && (
-        <div role="status" className="mt-6 rounded-2xl bg-amber-50 px-5 py-4 text-center text-sm text-amber-900 ring-1 ring-amber-200">
+        <div role="status" className="mt-6 rounded-2xl bg-amber-50 dark:bg-amber-950/40 px-5 py-4 text-center text-sm text-amber-900 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900">
           <p className="font-semibold">The host is just changing the times, please check back shortly.</p>
-          <p className="mt-1 text-amber-800">This page will update by itself when they're done.</p>
+          <p className="mt-1 text-amber-800 dark:text-amber-200">This page will update by itself when they're done.</p>
         </div>
       )}
 
@@ -521,8 +524,8 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         />
       )}
       {isBooking && booking.status === 'booked' && (
-        <div className="mt-3 rounded-xl bg-white ring-1 ring-slate-200 px-4 py-3 text-sm text-slate-700">
-          <span className="font-semibold text-slate-900">You're booked in.</span>{' '}
+        <div className="mt-3 rounded-xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-700 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+          <span className="font-semibold text-slate-900 dark:text-slate-100">You're booked in.</span>{' '}
           {booking.viaCalendar
             ? <>A calendar invitation is on its way to <span className="font-medium">{email.trim()}</span> — accept it and the meeting lands in your calendar.</>
             : booking.emailed
@@ -531,12 +534,12 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         </div>
       )}
       {isHost && !finalSlot && !isBooking && responses.length > 0 && (
-        <p className="mt-5 text-center text-sm text-slate-500">
-          You're the host — pick the final time below with <span className="font-medium text-slate-700">Confirm this time</span>, and everyone with the link will see it.
+        <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
+          You're the host — pick the final time below with <span className="font-medium text-slate-700 dark:text-slate-300">Confirm this time</span>, and everyone with the link will see it.
         </p>
       )}
       {isHost && !finalSlot && isBooking && !expired && (
-        <p className="mt-5 text-center text-sm text-slate-500">
+        <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
           This is a booking page. Send the link to one person — whichever time they pick is booked immediately, and you'll both get a calendar invite.
         </p>
       )}
@@ -547,22 +550,22 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           "which of these work for you?" is the wrong email to send then, and
           the banner's "Copy email" is the right one. */}
       {isHost && !expired && !finalSlot && (
-        <section className="mt-5 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+        <section className="mt-5 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-4 sm:p-5">
           <CopyAsText poll={poll} url={pollUrl} displayTz={activeTz} />
         </section>
       )}
 
       {isOtpHost && otpUser?.email && (
         <p className="mt-3 text-center text-xs text-slate-400">
-          Signed in as <span className="font-medium text-slate-500">{otpUser.email}</span> —{' '}
-          <button type="button" onClick={handleSignOut} className="underline underline-offset-2 hover:text-slate-600">
+          Signed in as <span className="font-medium text-slate-500 dark:text-slate-400">{otpUser.email}</span> —{' '}
+          <button type="button" onClick={handleSignOut} className="underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-300">
             Sign out
           </button>
         </p>
       )}
 
       {expired && (
-        <div className="mt-6 rounded-lg bg-amber-50 text-amber-800 ring-1 ring-amber-200 px-4 py-3 text-sm">
+        <div className="mt-6 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm">
           This poll's link has expired — it's read-only now.
         </div>
       )}
@@ -593,45 +596,45 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         />
       )}
       {!expired && !isBooking && !editing && (!finalSlot || showRespond) && (
-        <section className="mt-7 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-6 pop-in">
+        <section className="mt-7 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-6 pop-in">
           <div className="flex items-start justify-between gap-3">
-            <h2 className="text-base font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
               {dayMode ? 'Are you free on these days?' : 'Are you free at these times?'}
             </h2>
             {finalSlot && <FoldButton onClick={() => setShowRespond(false)} />}
           </div>
           <div className="mt-3 flex flex-col sm:flex-row gap-3">
             <label className="block">
-              <span className="text-sm font-medium text-slate-700">Your name</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Your name</span>
               <input
                 type="text"
                 value={name}
                 maxLength={120}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Sam"
-                className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+                className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-slate-700">Your email <span className="font-normal text-slate-400">(optional)</span></span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Your email <span className="font-normal text-slate-400">(optional)</span></span>
               <input
                 type="email"
                 value={email}
                 maxLength={320}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+                className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
               />
             </label>
           </div>
-          <p className="mt-1.5 text-xs text-slate-500">
+          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
             Leave your email and you'll get the final date (with a calendar invite) once the host confirms it. Only the host can see it — never other respondents.
           </p>
 
           <div className="mt-4 space-y-4">
             {groupByDay(slots).map(([day, list]) => (
               <div key={day}>
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   {dayMode ? formatCalendarDay(day) : formatDateHeading(slotInstant(list[0].start, poll.timezone), activeTz)}
                 </div>
                 <div className="mt-2 space-y-2">
@@ -639,17 +642,17 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                     const inst = slotInstant(s.start, poll.timezone)
                     const v = mine[s.id]
                     return (
-                      <div key={s.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2">
+                      <div key={s.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
                         <div className="min-w-0">
-                          <div className="text-sm font-medium text-slate-900">{dayMode ? 'All day' : formatRange(inst, s.durationMins, activeTz)}</div>
-                          {tzNote && <div className="text-xs text-slate-500">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</div>}
+                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{dayMode ? 'All day' : formatRange(inst, s.durationMins, activeTz)}</div>
+                          {tzNote && <div className="text-xs text-slate-500 dark:text-slate-400">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</div>}
                         </div>
                         <div className="flex shrink-0 gap-1.5">
                           <button
                             type="button"
                             onClick={() => cycle(s.id, 'yes')}
                             aria-pressed={v === 'yes'}
-                            className={`h-9 px-3 rounded-md text-sm font-medium ring-1 transition ${v === 'yes' ? 'bg-[var(--accent)] text-white ring-[var(--accent)]' : 'bg-white text-slate-700 ring-slate-300 hover:ring-[var(--accent)]'}`}
+                            className={`h-9 px-3 rounded-md text-sm font-medium ring-1 transition ${v === 'yes' ? 'bg-[var(--accent)] text-white ring-[var(--accent)]' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 ring-slate-300 dark:ring-slate-600 hover:ring-[var(--accent)]'}`}
                           >
                             Yes 👍
                           </button>
@@ -657,7 +660,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                             type="button"
                             onClick={() => cycle(s.id, 'maybe')}
                             aria-pressed={v === 'maybe'}
-                            className={`h-9 px-3 rounded-md text-sm font-medium ring-1 transition ${v === 'maybe' ? 'bg-[var(--accent-soft)] text-[var(--accent-text)] ring-[var(--accent)]' : 'bg-white text-slate-500 ring-slate-300 hover:ring-[var(--accent)]'}`}
+                            className={`h-9 px-3 rounded-md text-sm font-medium ring-1 transition ${v === 'maybe' ? 'bg-[var(--accent-soft)] text-[var(--accent-text)] ring-[var(--accent)]' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 ring-slate-300 dark:ring-slate-600 hover:ring-[var(--accent)]'}`}
                           >
                             If need be
                           </button>
@@ -665,7 +668,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                             type="button"
                             onClick={() => cycle(s.id, 'no')}
                             aria-pressed={v === 'no'}
-                            className={`h-9 px-3 rounded-md text-sm font-medium ring-1 transition ${v === 'no' ? 'bg-rose-600 text-white ring-rose-600' : 'bg-white text-slate-500 ring-slate-300 hover:ring-rose-400'}`}
+                            className={`h-9 px-3 rounded-md text-sm font-medium ring-1 transition ${v === 'no' ? 'bg-rose-600 text-white ring-rose-600' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 ring-slate-300 dark:ring-slate-600 hover:ring-rose-400'}`}
                           >
                             No 🙅‍♀️
                           </button>
@@ -678,7 +681,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
             ))}
           </div>
 
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="mt-5 flex items-center gap-3">
             <button
               type="button"
@@ -688,7 +691,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
             >
               {saving ? 'Saving…' : 'Save my availability'}
             </button>
-            {savedAt && <span className="text-sm text-green-600">Saved — thanks!</span>}
+            {savedAt && <span className="text-sm text-green-600 dark:text-green-400">Saved — thanks!</span>}
           </div>
         </section>
       )}
@@ -715,10 +718,10 @@ function SlotLine({ poll, slot, dayMode, activeTz, viewerTz, tzNote }: {
   const inst = slotInstant(slot.start, poll.timezone)
   return (
     <>
-      <div className="text-sm font-medium text-slate-900">
+      <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
         {dayMode ? formatCalendarDay(slotDayKey(slot)) : `${formatDateHeading(inst, activeTz)} · ${formatRange(inst, slot.durationMins, activeTz)}`}
       </div>
-      {tzNote && <div className="text-xs text-slate-500">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</div>}
+      {tzNote && <div className="text-xs text-slate-500 dark:text-slate-400">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</div>}
     </>
   )
 }
@@ -739,11 +742,11 @@ function BookingPanel({ poll, slots, dayMode, activeTz, viewerTz, tzNote, name, 
 }) {
   const busy = state.status === 'booking'
   return (
-    <section className="mt-7 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-6 pop-in">
-      <h2 className="text-base font-bold text-slate-900">
+    <section className="mt-7 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-6 pop-in">
+      <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
         {dayMode ? 'Pick a day' : 'Pick a time'}
       </h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Whichever you choose is booked straight away — there's nothing else to send back.
       </p>
 
@@ -760,12 +763,12 @@ function BookingPanel({ poll, slots, dayMode, activeTz, viewerTz, tzNote, name, 
               className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition disabled:opacity-60 ${
                 chosen
                   ? 'border-[var(--accent)] bg-[var(--accent-softer)] ring-1 ring-[var(--accent)]'
-                  : 'border-slate-200 hover:border-[var(--accent)]'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-[var(--accent)]'
               }`}
             >
               <span
                 aria-hidden="true"
-                className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${chosen ? 'border-[var(--accent)]' : 'border-slate-300'}`}
+                className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${chosen ? 'border-[var(--accent)]' : 'border-slate-300 dark:border-slate-700'}`}
               >
                 {chosen && <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />}
               </span>
@@ -779,33 +782,33 @@ function BookingPanel({ poll, slots, dayMode, activeTz, viewerTz, tzNote, name, 
 
       <div className="mt-5 flex flex-col sm:flex-row gap-3">
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Your name</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Your name</span>
           <input
             type="text"
             value={name}
             maxLength={120}
             onChange={(e) => onName(e.target.value)}
             placeholder="e.g. Sam"
-            className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+            className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">Your email</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Your email</span>
           <input
             type="email"
             value={email}
             maxLength={320}
             onChange={(e) => onEmail(e.target.value)}
             placeholder="you@example.com"
-            className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+            className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </label>
       </div>
-      <p className="mt-1.5 text-xs text-slate-500">
+      <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
         Your calendar invite goes here. It's only ever used for this booking.
       </p>
 
-      {state.status === 'error' && <p className="mt-3 text-sm text-red-600">{state.message}</p>}
+      {state.status === 'error' && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{state.message}</p>}
 
       <div className="mt-5">
         <button
@@ -828,11 +831,11 @@ function OfferedTimes({ poll, slots, dayMode, activeTz, viewerTz, tzNote }: {
   poll: Poll; slots: Slot[]; dayMode: boolean; activeTz: string; viewerTz: string; tzNote: boolean
 }) {
   return (
-    <section className="mt-7 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-6">
-      <h2 className="text-base font-bold text-slate-900">{dayMode ? "Days you're offering" : "Times you're offering"}</h2>
+    <section className="mt-7 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-6">
+      <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{dayMode ? "Days you're offering" : "Times you're offering"}</h2>
       <div className="mt-3 space-y-2">
         {slots.map((slot) => (
-          <div key={slot.id} className="rounded-xl border border-slate-200 px-3 py-2.5">
+          <div key={slot.id} className="rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5">
             <SlotLine poll={poll} slot={slot} dayMode={dayMode} activeTz={activeTz} viewerTz={viewerTz} tzNote={tzNote} />
           </div>
         ))}
@@ -854,7 +857,7 @@ function BookingNotifyBanner({ which, guest }: { which: 'host' | 'invitee' | 'bo
   return (
     <div
       role="status"
-      className="mt-3 rounded-lg bg-amber-50 text-amber-900 ring-1 ring-amber-200 px-4 py-3 text-sm"
+      className="mt-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm"
     >
       <span className="font-semibold">This time is booked — but an email didn't get through.</span>{' '}
       {which === 'both' ? (
@@ -905,19 +908,19 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
   return (
     <section className="mt-7">
       <div className="flex items-center justify-between gap-3 px-1">
-        <h2 className="text-base font-bold text-slate-900">{foldable ? 'Results' : 'Results so far'}</h2>
+        <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{foldable ? 'Results' : 'Results so far'}</h2>
         {foldable && <FoldButton onClick={() => onOpenChange(false)} />}
       </div>
       {total === 0 ? (
-        <p className="mt-2 px-1 text-sm text-slate-500">No responses yet — share the link to get started.</p>
+        <p className="mt-2 px-1 text-sm text-slate-500 dark:text-slate-400">No responses yet — share the link to get started.</p>
       ) : (
         <div className="mt-3 space-y-4">
           {groupByDay(slots).map(([day, list]) => (
-            <div key={day} className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
-              <div className="bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div key={day} className="rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
+              <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {dayMode ? formatCalendarDay(day) : formatDateHeading(slotInstant(list[0].start, poll.timezone), activeTz)}
               </div>
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {list.map((s) => {
                   const t = tally.find((x) => x.slot.id === s.id)!
                   const inst = slotInstant(s.start, poll.timezone)
@@ -925,11 +928,11 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                   const best = t.yes.length > 0 && t.yes.length === maxYes
                   const isFinal = finalSlotId === s.id
                   return (
-                    <div key={s.id} className={`px-4 py-3 ${isFinal ? 'bg-emerald-50/60' : ''}`}>
+                    <div key={s.id} className={`px-4 py-3 ${isFinal ? 'bg-emerald-50/60 dark:bg-emerald-950/30' : ''}`}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <span className="text-sm font-semibold text-slate-900">{dayMode ? 'All day' : formatRange(inst, s.durationMins, activeTz)}</span>
-                          {tzNote && <span className="ml-2 text-xs text-slate-500">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</span>}
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{dayMode ? 'All day' : formatRange(inst, s.durationMins, activeTz)}</span>
+                          {tzNote && <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</span>}
                           {isFinal && (
                             <span className="ml-2 inline-block rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white align-middle">✓ Confirmed</span>
                           )}
@@ -937,17 +940,17 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                             <span className="ml-2 inline-block rounded-full bg-[var(--accent)] px-2 py-0.5 text-[11px] font-bold text-white align-middle">Best</span>
                           )}
                         </div>
-                        <div className="shrink-0 text-sm text-slate-600">
-                          <span className="font-semibold text-slate-900">{t.yes.length}</span>
+                        <div className="shrink-0 text-sm text-slate-600 dark:text-slate-300">
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">{t.yes.length}</span>
                           {t.maybe.length > 0 && <span className="text-slate-400"> · {t.maybe.length} maybe</span>}
                           {t.no.length > 0 && <span className="text-slate-400"> · {t.no.length} not free</span>}
                         </div>
                       </div>
-                      <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
+                      <div className="mt-2 h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800">
                         <div className="heat-cell h-2 rounded-full" style={{ width: `${Math.max(heat * 100, t.yes.length ? 6 : 0)}%`, ['--heat' as string]: '1' }} />
                       </div>
                       {(t.yes.length > 0 || t.maybe.length > 0 || t.no.length > 0) && (
-                        <p className="mt-1.5 text-xs text-slate-500">
+                        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                           {t.yes.length > 0 && <span className="text-[var(--accent-text)] font-medium">{t.yes.join(', ')}</span>}
                           {t.maybe.length > 0 && <span> {t.yes.length > 0 ? '· ' : ''}maybe: {t.maybe.join(', ')}</span>}
                           {t.no.length > 0 && <span> {t.yes.length > 0 || t.maybe.length > 0 ? '· ' : ''}not free: {t.no.join(', ')}</span>}
@@ -959,7 +962,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                             type="button"
                             onClick={() => onConfirm(s.id)}
                             disabled={confirming}
-                            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 hover:ring-emerald-400 transition disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition disabled:opacity-60"
                           >
                             ✓ Confirm this time
                           </button>
@@ -969,7 +972,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                             type="button"
                             onClick={() => onConfirm(null)}
                             disabled={confirming}
-                            className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 hover:text-slate-700 transition disabled:opacity-60"
+                            className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-300 transition disabled:opacity-60"
                           >
                             Unconfirm
                           </button>
@@ -1040,14 +1043,14 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
   const upgradable = connected.filter((p) => !calStatus?.[p].writable && calStatus?.[p].ceiling.writable)
   const staleOnly = upgradable.length > 0 && writable.length === 0
   return (
-    <div className="mt-6 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 px-5 py-4">
+    <div className="mt-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 ring-1 ring-emerald-200 dark:ring-emerald-800 px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+          <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
             {isBooking ? (bookedBy ? `✓ Booked by ${bookedBy}` : '✓ Booked') : '✓ Confirmed time'}
           </div>
-          <div className="mt-0.5 text-lg font-bold text-slate-900 break-words">{when}</div>
-          {tzNote && <div className="text-xs text-slate-500">{viewerTimeNote(formatRange(inst, slot.durationMins, viewerTz), inst, activeTz, viewerTz)}</div>}
+          <div className="mt-0.5 text-lg font-bold text-slate-900 dark:text-slate-100 break-words">{when}</div>
+          {tzNote && <div className="text-xs text-slate-500 dark:text-slate-400">{viewerTimeNote(formatRange(inst, slot.durationMins, viewerTz), inst, activeTz, viewerTz)}</div>}
           {poll.location && <PollLocation location={poll.location} className="mt-1.5" />}
         </div>
         <div className="flex items-center gap-2">
@@ -1064,7 +1067,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
                 onUnconfirm()
               }}
               disabled={confirming}
-              className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200 hover:bg-white hover:text-slate-700 transition disabled:opacity-60"
+              className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700 hover:bg-white dark:hover:bg-slate-900 hover:text-slate-700 dark:hover:text-slate-300 transition disabled:opacity-60"
             >
               {confirming ? 'Working…' : 'Change'}
             </button>
@@ -1073,12 +1076,12 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
         </div>
       </div>
       {isHost && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-emerald-200/70 pt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-emerald-200/70 dark:border-emerald-900/70 pt-3">
           <button
             type="button"
             onClick={onNotify}
             disabled={sending}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-white hover:ring-emerald-400 transition disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition disabled:opacity-60"
           >
             ✉️ {sending
               ? 'Sending…'
@@ -1094,13 +1097,13 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
               recipients={recipients} recipientsLoading={recipientsLoading}
             />
           )}
-          <span className="text-xs text-slate-600">
+          <span className="text-xs text-slate-600 dark:text-slate-300">
             {notifyState.status === 'sent' && (
               notifyState.sent > 0
                 ? `Sent to ${notifyState.sent} ${notifyState.sent === 1 ? 'person' : 'people'} ✓`
                 : 'No one has left an email address yet.'
             )}
-            {notifyState.status === 'error' && <span className="text-red-600">{notifyState.message}</span>}
+            {notifyState.status === 'error' && <span className="text-red-600 dark:text-red-400">{notifyState.message}</span>}
             {notifyState.status === 'idle' && (
               isBooking
                 ? `${bookedBy ?? 'Your guest'} was emailed the invite when they booked ✓`
@@ -1119,13 +1122,13 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
           guest's invitation without telling them. The "Add to calendar" menu
           above is still there for everyone. */}
       {isHost && !isBooking && (writable.length > 0 || upgradable.length > 0) && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-emerald-200/70 pt-2.5">
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-emerald-200/70 dark:border-emerald-900/70 pt-2.5">
           {writable.length > 0 ? (
             <button
               type="button"
               onClick={onAddToMyCalendar}
               disabled={calWrite.status === 'working'}
-              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-white hover:ring-emerald-400 transition disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition disabled:opacity-60"
             >
               📅 {calWrite.status === 'working'
                 ? 'Adding…'
@@ -1137,19 +1140,19 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
             <button
               type="button"
               onClick={() => onReconnectCalendar(upgradable[0])}
-              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-white hover:ring-emerald-400 transition"
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition"
             >
               📅 Reconnect {PROVIDER_LABEL[upgradable[0]]} to add it
             </button>
           )}
-          <span className="text-xs text-slate-600">
+          <span className="text-xs text-slate-600 dark:text-slate-300">
             {calWrite.status === 'added' && (
               `Added to ${calWrite.providers.map((p) => PROVIDER_LABEL[p]).join(' and ')} ✓`
             )}
             {calWrite.status === 'stale' && (
               'Your calendar was connected for availability only — reconnect it once to allow adding events.'
             )}
-            {calWrite.status === 'error' && <span className="text-red-600">{calWrite.message}</span>}
+            {calWrite.status === 'error' && <span className="text-red-600 dark:text-red-400">{calWrite.message}</span>}
             {(calWrite.status === 'idle' || calWrite.status === 'working' || calWrite.status === 'removed') && (
               staleOnly
                 ? 'Connected for availability only. One reconnect lets this put the time straight in your diary.'
@@ -1173,7 +1176,7 @@ function isUrlLike(s: string): boolean {
 function PollLocation({ location, className = '' }: { location: string; className?: string }) {
   const isLink = isUrlLike(location)
   return (
-    <div className={`flex items-center gap-1.5 text-sm text-slate-600 ${className}`}>
+    <div className={`flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 ${className}`}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true">
         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z" />
         <circle cx="12" cy="10" r="3" />
@@ -1183,7 +1186,7 @@ function PollLocation({ location, className = '' }: { location: string; classNam
           {location}
         </a>
       ) : (
-        <span className="min-w-0 break-words font-medium text-slate-700">{location}</span>
+        <span className="min-w-0 break-words font-medium text-slate-700 dark:text-slate-300">{location}</span>
       )}
     </div>
   )
@@ -1199,9 +1202,9 @@ function TimezoneBar({ pollTz, activeTz, viewerTz, at, onChange }: {
   const viewingOwn = activeTz === viewerTz
   const viewingPoll = activeTz === pollTz
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-slate-500">
+    <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
       <span>
-        This poll is in <span className="font-medium text-slate-700">{tzAbbrev(pollTz, at)}</span>
+        This poll is in <span className="font-medium text-slate-700 dark:text-slate-300">{tzAbbrev(pollTz, at)}</span>
         <span className="text-slate-400"> ({pollTz})</span>.
       </span>
       {viewerTz !== pollTz && !viewingOwn && (
@@ -1218,7 +1221,7 @@ function TimezoneBar({ pollTz, activeTz, viewerTz, at, onChange }: {
         <button
           type="button"
           onClick={() => onChange(pollTz)}
-          className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
+          className="text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
         >
           Reset to poll's timezone
         </button>
@@ -1234,7 +1237,7 @@ function BrandingHeader({ branding }: { branding: PollBranding }) {
     <div className="mb-5 flex items-center justify-center gap-2.5">
       {img && <img src={img} alt={branding.name ?? 'Brand'} className="h-9 max-w-[200px] object-contain" />}
       {branding.name && (
-        <span className={`font-semibold ${img ? 'text-sm text-slate-700' : 'text-lg text-[var(--accent-text)]'}`}>{branding.name}</span>
+        <span className={`font-semibold ${img ? 'text-sm text-slate-700 dark:text-slate-300' : 'text-lg text-[var(--accent-text)]'}`}>{branding.name}</span>
       )}
     </div>
   )
@@ -1269,11 +1272,11 @@ function FoldedSection({ title, summary, onOpen }: { title: string; summary: str
       type="button"
       onClick={onOpen}
       aria-expanded={false}
-      className="mt-7 flex w-full items-center justify-between gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm ring-1 ring-slate-200 transition hover:ring-[var(--accent)] sm:px-6"
+      className="mt-7 flex w-full items-center justify-between gap-3 rounded-2xl bg-white dark:bg-slate-900 px-5 py-4 text-left shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 transition hover:ring-[var(--accent)] sm:px-6"
     >
       <span className="min-w-0">
-        <span className="block text-base font-bold text-slate-900">{title}</span>
-        <span className="mt-0.5 block text-sm text-slate-500">{summary}</span>
+        <span className="block text-base font-bold text-slate-900 dark:text-slate-100">{title}</span>
+        <span className="mt-0.5 block text-sm text-slate-500 dark:text-slate-400">{summary}</span>
       </span>
       <span className="shrink-0 text-sm font-medium text-[var(--accent-text)]">Show ▾</span>
     </button>
@@ -1294,7 +1297,7 @@ function FoldButton({ onClick }: { onClick: () => void }) {
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <div className="mx-auto max-w-md px-4 py-20 text-center text-slate-500">{children}</div>
+  return <div className="mx-auto max-w-md px-4 py-20 text-center text-slate-500 dark:text-slate-400">{children}</div>
 }
 
 /** Shown when a poll fails to load (network hiccup, backend warming up on the
@@ -1303,8 +1306,8 @@ function Centered({ children }: { children: React.ReactNode }) {
 function LoadError({ message, onRetry }: { message: string | null; onRetry: () => void }) {
   return (
     <div className="mx-auto max-w-md px-4 py-20 text-center">
-      <h1 className="text-xl font-bold text-slate-900">Couldn't load this poll</h1>
-      <p className="mt-2 text-slate-600">{message ?? 'Something went wrong.'}</p>
+      <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Couldn't load this poll</h1>
+      <p className="mt-2 text-slate-600 dark:text-slate-300">{message ?? 'Something went wrong.'}</p>
       <button
         type="button"
         onClick={onRetry}
@@ -1319,9 +1322,9 @@ function LoadError({ message, onRetry }: { message: string | null; onRetry: () =
 function NotFound({ pollBase }: { pollBase: string }) {
   return (
     <div className="mx-auto max-w-md px-4 py-20 text-center">
-      <h1 className="text-xl font-bold text-slate-900">Poll not found</h1>
-      <p className="mt-2 text-slate-600">This poll may have been removed, or the link is wrong.</p>
-      <a href={pollBase} className="mt-4 inline-block text-sm font-medium text-orange-700 hover:underline">Create a new poll →</a>
+      <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Poll not found</h1>
+      <p className="mt-2 text-slate-600 dark:text-slate-300">This poll may have been removed, or the link is wrong.</p>
+      <a href={pollBase} className="mt-4 inline-block text-sm font-medium text-orange-700 dark:text-orange-400 hover:underline">Create a new poll →</a>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import type { Slot } from '../lib/types'
 import type { DaySegment } from '../lib/hostCalendar'
 import { shortId } from '../lib/api'
 import { addLocalDays, slotDayKey } from '../lib/time'
+import { useThemeStore } from '../stores/themeStore'
 
 /* A Google-Calendar-style week view for proposing candidate times. The host
  * clicks-and-drags down a day column to draw a slot (snapped to 30 minutes), or
@@ -97,6 +98,9 @@ export default function CalendarWeekView({
   focus?: { day: string } | null
 }) {
   const todayStart = startOfWeek(new Date())
+  // The hour lines are an inline gradient, so they can't answer `.dark` — slate-200
+  // on white, slate-800 on the dark card.
+  const gridLine = useThemeStore((s) => s.effective) === 'dark' ? '#1e293b' : '#e2e8f0'
   const [weekStart, setWeekStart] = useState<Date>(todayStart)
   // `drag` state drives the live preview; `dragRef` mirrors it so the pointer
   // handlers read the current gesture synchronously (a fast click fires
@@ -213,7 +217,7 @@ export default function CalendarWeekView({
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
-        <div className="text-sm font-semibold text-slate-700">
+        <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
           {new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(days[0])} –{' '}
           {new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(days[6])}
         </div>
@@ -223,14 +227,14 @@ export default function CalendarWeekView({
             onClick={() => setWeekStart(addLocalDays(weekStart, -7))}
             disabled={atFirstWeek}
             aria-label="Previous week"
-            className="grid h-8 w-8 place-items-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="grid h-8 w-8 place-items-center rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ‹
           </button>
           <button
             type="button"
             onClick={() => setWeekStart(todayStart)}
-            className="h-8 px-3 rounded-lg border border-slate-300 text-xs font-medium text-slate-600 hover:bg-slate-50"
+            className="h-8 px-3 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
           >
             This week
           </button>
@@ -238,14 +242,14 @@ export default function CalendarWeekView({
             type="button"
             onClick={() => setWeekStart(addLocalDays(weekStart, 7))}
             aria-label="Next week"
-            className="grid h-8 w-8 place-items-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+            className="grid h-8 w-8 place-items-center rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
           >
             ›
           </button>
         </div>
       </div>
 
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
         Click a day to drop a 1-hour slot, or drag down a column to set the length. Drag a slot to move it within the day; click it to remove.
         {busyByDay && (
           <>
@@ -263,10 +267,10 @@ export default function CalendarWeekView({
         {busySyncing && (
           <>
             {' '}
-            <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium text-slate-600">
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium text-slate-600 dark:text-slate-300">
               <span
                 aria-hidden
-                className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600 align-middle"
+                className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-300 dark:border-slate-700 border-t-slate-600 dark:border-t-slate-300 align-middle"
               />
               Syncing your calendar…
             </span>
@@ -293,7 +297,7 @@ export default function CalendarWeekView({
               <div
                 className={
                   'mx-auto mt-0.5 grid h-6 w-6 place-items-center rounded-full text-xs font-semibold ' +
-                  (isToday ? 'bg-[var(--accent)] text-white' : 'text-slate-700')
+                  (isToday ? 'bg-[var(--accent)] text-white' : 'text-slate-700 dark:text-slate-300')
                 }
               >
                 {d.getDate()}
@@ -306,7 +310,7 @@ export default function CalendarWeekView({
       {/* Scrollable time grid */}
       <div
         ref={scrollRef}
-        className="mt-1 max-h-[460px] overflow-y-auto rounded-lg border border-slate-200"
+        className="mt-1 max-h-[460px] overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700"
       >
         <div className="grid" style={{ gridTemplateColumns: `3rem repeat(7, minmax(0, 1fr))` }}>
           {/* Hour gutter */}
@@ -331,10 +335,10 @@ export default function CalendarWeekView({
             return (
               <div
                 key={day.toISOString()}
-                className="relative border-l border-slate-200 touch-none select-none"
+                className="relative border-l border-slate-200 dark:border-slate-800 touch-none select-none"
                 style={{
                   height: TOTAL_PX,
-                  backgroundImage: `repeating-linear-gradient(to bottom, transparent, transparent ${HOUR_PX - 1}px, #e2e8f0 ${HOUR_PX - 1}px, #e2e8f0 ${HOUR_PX}px)`,
+                  backgroundImage: `repeating-linear-gradient(to bottom, transparent, transparent ${HOUR_PX - 1}px, ${gridLine} ${HOUR_PX - 1}px, ${gridLine} ${HOUR_PX}px)`,
                 }}
                 onPointerDown={(e) => {
                   if ((e.target as HTMLElement).closest('[data-slot]')) return
@@ -385,7 +389,7 @@ export default function CalendarWeekView({
                           letter-tops, which reads as a rendering fault rather
                           than as a label — the hover title still carries it. */}
                       {names && height >= 16 && (
-                        <span className="block truncate px-1 pt-px text-[10px] font-medium leading-[14px] text-slate-600">
+                        <span className="block truncate px-1 pt-px text-[10px] font-medium leading-[14px] text-slate-600 dark:text-slate-300">
                           {names}
                         </span>
                       )}
@@ -394,10 +398,10 @@ export default function CalendarWeekView({
                 })}
 
                 {/* Past shading: whole day if before today, or up to "now" today */}
-                {isPastDay && <div className="pointer-events-none absolute inset-0 bg-slate-100/70" />}
+                {isPastDay && <div className="pointer-events-none absolute inset-0 bg-slate-100/70 dark:bg-slate-950/60" />}
                 {isToday && nowMin > DAY_MIN && (
                   <div
-                    className="pointer-events-none absolute inset-x-0 top-0 bg-slate-100/70"
+                    className="pointer-events-none absolute inset-x-0 top-0 bg-slate-100/70 dark:bg-slate-950/60"
                     style={{ height: Math.min(TOTAL_PX, ((Math.min(nowMin, END_MIN) - DAY_MIN) / 60) * HOUR_PX) }}
                   />
                 )}
@@ -490,7 +494,7 @@ export default function CalendarWeekView({
         </div>
       </div>
 
-      {warning && <p className="mt-2 text-sm font-medium text-amber-600">{warning}</p>}
+      {warning && <p className="mt-2 text-sm font-medium text-amber-600 dark:text-amber-400">{warning}</p>}
     </div>
   )
 }

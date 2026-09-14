@@ -66,11 +66,11 @@ export default function SlotPicker({
       {/* Manual / Calendar both edit timed slots, so they sit in one group;
           Whole days is a separate mode, set apart with a gap. */}
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium">
-        <div className="inline-flex rounded-lg border border-slate-300 p-0.5">
+        <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-700 p-0.5">
           <SelectorTab view={view} value="form" onSelect={onViewChange}>Manual</SelectorTab>
           <SelectorTab view={view} value="calendar" onSelect={onViewChange}>Calendar</SelectorTab>
         </div>
-        <div className="inline-flex rounded-lg border border-slate-300 p-0.5">
+        <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-700 p-0.5">
           <SelectorTab view={view} value="days" onSelect={onViewChange}>Whole days</SelectorTab>
         </div>
       </div>
@@ -105,7 +105,7 @@ function SelectorTab({
       aria-pressed={view === value}
       className={
         'rounded-md px-3 py-1.5 transition-colors ' +
-        (view === value ? 'bg-[var(--accent)] text-white' : 'text-slate-600 hover:bg-slate-100')
+        (view === value ? 'bg-[var(--accent)] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800')
       }
     >
       {children}
@@ -160,16 +160,16 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
           onClick={() => setCursor(({ y, m }) => (m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }))}
           disabled={!canPrev}
           aria-label="Previous month"
-          className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           ‹
         </button>
-        <span className="text-sm font-semibold text-slate-800">{MONTH_YEAR.format(first)}</span>
+        <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{MONTH_YEAR.format(first)}</span>
         <button
           type="button"
           onClick={() => setCursor(({ y, m }) => (m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 }))}
           aria-label="Next month"
-          className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
+          className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
         >
           ›
         </button>
@@ -197,8 +197,8 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
                 (sel
                   ? 'bg-[var(--accent)] text-white font-semibold'
                   : past
-                    ? 'text-slate-300 cursor-not-allowed'
-                    : 'text-slate-700 hover:bg-[var(--accent-soft)]')
+                    ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-[var(--accent-soft)]')
               }
             >
               {Number(dateStr.slice(8, 10))}
@@ -208,10 +208,10 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
       </div>
 
       {chosen.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500">No days yet — click the days you want to propose.</p>
+        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No days yet — click the days you want to propose.</p>
       ) : (
         <div className="mt-3">
-          <div className="text-xs font-medium text-slate-500">{chosen.length} day{chosen.length > 1 ? 's' : ''} selected</div>
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{chosen.length} day{chosen.length > 1 ? 's' : ''} selected</div>
           <div className="mt-1.5 flex flex-wrap gap-2">
             {chosen.map((dateStr) => (
               <span
@@ -223,7 +223,7 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
                   type="button"
                   onClick={() => toggle(dateStr)}
                   aria-label={`Remove ${fmtDay(dateStr)}`}
-                  className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 hover:text-[var(--accent-strong)]"
+                  className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 dark:hover:bg-white/10 hover:text-[var(--accent-strong)] dark:hover:text-[var(--accent-text)]"
                 >
                   {/* ⚠️ An SVG, not `✕`: U+2715 has no glyph in iOS's system
                       font, so the way to take a date back off the poll was a
@@ -296,31 +296,31 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
   return (
     <>
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col text-xs font-medium text-slate-600">
+        <label className="flex flex-col text-xs font-medium text-slate-600 dark:text-slate-300">
           Date
           <input
             type="date"
             min={today}
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="mt-1 h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+            className="mt-1 h-10 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-sm text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </label>
-        <label className="flex flex-col text-xs font-medium text-slate-600">
+        <label className="flex flex-col text-xs font-medium text-slate-600 dark:text-slate-300">
           Time
           <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="mt-1 h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+            className="mt-1 h-10 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-sm text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </label>
-        <label className="flex flex-col text-xs font-medium text-slate-600">
+        <label className="flex flex-col text-xs font-medium text-slate-600 dark:text-slate-300">
           Length
           <select
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
-            className="mt-1 h-10 rounded-lg border border-slate-300 px-2 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
+            className="mt-1 h-10 rounded-lg border border-slate-300 dark:border-slate-700 px-2 text-sm text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] outline-none"
           >
             {DURATIONS.map((d) => (
               <option key={d} value={d}>{durationLabel(d)}</option>
@@ -338,18 +338,18 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
       </div>
 
       {warning && (
-        <p className="mt-2 text-sm font-medium text-amber-600">{warning}</p>
+        <p className="mt-2 text-sm font-medium text-amber-600 dark:text-amber-400">{warning}</p>
       )}
 
       {slots.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
           No times yet — pick a date and time above and press <span className="font-medium">Add time</span>.
         </p>
       ) : (
         <div className="mt-4 space-y-3">
           {[...groups.entries()].map(([day, list]) => (
             <div key={day}>
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{fmtDay(day)}</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{fmtDay(day)}</div>
               <div className="mt-1.5 flex flex-wrap gap-2">
                 {list.map((s) => (
                   <span
@@ -361,7 +361,7 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
                       type="button"
                       onClick={() => remove(s.id)}
                       aria-label={`Remove ${day} ${s.start.slice(11)}`}
-                      className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 hover:text-[var(--accent-strong)]"
+                      className="ml-0.5 -mr-1 grid h-4 w-4 place-items-center rounded-full text-[var(--accent-text)]/70 hover:bg-white/60 dark:hover:bg-white/10 hover:text-[var(--accent-strong)] dark:hover:text-[var(--accent-text)]"
                     >
                       {/* SVG, not `✕` — see the note on the date chip above. */}
                       <svg viewBox="0 0 16 16" aria-hidden="true" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">

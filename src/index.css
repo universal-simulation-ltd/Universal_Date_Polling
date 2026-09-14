@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* Tailwind 4 defaults `dark:` to the OS media query. We drive it from a class
+   on <html> instead, because the suite rule is that an app opens LIGHT and only
+   goes dark when the user says so — see stores/themeStore.ts. With the media
+   default, a laptop set to dark would override that on first paint.
+   ⚠️ A CLASS, not a `data-theme` attribute: `[data-theme]` below is the poll's
+   booking-page accent, a different thing. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* The dark ground from the very first paint (the pre-paint script in
+   index.html adds the class before the bundle loads), so the page does not
+   flash light while React mounts. slate-950, the app root's dark:bg. */
+html.dark {
+  background-color: #020617;
+}
+
 html, body {
   height: 100%;
   margin: 0;
@@ -49,10 +64,45 @@ body {
   --accent-soft: #dcfce7; --accent-softer: #f0fdf4; --accent-text: #166534;
 }
 
+/* The same accents in DARK mode. --accent / --accent-strong are fills under
+   white text and read the same on either ground, so they are left alone. The
+   pale tints would glare on a dark card and the deep -800 text would vanish on
+   it, so: the tints become the hue's -500 mixed into the card ground
+   (slate-900), and accent-coloured TEXT becomes the hue's -400 — AA on the card
+   and on the tint (orange 5.6:1, blue 5.1:1, pink 5.0:1, green 9:1 on the
+   tint; higher on the bare card). A custom hex gets the same treatment inline,
+   from themeVars(theme, 'dark') in lib/theme.ts. */
+.dark [data-theme],
+.dark [data-theme="orange"] {
+  --accent-soft: color-mix(in srgb, #f97316 24%, #0f172a);
+  --accent-softer: color-mix(in srgb, #f97316 12%, #0f172a);
+  --accent-text: #fb923c;
+}
+.dark [data-theme="blue"] {
+  --accent-soft: color-mix(in srgb, #3b82f6 24%, #0f172a);
+  --accent-softer: color-mix(in srgb, #3b82f6 12%, #0f172a);
+  --accent-text: #60a5fa;
+}
+.dark [data-theme="pink"] {
+  --accent-soft: color-mix(in srgb, #ec4899 24%, #0f172a);
+  --accent-softer: color-mix(in srgb, #ec4899 12%, #0f172a);
+  --accent-text: #f472b6;
+}
+.dark [data-theme="green"] {
+  --accent-soft: color-mix(in srgb, #22c55e 24%, #0f172a);
+  --accent-softer: color-mix(in srgb, #22c55e 12%, #0f172a);
+  --accent-text: #4ade80;
+}
+
 /* Availability heat — how strongly a results cell is shaded by how many people
    are free. Driven by an inline --heat (0..1) and the theme accent. */
 .heat-cell {
   background-color: color-mix(in srgb, var(--accent) calc(var(--heat) * 100%), white);
+}
+/* In dark, an empty-ish cell fades into the dark track (slate-800) rather than
+   into white — a white block would be the brightest thing on the page. */
+.dark .heat-cell {
+  background-color: color-mix(in srgb, var(--accent) calc(var(--heat) * 100%), #1e293b);
 }
 
 @media (prefers-reduced-motion: no-preference) {

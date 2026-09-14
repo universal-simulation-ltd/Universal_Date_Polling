@@ -29,7 +29,7 @@ export default function CopyEmail({ poll, slot, url, displayTz, recipients, reci
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-white hover:ring-emerald-400 transition"
+        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition"
       >
         📋 Copy email
       </button>
@@ -63,16 +63,16 @@ function CopyEmailDialog({ poll, slot, url, displayTz, recipients, recipientsLoa
       <div className="space-y-4">
         <Field label="To" copyText={to} disabled={!to}>
           {recipientsLoading ? (
-            <p className="text-sm text-slate-500">Loading addresses…</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Loading addresses…</p>
           ) : to ? (
             <input
               readOnly
               value={to}
               onFocus={(e) => e.currentTarget.select()}
-              className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 text-sm text-slate-700 dark:text-slate-300"
             />
           ) : (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Nobody left an email address, so add your own recipients in your email app.
             </p>
           )}
@@ -82,7 +82,7 @@ function CopyEmailDialog({ poll, slot, url, displayTz, recipients, recipientsLoa
           <input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+            className="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </Field>
 
@@ -91,7 +91,7 @@ function CopyEmailDialog({ poll, slot, url, displayTz, recipients, recipientsLoa
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={Math.min(16, Math.max(8, body.split('\n').length + 1))}
-            className="w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm leading-relaxed text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+            className="w-full resize-y rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm leading-relaxed text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </Field>
       </div>
@@ -122,14 +122,14 @@ function Field({ label, copyText, disabled = false, primary = false, children }:
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-slate-700">{label}</span>
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
         <button
           type="button"
           onClick={copy}
           disabled={disabled}
           className={primary
             ? 'h-9 rounded-lg bg-[var(--accent)] px-3.5 text-sm font-semibold text-white hover:bg-[var(--accent-strong)] disabled:opacity-50'
-            : 'h-8 rounded-md px-2.5 text-xs font-medium text-[var(--accent-text)] ring-1 ring-slate-200 hover:ring-[var(--accent)] disabled:opacity-50'}
+            : 'h-8 rounded-md px-2.5 text-xs font-medium text-[var(--accent-text)] ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-[var(--accent)] disabled:opacity-50'}
         >
           {copied ? 'Copied!' : primary ? 'Copy message' : 'Copy'}
         </button>

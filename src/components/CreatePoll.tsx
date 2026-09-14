@@ -20,6 +20,7 @@ import ProductLogo from './ProductLogo'
 import SettingsDialog from './SettingsDialog'
 import type { SlotView } from './SlotPicker'
 import { CONTAINER_CREATE, centreScrollTop } from '../lib/layout'
+import { useThemeStore } from '../stores/themeStore'
 import { pollLink } from '../lib/appUrl'
 import {
   calendarPromptHidden, onOpenAppSettings, setCalendarPromptHidden, type SettingsSection,
@@ -53,6 +54,8 @@ type Phase = 'edit' | 'sending' | 'code' | 'creating' | 'done'
 
 export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [title, setTitle] = useState('')
+  // The app's light/dark mode — a custom-hex accent renders differently in each.
+  const colorMode = useThemeStore((s) => s.effective)
   // `view` drives the slot picker's segmented selector; the stored poll `mode`
   // is derived from it (only "Whole days" is a days poll). It starts null —
   // no view is chosen and no picker is shown until the host picks one, so all
@@ -836,7 +839,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   return (
     <div
       data-theme={themeAttr(theme)}
-      style={themeVars(theme)}
+      style={themeVars(theme, colorMode)}
       className={`${CONTAINER_CREATE} py-8 sm:py-12`}
     >
       {diag && (
@@ -873,7 +876,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       />
 
       {editingId && (
-        <div role="status" className="mb-4 rounded-2xl bg-amber-50 px-5 py-4 text-sm text-amber-900 ring-1 ring-amber-200">
+        <div role="status" className="mb-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 px-5 py-4 text-sm text-amber-900 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900">
           <p className="font-semibold">You're changing the times on your live poll.</p>
           <p className="mt-1">
             Until you save, anyone who opens the link is told you're changing the times and to check
@@ -882,7 +885,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           <button
             type="button"
             onClick={cancelEditing}
-            className="mt-2 font-medium underline underline-offset-2 hover:text-amber-950"
+            className="mt-2 font-medium underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-100"
           >
             Cancel — keep it as it was
           </button>
@@ -896,7 +899,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           "right" in places. The phone already had this order — the grid just
           stacked in DOM order — so the two now agree, and the availability
           picker is WIDER here than it was in its own column. */}
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7 pop-in">
+      <div className="rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-7 pop-in">
         {/* The page's masthead — app mark + tagline, centred over the left
             column rather than a full-width hero above the card, so the form
             starts at the top of the viewport and the calendar sits alongside
@@ -912,7 +915,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             <ProductLogo />
             {mastheadMark && (
               <>
-                <span aria-hidden="true" className="h-5 w-px bg-slate-200" />
+                <span aria-hidden="true" className="h-5 w-px bg-slate-200 dark:bg-slate-700" />
                 <img
                   src={mastheadMark}
                   alt={`${brandName || org?.name || 'Your'} logo`}
@@ -921,9 +924,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               </>
             )}
           </div>
-          <h1 className="mt-2 text-2xl font-extrabold leading-tight text-slate-900">
+          <h1 className="mt-2 text-2xl font-extrabold leading-tight text-slate-900 dark:text-slate-100">
             Find a time that<br />
-            <span className="text-orange-600">works for everyone</span>
+            <span className="text-orange-600 dark:text-orange-400">works for everyone</span>
           </h1>
         </div>
 
@@ -931,14 +934,14 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         <div>
         {/* Title */}
         <label className="block">
-          <span className="text-sm font-semibold text-slate-800">Poll title</span>
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Poll title</span>
           <input
             type="text"
             value={title}
             maxLength={200}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Team catch-up — week of the 9th"
-            className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+            className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </label>
 
@@ -949,25 +952,25 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         {title.trim() !== '' && (
         <div className="mt-6 pop-in">
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800">Location or meeting link <span className="font-normal text-slate-400">(optional)</span></span>
+            <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Location or meeting link <span className="font-normal text-slate-400">(optional)</span></span>
             <input
               type="text"
               value={location}
               maxLength={500}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g. Meeting room 5, or a Teams / Zoom / Meet link"
-              className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+              className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
             />
           </label>
-          <p className="mt-1 text-xs text-slate-500">Shown to everyone on the poll and added to the calendar invite.</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Shown to everyone on the poll and added to the calendar invite.</p>
         </div>
         )}
         </div>
 
         {/* Availability (slots) */}
         <div ref={availabilityRef} className="mt-6">
-          <span className="text-sm font-semibold text-slate-800">Availability</span>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Availability</span>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {view === null ? (
               <>Choose how you'd like to propose times — type them in, drag them on a calendar, or offer whole days.</>
             ) : mode === 'days' ? (
@@ -1000,20 +1003,20 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               picked from, and only with a calendar connected, since free space
               is the whole input. */}
           {view === 'calendar' && anyConnected && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5">
-              <span className="flex-1 min-w-[16rem] text-xs text-slate-600">
-                <span className="font-medium text-slate-700">Not sure what to propose?</span> We'll pick {SUGGEST_COUNT} times you're free — weekdays, 10:00–16:00 {tzAbbrev(timezone)}, at most one morning and one afternoon a day.
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 ring-1 ring-slate-200 dark:ring-slate-700 px-3 py-2.5">
+              <span className="flex-1 min-w-[16rem] text-xs text-slate-600 dark:text-slate-300">
+                <span className="font-medium text-slate-700 dark:text-slate-300">Not sure what to propose?</span> We'll pick {SUGGEST_COUNT} times you're free — weekdays, 10:00–16:00 {tzAbbrev(timezone)}, at most one morning and one afternoon a day.
               </span>
               <button
                 type="button"
                 onClick={suggestTimes}
                 disabled={suggesting}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-60"
               >
                 {suggesting ? 'Finding free time…' : `Suggest ${SUGGEST_COUNT} times`}
               </button>
               {suggestNote && (
-                <span className="basis-full text-[11px] text-slate-500">{suggestNote}</span>
+                <span className="basis-full text-[11px] text-slate-500 dark:text-slate-400">{suggestNote}</span>
               )}
             </div>
           )}
@@ -1031,12 +1034,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               unlinked, so adding a second calendar to a first one lives here
               too, and only until the host says "don't show again". */}
           {view === 'calendar' && hasSession && calStatus && anyConnectable && !calPromptHidden && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5">
-              <span className="text-xs text-slate-600">
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 ring-1 ring-slate-200 dark:ring-slate-700 px-3 py-2.5">
+              <span className="text-xs text-slate-600 dark:text-slate-300">
                 {anyConnected ? (
-                  <><span className="font-medium text-slate-700">Busy somewhere else too?</span> Connect your other calendar and it shades the grid as well.</>
+                  <><span className="font-medium text-slate-700 dark:text-slate-300">Busy somewhere else too?</span> Connect your other calendar and it shades the grid as well.</>
                 ) : (
-                  <><span className="font-medium text-slate-700">See when you're already busy</span> — connect a calendar and your busy times shade the grid. Only you see them.</>
+                  <><span className="font-medium text-slate-700 dark:text-slate-300">See when you're already busy</span> — connect a calendar and your busy times shade the grid. Only you see them.</>
                 )}
               </span>
               <span className="flex flex-wrap items-center gap-2">
@@ -1044,7 +1047,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   <button
                     type="button"
                     onClick={() => connectCalendar('google')}
-                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     Connect Google Calendar
                   </button>
@@ -1053,7 +1056,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   <button
                     type="button"
                     onClick={() => connectCalendar('microsoft')}
-                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     Connect Outlook
                   </button>
@@ -1063,7 +1066,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 <button
                   type="button"
                   onClick={hideCalPrompt}
-                  className="px-1 text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
+                  className="px-1 text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
                 >
                   Don't show again
                 </button>
@@ -1077,9 +1080,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               so the same email OTP the create step runs happens here first —
               verify, and the connect buttons above take this prompt's place. */}
           {view === 'calendar' && !hasSession && !calPromptHidden && (calProviders?.google || calProviders?.microsoft) && (
-            <div className="mt-3 rounded-lg bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5">
-              <span className="block text-xs text-slate-600">
-                <span className="font-medium text-slate-700">See when you're already busy</span> — verify your email (the same one that saves your poll), then connect your calendar. Only you see the shading.
+            <div className="mt-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 ring-1 ring-slate-200 dark:ring-slate-700 px-3 py-2.5">
+              <span className="block text-xs text-slate-600 dark:text-slate-300">
+                <span className="font-medium text-slate-700 dark:text-slate-300">See when you're already busy</span> — verify your email (the same one that saves your poll), then connect your calendar. Only you see the shading.
               </span>
               {calAuthPhase === 'code' || calAuthPhase === 'verifying' ? (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1090,7 +1093,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     value={calCode}
                     onChange={(e) => setCalCode(e.target.value)}
                     placeholder="123456"
-                    className="h-9 w-28 rounded-lg border border-slate-300 px-2.5 text-xs tracking-widest text-slate-900 focus:border-[var(--accent)] outline-none"
+                    className="h-9 w-28 rounded-lg border border-slate-300 dark:border-slate-700 px-2.5 text-xs tracking-widest text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] outline-none"
                   />
                   <button
                     type="button"
@@ -1103,11 +1106,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   <button
                     type="button"
                     onClick={() => { setCalAuthPhase('idle'); setCalCode('') }}
-                    className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
+                    className="text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
                   >
                     Different email
                   </button>
-                  <span className="basis-full text-[11px] text-slate-500">We emailed a 6-digit code to {email}.</span>
+                  <span className="basis-full text-[11px] text-slate-500 dark:text-slate-400">We emailed a 6-digit code to {email}.</span>
                 </div>
               ) : (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1117,13 +1120,13 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     autoComplete="email"
-                    className="h-9 w-56 max-w-full rounded-lg border border-slate-300 px-2.5 text-xs text-slate-900 focus:border-[var(--accent)] outline-none"
+                    className="h-9 w-56 max-w-full rounded-lg border border-slate-300 dark:border-slate-700 px-2.5 text-xs text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] outline-none"
                   />
                   <button
                     type="button"
                     onClick={calSendCode}
                     disabled={calAuthPhase === 'sending'}
-                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-60"
                   >
                     {calAuthPhase === 'sending' ? 'Sending…' : 'Email me a code'}
                   </button>
@@ -1133,7 +1136,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   <button
                     type="button"
                     onClick={hideCalPrompt}
-                    className="px-1 text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
+                    className="px-1 text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
                   >
                     Don't show again
                   </button>
@@ -1142,7 +1145,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             </div>
           )}
           {view === 'calendar' && calError && (
-            <p className="mt-2 text-xs text-red-600">{calError}</p>
+            <p className="mt-2 text-xs text-red-600 dark:text-red-400">{calError}</p>
           )}
         </div>
 
@@ -1153,7 +1156,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             Actions → App Settings and nowhere else now — but this poll is about
             to be created with them, and "Booking page" in particular changes
             what the link does, so it cannot be silent. */}
-        <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 pt-4 text-xs text-slate-500">
+        <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 dark:border-slate-800 pt-4 text-xs text-slate-500 dark:text-slate-400">
           {bookingMode && (
             <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-text)]">
               Booking page
@@ -1184,18 +1187,18 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               <div className="sm:col-span-2">
                 <label
                   className={`flex items-start gap-2.5 cursor-pointer rounded-xl p-3 ring-1 transition ${
-                    bookingMode ? 'bg-[var(--accent-softer)] ring-[var(--accent)]' : 'bg-white ring-slate-200 hover:ring-slate-300'
+                    bookingMode ? 'bg-[var(--accent-softer)] ring-[var(--accent)]' : 'bg-white dark:bg-slate-900 ring-slate-200 dark:ring-slate-700 hover:ring-slate-300 dark:hover:ring-slate-600'
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={bookingMode}
                     onChange={(e) => setBookingMode(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[var(--accent)] focus:ring-[var(--accent)]"
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[var(--accent)] focus:ring-[var(--accent)]"
                   />
-                  <span className="text-sm text-slate-700">
-                    <span className="font-semibold text-slate-900">Just the two of us</span> — make this an instant booking page
-                    <span className="block text-xs text-slate-500">
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">Just the two of us</span> — make this an instant booking page
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">
                       {bookingMode
                         ? "Whoever you send the link to picks one time and it's booked on the spot — no votes, and nothing for you to confirm. You'll both get a calendar invite by email."
                         : 'For a one-to-one. They pick a time, it books itself, and you both get a calendar invite — instead of collecting availability and confirming a time yourself.'}
@@ -1206,11 +1209,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
               {/* Validity */}
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Link stays valid for</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Link stays valid for</span>
                 <select
                   value={String(validityDays)}
                   onChange={(e) => setValidityDays(e.target.value === 'null' ? null : Number(e.target.value))}
-                  className="mt-2 w-full h-10 rounded-lg border border-slate-300 px-2 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
+                  className="mt-2 w-full h-10 rounded-lg border border-slate-300 dark:border-slate-700 px-2 text-sm text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] outline-none"
                 >
                   {VALIDITY.map((v) => (
                     <option key={v.label} value={String(v.days)}>{v.label}</option>
@@ -1228,19 +1231,19 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     type="checkbox"
                     checked={notifyOnResponse}
                     onChange={(e) => setNotifyOnResponse(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[var(--accent)] focus:ring-[var(--accent)]"
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[var(--accent)] focus:ring-[var(--accent)]"
                   />
-                  <span className="text-sm text-slate-700">
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
                     Want to be emailed when your guests respond?
                     {(() => {
                       const to = suiteLoggedIn ? (suiteUser?.email ?? '') : email.trim()
                       if (suiteLoggedIn) {
-                        return <span className="block text-xs text-slate-500">We'll email <span className="font-medium">{to}</span> each time a new person responds.</span>
+                        return <span className="block text-xs text-slate-500 dark:text-slate-400">We'll email <span className="font-medium">{to}</span> each time a new person responds.</span>
                       }
                       if (to && verified) {
-                        return <span className="block text-xs text-slate-500">We'll email <span className="font-medium">{to}</span> (confirmed) each time a new person responds.</span>
+                        return <span className="block text-xs text-slate-500 dark:text-slate-400">We'll email <span className="font-medium">{to}</span> (confirmed) each time a new person responds.</span>
                       }
-                      return <span className="block text-xs text-slate-500">You'll confirm your email below to create your poll — check this and we'll also alert you there each time someone responds.</span>
+                      return <span className="block text-xs text-slate-500 dark:text-slate-400">You'll confirm your email below to create your poll — check this and we'll also alert you there each time someone responds.</span>
                     })()}
                   </span>
                 </label>
@@ -1252,8 +1255,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   least one provider OAuth app is configured server-side. */}
               {hasSession && anyConfigured && calStatus && (
                 <div className="sm:col-span-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Your calendar</span>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Your calendar</span>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                     Connect a calendar and the <span className="font-medium">Calendar</span> view shades the times you're already busy. Only you ever see the shading — nothing is shown to the people you send the poll to. <span className="font-medium">Outlook / Microsoft 365</span> also labels each block with the event's name; <span className="font-medium">Google Calendar</span> shades busy times only, and we never read your event names, guests, locations or descriptions there.
                   </p>
                   {/* What is connected, how to undo it — and, since the prompt
@@ -1281,13 +1284,13 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                       />
                     )}
                     {anyConnectable && (
-                      <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                         {anyConnected ? 'Add another:' : 'Nothing connected yet.'}
                         {connectable.google && (
                           <button
                             type="button"
                             onClick={() => connectCalendar('google')}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
                             Connect Google Calendar
                           </button>
@@ -1296,7 +1299,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                           <button
                             type="button"
                             onClick={() => connectCalendar('microsoft')}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
                             Connect Outlook
                           </button>
@@ -1306,39 +1309,39 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     {/* The way back from "Don't show again" — a dismissal you
                         cannot undo is a setting the host has lost. */}
                     {calPromptHidden && anyConnectable && (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         The connect prompt beside the calendar is hidden.{' '}
                         <button
                           type="button"
                           onClick={restoreCalPrompt}
-                          className="font-medium text-[var(--accent-strong)] underline underline-offset-2 hover:no-underline"
+                          className="font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] underline underline-offset-2 hover:no-underline"
                         >
                           Show it again
                         </button>
                       </span>
                     )}
                   </div>
-                  {calError && <p className="mt-2 text-xs text-red-600">{calError}</p>}
+                  {calError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{calError}</p>}
                 </div>
               )}
 
               {/* Timezone (timed polls only) */}
               {mode === 'times' && (
                 <div className="sm:col-span-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Timezone</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Timezone</span>
                   <select
                     ref={tzSelectRef}
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
-                    className="mt-2 w-full h-10 rounded-lg border border-slate-300 px-2 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
+                    className="mt-2 w-full h-10 rounded-lg border border-slate-300 dark:border-slate-700 px-2 text-sm text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] outline-none"
                   >
                     {zones.map((z) => (
                       <option key={z} value={z}>{z}</option>
                     ))}
                   </select>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                     Every time on this poll is written in this zone; each guest sees it converted to theirs. It's{' '}
-                    <span className="font-medium text-slate-600">{formatTime(new Date(), timezone)}</span> there now.
+                    <span className="font-medium text-slate-600 dark:text-slate-300">{formatTime(new Date(), timezone)}</span> there now.
                   </p>
                 </div>
               )}
@@ -1348,12 +1351,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         )}
 
         {/* Identity + create */}
-        <div className="mt-6 border-t border-slate-100 pt-5">
+        <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-5">
           {freeGated && (
-            <div className="mb-4 rounded-lg bg-amber-50 ring-1 ring-amber-200 px-4 py-3 text-sm text-amber-800">
+            <div className="mb-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
               <strong>1 token per poll.</strong> Free accounts can run one active poll at a time — your token is returned automatically when the poll expires or you delete it.
               {subscription && (
-                <span className="ml-1 text-amber-700">
+                <span className="ml-1 text-amber-700 dark:text-amber-300">
                   {pollFreeToken === 'available'
                     ? `(free token available${subscription.credits > 0 ? ` + ${subscription.credits} purchased` : ''})`
                     : `(${subscription.credits} token${subscription.credits !== 1 ? 's' : ''} available)`}
@@ -1363,28 +1366,28 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           )}
 
           {enterprise ? (
-            <p className="text-sm text-slate-600">
-              Creating as <span className="font-medium text-slate-900">{org?.name ?? suiteUser?.email}</span>
-              {org?.name && suiteUser?.email && <span className="text-slate-500"> ({suiteUser.email})</span>} — no email verification needed.
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Creating as <span className="font-medium text-slate-900 dark:text-slate-100">{org?.name ?? suiteUser?.email}</span>
+              {org?.name && suiteUser?.email && <span className="text-slate-500 dark:text-slate-400"> ({suiteUser.email})</span>} — no email verification needed.
             </p>
           ) : suiteLoggedIn ? (
-            <p className="text-sm text-slate-600">
-              Creating as <span className="font-medium text-slate-900">{suiteUser?.email}</span> — no email verification needed.
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Creating as <span className="font-medium text-slate-900 dark:text-slate-100">{suiteUser?.email}</span> — no email verification needed.
             </p>
           ) : verified ? (
-            <p className="text-sm text-slate-600">
-              Signed in as <span className="font-medium text-slate-900">{email}</span> (verified).{' '}
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Signed in as <span className="font-medium text-slate-900 dark:text-slate-100">{email}</span> (verified).{' '}
               <button
                 type="button"
                 onClick={async () => { await signOut(); setVerified(false); setEmail('') }}
-                className="text-slate-500 hover:text-slate-700 underline underline-offset-2"
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
               >
                 Not you? Sign out
               </button>
             </p>
           ) : (
             <label className="block">
-              <span className="text-sm font-semibold text-slate-800">Your email</span>
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Your email</span>
               <input
                 type="email"
                 value={email}
@@ -1392,9 +1395,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 placeholder="you@example.com"
                 autoComplete="email"
                 disabled={phase === 'code'}
-                className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 px-3 text-slate-900 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none disabled:bg-slate-50"
+                className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none disabled:bg-slate-50 dark:disabled:bg-slate-800/60"
               />
-              <p className="mt-1.5 text-xs text-slate-500">
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                 We'll send a quick code to confirm it's you — that's how you'll manage this poll later
                 {notifyOnResponse
                   ? <> and where we'll send your response alerts.</>
@@ -1405,7 +1408,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
           {phase === 'code' && (
             <div className="mt-4 rounded-lg bg-[var(--accent-softer)] p-4">
-              <label className="block text-sm font-medium text-slate-800">
+              <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">
                 Enter the 6-digit code we emailed to {email}
                 <input
                   type="text"
@@ -1414,10 +1417,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="123456"
-                  className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 px-3 tracking-widest text-slate-900 focus:border-[var(--accent)] outline-none"
+                  className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 tracking-widest text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] outline-none"
                 />
               </label>
-              <p className="mt-2 text-xs text-slate-600">
+              <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
                 {notifyOnResponse
                   ? "Confirming creates your poll and turns on response alerts to this address."
                   : 'Confirming creates your poll and lets you manage it later from this address.'}
@@ -1425,14 +1428,14 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               <button
                 type="button"
                 onClick={() => { setPhase('edit'); setCode('') }}
-                className="mt-2 text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2"
+                className="mt-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
               >
                 Use a different email
               </button>
             </div>
           )}
 
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
           <button
             type="button"
@@ -1453,7 +1456,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           fill it in by hand; a logged-in host's account branding ("My Company")
           imports automatically and shows here read-only until they choose to
           override it for this one poll. */}
-      <div className="mt-4 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7">
+      <div className="mt-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <button
               type="button"
@@ -1466,8 +1469,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <span>
-                <span className="block text-sm font-semibold text-slate-800 group-hover:text-[var(--accent-strong)]">Branding</span>
-                <span className="block text-xs text-slate-500 mt-0.5">
+                <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[var(--accent-strong)] dark:group-hover:text-[var(--accent-text)]">Branding</span>
+                <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   {suiteLoggedIn
                     ? 'Imported from your account — override it for this poll if you like.'
                     : "Add your colour and logo to the poll's create and share pages."}
@@ -1475,7 +1478,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               </span>
             </button>
             {!suiteLoggedIn && (
-              <a href="https://app.unisim.co.uk/login" className="text-xs font-medium text-[var(--accent-strong)] hover:underline whitespace-nowrap">
+              <a href="https://app.unisim.co.uk/login" className="text-xs font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] hover:underline whitespace-nowrap">
                 Sign in to import your branding →
               </a>
             )}
@@ -1488,14 +1491,14 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 <img
                   src={orgBranding.logo_url ?? orgBranding.icon_url ?? ''}
                   alt={org?.name ?? 'Account logo'}
-                  className="h-10 max-w-[160px] rounded object-contain ring-1 ring-slate-200 bg-white"
+                  className="h-10 max-w-[160px] rounded object-contain ring-1 ring-slate-200 dark:ring-slate-700 bg-white dark:bg-slate-900"
                 />
               )}
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800">{org?.name ?? 'Your account'}</p>
-                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{org?.name ?? 'Your account'}</p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                   <span
-                    className="inline-block h-3 w-3 rounded-full ring-1 ring-slate-300"
+                    className="inline-block h-3 w-3 rounded-full ring-1 ring-slate-300 dark:ring-slate-600"
                     style={{ backgroundColor: hexOfTheme(theme) ?? undefined }}
                     aria-hidden="true"
                   />
@@ -1505,7 +1508,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               <button
                 type="button"
                 onClick={startBrandOverride}
-                className="ml-auto rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                className="ml-auto rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
               >
                 Customise for this poll
               </button>
@@ -1516,7 +1519,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           <div id={brandingId} className="mt-4 grid gap-5 sm:grid-cols-2">
             {/* Booking-page colour */}
             <div className="sm:col-span-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Booking-page colour</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Booking-page colour</span>
               <div className="mt-2 flex items-center gap-2">
                 {THEMES.map((t) => (
                   <button
@@ -1526,7 +1529,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     aria-label={t.label}
                     aria-pressed={theme === t.name}
                     title={t.label}
-                    className={`h-8 w-8 rounded-full ring-2 ring-offset-2 transition ${theme === t.name ? 'ring-slate-900' : 'ring-transparent hover:ring-slate-300'}`}
+                    className={`h-8 w-8 rounded-full ring-2 ring-offset-2 dark:ring-offset-slate-900 transition ${theme === t.name ? 'ring-slate-900 dark:ring-slate-100' : 'ring-transparent hover:ring-slate-300 dark:hover:ring-slate-600'}`}
                     style={{ backgroundColor: t.swatch }}
                   />
                 ))}
@@ -1537,7 +1540,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   aria-label="Custom colour"
                   aria-pressed={isHexTheme(theme)}
                   title="Custom colour"
-                  className={`grid h-8 w-8 place-items-center rounded-full transition ${isHexTheme(theme) ? 'ring-2 ring-offset-2 ring-slate-900 text-white' : 'border-2 border-dashed border-slate-300 text-slate-400 hover:border-slate-400'}`}
+                  className={`grid h-8 w-8 place-items-center rounded-full transition ${isHexTheme(theme) ? 'ring-2 ring-offset-2 dark:ring-offset-slate-900 ring-slate-900 dark:ring-slate-100 text-white' : 'border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-400 hover:border-slate-400 dark:hover:border-slate-500'}`}
                   style={isHexTheme(theme) ? { backgroundColor: theme } : undefined}
                 >
                   {!isHexTheme(theme) && (
@@ -1560,28 +1563,28 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
             {/* Brand name */}
             <label className="block">
-              <span className="text-xs font-medium text-slate-600">Brand name</span>
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Brand name</span>
               <input
                 type="text"
                 value={brandName}
                 maxLength={80}
                 onChange={(e) => setBrandName(e.target.value)}
                 placeholder="e.g. Acme Adventures"
-                className="mt-1 w-full h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
+                className="mt-1 w-full h-10 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-sm text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] outline-none"
               />
             </label>
 
             {/* Logo */}
             <div>
-              <span className="text-xs font-medium text-slate-600">Logo</span>
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Logo</span>
               <div className="mt-1 flex items-center gap-3">
                 {shownLogo && (
-                  <img src={shownLogo} alt="Logo preview" className="h-10 w-10 rounded object-contain ring-1 ring-slate-200 bg-white" />
+                  <img src={shownLogo} alt="Logo preview" className="h-10 w-10 rounded object-contain ring-1 ring-slate-200 dark:ring-slate-700 bg-white dark:bg-slate-900" />
                 )}
                 <button
                   type="button"
                   onClick={logoPicker.open}
-                  className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  className="cursor-pointer rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
                 >
                   {shownLogo ? 'Change…' : 'Upload…'}
                 </button>
@@ -1592,20 +1595,20 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   <button
                     type="button"
                     onClick={() => { onPickLogo(null); setDropOrgLogo(true) }}
-                    className="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2"
+                    className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
                   >
                     Remove
                   </button>
                 )}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">PNG, JPG or WebP · large images are resized for you.</p>
-              {logoErr && <p className="mt-1 text-xs text-red-600">{logoErr}</p>}
+              {logoErr && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{logoErr}</p>}
             </div>
 
             {/* A way back — overriding is per-poll, so reverting just drops the
                 local edits and lets the account branding import again. */}
             {suiteLoggedIn && (
-              <div className="sm:col-span-2 border-t border-slate-100 pt-4">
+              <div className="sm:col-span-2 border-t border-slate-100 dark:border-slate-800 pt-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -1615,7 +1618,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     setBrandName('')
                     if (orgBranding.brand_color && isHexTheme(orgBranding.brand_color)) setTheme(orgBranding.brand_color)
                   }}
-                  className="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2"
+                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
                 >
                   Use my account branding instead
                 </button>
@@ -1650,13 +1653,13 @@ function CalendarProviderRow({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-700">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-700 dark:text-slate-300">
         <span className="font-medium">{label}</span>
-        <span className="text-slate-500">connected{email ? ` as ${email}` : ''}</span>
+        <span className="text-slate-500 dark:text-slate-400">connected{email ? ` as ${email}` : ''}</span>
         <button
           type="button"
           onClick={onDisconnect}
-          className="text-slate-500 underline underline-offset-2 hover:text-slate-700"
+          className="text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
         >
           Disconnect
         </button>
@@ -1667,12 +1670,12 @@ function CalendarProviderRow({
           banner's "Reconnect … to add it" rather than erroring, which is the
           pattern for a grant that is narrower than the current one. */}
       {titlesOffer && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Busy times only — this connection predates event names.{' '}
           <button
             type="button"
             onClick={onReconnect}
-            className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-800"
+            className="font-medium text-slate-600 dark:text-slate-300 underline underline-offset-2 hover:text-slate-800 dark:hover:text-slate-200"
           >
             Reconnect to show them
           </button>
@@ -1696,6 +1699,7 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError }: {
   poll: TextListPoll
 }) {
   const booking = !!poll.booking_mode
+  const colorMode = useThemeStore((s) => s.effective)
   // Not the running origin: inside the iPhone app that is
   // `capacitor://localhost`, and this string is the app's whole output —
   // the link the host copies and sends to everyone. See src/lib/appUrl.ts.
@@ -1711,20 +1715,20 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError }: {
     }
   }
   return (
-    <div data-theme={themeAttr(theme)} style={themeVars(theme)} className={`${CONTAINER_CREATE} py-12`}>
+    <div data-theme={themeAttr(theme)} style={themeVars(theme, colorMode)} className={`${CONTAINER_CREATE} py-12`}>
       {/* A shade narrower than the create card — this one is a headline, a
           link and a copy button, and a short line of text set to the full
           container width reads badly. */}
-      <div className="mx-auto max-w-2xl rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-7 text-center pop-in">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+      <div className="mx-auto max-w-2xl rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-7 text-center pop-in">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)] dark:text-[var(--accent-text)]">
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12.5 L10 17.5 L19 7" />
           </svg>
         </div>
-        <h2 className="mt-4 text-xl font-extrabold text-slate-900">
+        <h2 className="mt-4 text-xl font-extrabold text-slate-900 dark:text-slate-100">
           {booking ? 'Your booking page is live' : 'Your poll is live'}
         </h2>
-        <p className="mt-1 text-slate-600">
+        <p className="mt-1 text-slate-600 dark:text-slate-300">
           {booking
             ? 'Send this link to the one person you want to meet. The first time they pick is booked, and you\u2019ll both get a calendar invite.'
             : 'Share this link with everyone you want to invite.'}
@@ -1734,7 +1738,7 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError }: {
             readOnly
             value={url}
             onFocus={(e) => e.currentTarget.select()}
-            className="flex-1 h-11 rounded-lg border border-slate-300 px-3 text-sm text-slate-700 bg-slate-50"
+            className="flex-1 h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60"
           />
           <button
             type="button"
@@ -1746,7 +1750,7 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError }: {
         </div>
         <a
           href={url}
-          className="mt-4 inline-block text-sm font-medium text-[var(--accent-strong)] hover:underline underline-offset-2"
+          className="mt-4 inline-block text-sm font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] hover:underline underline-offset-2"
         >
           Open your poll →
         </a>
@@ -1756,17 +1760,17 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError }: {
             <button
               type="button"
               onClick={onEditTimes}
-              className="text-sm font-medium text-slate-500 hover:text-slate-800 underline underline-offset-2"
+              className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 underline underline-offset-2"
             >
               ← Change the times
             </button>
-            <p className={`mt-1 text-xs ${editError ? 'text-red-600' : 'text-slate-500'}`}>
+            <p className={`mt-1 text-xs ${editError ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>
               {editError ?? 'You can go back and change them until someone answers.'}
             </p>
           </div>
         )}
 
-        <div className="mt-6 border-t border-slate-200 pt-5">
+        <div className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-5">
           <CopyAsText poll={poll} url={url} />
         </div>
       </div>
@@ -1793,12 +1797,12 @@ function TimezoneLine({ timezone, onChange }: { timezone: string; onChange: () =
   }, [])
   return (
     <>
-      It's <span className="font-medium text-slate-700">{formatTime(now, timezone)}</span>. You are in{' '}
-      <span className="font-medium text-slate-700">{timezone}</span>.{' '}
+      It's <span className="font-medium text-slate-700 dark:text-slate-300">{formatTime(now, timezone)}</span>. You are in{' '}
+      <span className="font-medium text-slate-700 dark:text-slate-300">{timezone}</span>.{' '}
       <button
         type="button"
         onClick={onChange}
-        className="font-medium text-[var(--accent-strong)] underline underline-offset-2 hover:no-underline"
+        className="font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] underline underline-offset-2 hover:no-underline"
       >
         Change timezone?
       </button>
