@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useUser, useUniversal } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { bookSlot, BookingError, cancelBooking, currentUser, getPollResilient, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, submitResponse } from '../lib/api'
+import { bookSlot, BookingError, cancelBooking, currentUser, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, submitResponse } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import {
@@ -13,8 +13,10 @@ import {
   addConfirmedTimeToCalendar, calendarStatus, removeConfirmedTimeFromCalendar, startCalendarConnect,
   type CalendarProvider, type CalendarStatus,
 } from '../lib/hostCalendar'
+import { guestEmailsForSlot, uniqueEmails, type RespondentContact } from '../lib/confirmedEmail'
 import AddToCalendar from './AddToCalendar'
 import CopyAsText from './CopyAsText'
+import CopyEmail from './CopyEmail'
 import TimezonePicker from './TimezonePicker'
 
 type Load = 'loading' | 'ready' | 'notfound' | 'error'
@@ -73,6 +75,17 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const [reloadKey, setReloadKey] = useState(0)
   const [calStatus, setCalStatus] = useState<CalendarStatus | null>(null)
   const [calWrite, setCalWrite] = useState<CalWriteState>({ status: 'idle' })
+  // The addresses respondents left — host-only, and only once a time is
+  // confirmed. They pre-fill the calendar guests and the "Copy email" To line.
+  // null = not loaded or not the host; a failed load also leaves null, and both
+  // features carry on without addresses rather than showing an error.
+  const [contacts, setContacts] = useState<RespondentContact[] | null>(null)
+  const [contactsLoading, setContactsLoading] = useState(false)
+  // Once a time is confirmed, the answer form and the results fold away so the
+  // confirmed banner is what the page is about. Either can be reopened, and
+  // confirming a time folds them both back.
+  const [showRespond, setShowRespond] = useState(false)
+  const [showResults, setShowResults] = useState(false)
   // The timezone the viewer has chosen to see times in. Empty = the poll's own
   // timezone (the default). A viewer can switch to their own zone or any other,
   // and every time on the page re-renders in it — the slots' underlying instants
@@ -139,6 +152,22 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     // suiteUser/otpUser decide which client (if any) hostClientFor returns.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poll?.id, suiteUser?.id, otpUser?.id])
+
+  // The host's respondent addresses, for a confirmed ordinary poll. Not on a
+  // booking page: its one guest was invited when they booked.
+  useEffect(() => {
+    const client = poll && poll.final_slot_id && !poll.booking_mode ? hostClientFor(poll) : null
+    if (!poll || !client) { setContacts(null); return }
+    let live = true
+    setContactsLoading(true)
+    getRespondentEmails(client, poll.id)
+      .then((c) => { if (live) setContacts(c) })
+      .catch(() => { if (live) setContacts(null) })
+      .finally(() => { if (live) setContactsLoading(false) })
+    return () => { live = false }
+    // suiteUser/otpUser decide which client (if any) hostClientFor returns.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poll?.id, poll?.final_slot_id, poll?.booking_mode, suiteUser?.id, otpUser?.id])
 
   // Pre-fill the form if this browser has already responded under a known name.
   useEffect(() => {
@@ -211,6 +240,8 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     try {
       await setFinalSlot(client, poll.id, slotId)
       setPoll({ ...poll, final_slot_id: slotId })
+      setShowRespond(false)
+      setShowResults(false)
       // A different (or cleared) confirmation invalidates any "sent ✓" state
       // shown for the previous slot.
       setNotifyState({ status: 'idle' })
@@ -402,6 +433,11 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // identity is already visible via the shared navbar's profile/avatar.
   const isOtpHost = !!otpUser && otpUser.id === poll.host_user_id
   const finalSlot = poll.final_slot_id ? slots.find((s) => s.id === poll.final_slot_id) ?? null : null
+  // Everyone free at the confirmed time (calendar guests), and everyone who left
+  // an address at all ("Copy email" — the same people "Email respondents"
+  // reaches). Both empty for anyone but the host.
+  const guests = finalSlot && contacts ? guestEmailsForSlot(responses, contacts, finalSlot.id) : []
+  const recipients = contacts ? uniqueEmails(contacts) : []
 
   return (
     <div data-theme={themeAttr(poll.theme)} style={themeVars(poll.theme)} className={`${CONTAINER_POLL} py-8 sm:py-10`}>
@@ -439,6 +475,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           notifyState={notifyState} onNotify={emailRespondents}
           calStatus={calStatus} calWrite={calWrite}
           onAddToMyCalendar={addToMyCalendar} onReconnectCalendar={reconnectForWrite}
+          guests={guests} recipients={recipients} recipientsLoading={contactsLoading}
         />
       )}
       {/* The host's only notification channel is email, so a send that failed is
@@ -473,8 +510,10 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
 
       {/* Host-only: chase the people who haven't clicked the link. Uses
           `activeTz` rather than the poll's zone so the pasted list reads the
-          same as the page it was copied from. */}
-      {isHost && !expired && !(isBooking && finalSlot) && (
+          same as the page it was copied from. Gone once a time is confirmed:
+          "which of these work for you?" is the wrong email to send then, and
+          the banner's "Copy email" is the right one. */}
+      {isHost && !expired && !finalSlot && (
         <section className="mt-5 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
           <CopyAsText poll={poll} url={pollUrl} displayTz={activeTz} />
         </section>
@@ -510,12 +549,24 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         <OfferedTimes poll={poll} slots={slots} dayMode={dayMode} activeTz={activeTz} viewerTz={viewerTz} tzNote={tzNote} />
       )}
 
-      {/* Respond */}
-      {!expired && !isBooking && (
+      {/* Respond. Folded once a time is confirmed — the question has been
+          answered — but still reachable, since someone may need to say they
+          can no longer make it. */}
+      {!expired && !isBooking && finalSlot && !showRespond && (
+        <FoldedSection
+          title={dayMode ? 'Are you free on these days?' : 'Are you free at these times?'}
+          summary="A time is confirmed, so this is folded away. You can still change your answers."
+          onOpen={() => setShowRespond(true)}
+        />
+      )}
+      {!expired && !isBooking && (!finalSlot || showRespond) && (
         <section className="mt-7 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-6 pop-in">
-          <h2 className="text-base font-bold text-slate-900">
-            {dayMode ? 'Are you free on these days?' : 'Are you free at these times?'}
-          </h2>
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-base font-bold text-slate-900">
+              {dayMode ? 'Are you free on these days?' : 'Are you free at these times?'}
+            </h2>
+            {finalSlot && <FoldButton onClick={() => setShowRespond(false)} />}
+          </div>
           <div className="mt-3 flex flex-col sm:flex-row gap-3">
             <label className="block">
               <span className="text-sm font-medium text-slate-700">Your name</span>
@@ -541,7 +592,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
             </label>
           </div>
           <p className="mt-1.5 text-xs text-slate-500">
-            Leave your email and you'll get the final date (with a calendar invite) once the host confirms it. It's never shown to other respondents.
+            Leave your email and you'll get the final date (with a calendar invite) once the host confirms it. Only the host can see it — never other respondents.
           </p>
 
           <div className="mt-4 space-y-4">
@@ -616,6 +667,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         poll={poll} slots={slots} responses={responses} viewerTz={viewerTz} activeTz={activeTz} pollUrl={pollUrl}
         isHost={isHost} confirming={confirming} finalSlotId={poll.final_slot_id}
         onConfirm={confirmSlot}
+        foldable={!!finalSlot} open={showResults} onOpenChange={setShowResults}
       />
       )}
     </div>
@@ -786,10 +838,12 @@ function BookingNotifyBanner({ which, guest }: { which: 'host' | 'invitee' | 'bo
   )
 }
 
-function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, confirming, finalSlotId, onConfirm }: {
+function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, confirming, finalSlotId, onConfirm, foldable, open, onOpenChange }: {
   poll: Poll; slots: Slot[]; responses: PollResponse[]; viewerTz: string; activeTz: string; pollUrl: string
   isHost: boolean; confirming: boolean; finalSlotId: string | null
   onConfirm: (slotId: string | null) => void
+  /** A time is confirmed, so the results fold down to one line unless `open`. */
+  foldable: boolean; open: boolean; onOpenChange: (open: boolean) => void
 }) {
   const tally = useMemo(() => {
     return slots.map((s) => {
@@ -805,9 +859,22 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
   const dayMode = poll.mode === 'days'
   const tzNote = !dayMode && activeTz !== viewerTz
 
+  if (foldable && !open) {
+    return (
+      <FoldedSection
+        title="Results"
+        summary={total === 0 ? 'Nobody responded.' : `${total} ${total === 1 ? 'person' : 'people'} responded.`}
+        onOpen={() => onOpenChange(true)}
+      />
+    )
+  }
+
   return (
     <section className="mt-7">
-      <h2 className="text-base font-bold text-slate-900 px-1">Results so far</h2>
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h2 className="text-base font-bold text-slate-900">{foldable ? 'Results' : 'Results so far'}</h2>
+        {foldable && <FoldButton onClick={() => onOpenChange(false)} />}
+      </div>
       {total === 0 ? (
         <p className="mt-2 px-1 text-sm text-slate-500">No responses yet — share the link to get started.</p>
       ) : (
@@ -890,7 +957,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
 
 /** The prominent "Confirmed" banner shown to everyone once the host has picked
  *  a final slot — the chosen date/time plus an "Add to calendar" for it. */
-function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isHost, confirming, isBooking, bookedBy, onUnconfirm, notifyState, onNotify, calStatus, calWrite, onAddToMyCalendar, onReconnectCalendar }: {
+function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isHost, confirming, isBooking, bookedBy, onUnconfirm, notifyState, onNotify, calStatus, calWrite, onAddToMyCalendar, onReconnectCalendar, guests, recipients, recipientsLoading }: {
   poll: Poll; slot: Slot; pollUrl: string; viewerTz: string; activeTz: string; dayMode: boolean
   isHost: boolean; confirming: boolean
   /** A 1:1 booking rather than a host-confirmed poll slot. Changes what
@@ -903,6 +970,9 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
   notifyState: NotifyState; onNotify: () => void
   calStatus: CalendarStatus | null; calWrite: CalWriteState
   onAddToMyCalendar: () => void; onReconnectCalendar: (provider: CalendarProvider) => void
+  /** Host-only, empty for everyone else: who was free at this time (pre-filled
+   *  as calendar guests), and every respondent address ("Copy email"). */
+  guests: string[]; recipients: string[]; recipientsLoading: boolean
 }) {
   // Memoize the formatter chain: `inst` and the `when` label each run several
   // Intl.DateTimeFormat passes, and the banner re-renders on every poll refresh.
@@ -966,7 +1036,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
               {confirming ? 'Working…' : 'Change'}
             </button>
           )}
-          <AddToCalendar poll={poll} slot={slot} pollUrl={pollUrl} />
+          <AddToCalendar poll={poll} slot={slot} pollUrl={pollUrl} guests={guests} />
         </div>
       </div>
       {isHost && (
@@ -983,6 +1053,14 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
                 ? 'Resend the confirmation'
                 : alreadyNotified || notifyState.status === 'sent' ? 'Email respondents again' : 'Email respondents this time'}
           </button>
+          {/* Not on a booking page: its guest already has the invite, and the
+              email is written for a group that answered a poll. */}
+          {!isBooking && (
+            <CopyEmail
+              poll={poll} slot={slot} url={pollUrl} displayTz={activeTz}
+              recipients={recipients} recipientsLoading={recipientsLoading}
+            />
+          )}
           <span className="text-xs text-slate-600">
             {notifyState.status === 'sent' && (
               notifyState.sent > 0
@@ -1147,6 +1225,39 @@ function groupByDay(slots: Slot[]): [string, Slot[]][] {
     groups.get(day)!.push(s)
   }
   return [...groups.entries()]
+}
+
+/** A section folded down to its title and one line, once a time is confirmed.
+ *  The whole row is the button — a small target on a card this size would make
+ *  the fold feel like a dead end. */
+function FoldedSection({ title, summary, onOpen }: { title: string; summary: string; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-expanded={false}
+      className="mt-7 flex w-full items-center justify-between gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-sm ring-1 ring-slate-200 transition hover:ring-[var(--accent)] sm:px-6"
+    >
+      <span className="min-w-0">
+        <span className="block text-base font-bold text-slate-900">{title}</span>
+        <span className="mt-0.5 block text-sm text-slate-500">{summary}</span>
+      </span>
+      <span className="shrink-0 text-sm font-medium text-[var(--accent-text)]">Show ▾</span>
+    </button>
+  )
+}
+
+function FoldButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={true}
+      className="shrink-0 text-sm font-medium text-[var(--accent-text)] hover:underline underline-offset-2"
+    >
+      Hide ▴
+    </button>
+  )
 }
 
 function Centered({ children }: { children: React.ReactNode }) {

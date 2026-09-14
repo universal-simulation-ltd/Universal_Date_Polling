@@ -170,3 +170,26 @@ describe('outlookCalendarUrl', () => {
     expect(u.searchParams.get('enddt')).toBe('2026-06-11')
   })
 })
+
+describe('guests on the deep-links', () => {
+  const guests = ['sam@example.com', 'alex@example.com']
+
+  it('pre-fills Google’s guests box with a comma-separated add=', () => {
+    const u = new URL(googleCalendarUrl(timedPoll(), timedSlot, POLL_URL, guests))
+    expect(u.searchParams.get('add')).toBe('sam@example.com,alex@example.com')
+  })
+
+  it('pre-fills Outlook’s attendees with a comma-separated to=', () => {
+    const u = new URL(outlookCalendarUrl(timedPoll(), timedSlot, POLL_URL, guests))
+    expect(u.searchParams.get('to')).toBe('sam@example.com,alex@example.com')
+  })
+
+  it('leaves both parameters off when there is nobody to invite', () => {
+    expect(new URL(googleCalendarUrl(timedPoll(), timedSlot, POLL_URL)).searchParams.has('add')).toBe(false)
+    expect(new URL(outlookCalendarUrl(timedPoll(), timedSlot, POLL_URL, [])).searchParams.has('to')).toBe(false)
+  })
+
+  it('never puts attendees in the .ics', () => {
+    expect(buildIcs(timedPoll(), timedSlot, POLL_URL, NOW)).not.toContain('ATTENDEE')
+  })
+})

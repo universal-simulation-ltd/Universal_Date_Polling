@@ -433,6 +433,16 @@ export async function getPollResilient(
   throw lastErr
 }
 
+/** Host-only: the addresses respondents left on a poll, for the confirmed
+ *  banner's calendar guests and "Copy email". `client` must hold the host's
+ *  session — `get_poll_respondent_emails` (migration 0172) scopes itself to
+ *  `auth.uid()`, so anyone else gets an empty list, never someone's address. */
+export async function getRespondentEmails(client: SupabaseClient, pollId: string): Promise<{ name: string; email: string }[]> {
+  const { data, error } = await client.rpc('get_poll_respondent_emails', { p_poll_id: pollId })
+  if (error) throw error
+  return (data as { name: string; email: string }[] | null) ?? []
+}
+
 /** Everyone's answers to one poll. See `getPoll` for why this is an RPC.
  *
  *  Ordering stays server-side (`order by created_at` inside the function), so

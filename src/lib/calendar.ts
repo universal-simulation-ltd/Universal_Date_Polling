@@ -114,8 +114,10 @@ export function downloadIcs(poll: Poll, slot: Slot, pollUrl: string): void {
 // ── Web calendar deep-links ───────────────────────────────────────────────────
 
 /** Google Calendar "create event" URL. Timed events use UTC (…Z) stamps so no
- *  `ctz` is needed; all-day uses date-only with an exclusive end date. */
-export function googleCalendarUrl(poll: Poll, slot: Slot, pollUrl: string): string {
+ *  `ctz` is needed; all-day uses date-only with an exclusive end date.
+ *  `guests` pre-fills the "Add guests" box (`add=`, comma-separated) — the host
+ *  still sends the invitations themselves when they save the event. */
+export function googleCalendarUrl(poll: Poll, slot: Slot, pollUrl: string, guests: string[] = []): string {
   const ev = eventForSlot(poll, slot, pollUrl)
   const dates = ev.allDay
     ? `${ev.startDay.replace(/-/g, '')}/${ev.endDay.replace(/-/g, '')}`
@@ -127,12 +129,16 @@ export function googleCalendarUrl(poll: Poll, slot: Slot, pollUrl: string): stri
     details: ev.description,
   })
   if (ev.location) params.set('location', ev.location)
+  if (guests.length) params.set('add', guests.join(','))
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
 /** Outlook (Office 365 web) "compose event" deep-link. Timed events pass ISO
- *  instants; all-day passes date-only with an exclusive end date. */
-export function outlookCalendarUrl(poll: Poll, slot: Slot, pollUrl: string): string {
+ *  instants; all-day passes date-only with an exclusive end date. `guests`
+ *  pre-fills the required attendees (`to=`, comma-separated). ⚠️ Microsoft
+ *  documents none of these parameters; `to` is the one the add-to-calendar
+ *  generators have converged on, and it is the least proven of the set. */
+export function outlookCalendarUrl(poll: Poll, slot: Slot, pollUrl: string, guests: string[] = []): string {
   const ev = eventForSlot(poll, slot, pollUrl)
   const params = new URLSearchParams({
     path: '/calendar/action/compose',
@@ -142,6 +148,7 @@ export function outlookCalendarUrl(poll: Poll, slot: Slot, pollUrl: string): str
     allday: String(ev.allDay),
   })
   if (ev.location) params.set('location', ev.location)
+  if (guests.length) params.set('to', guests.join(','))
   if (ev.allDay) {
     params.set('startdt', ev.startDay)
     params.set('enddt', ev.endDay)

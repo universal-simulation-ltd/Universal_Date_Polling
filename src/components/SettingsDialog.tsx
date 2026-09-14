@@ -73,7 +73,7 @@ export default function SettingsDialog({ title, description, onClose, children }
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close settings"
+            aria-label="Close"
             className="-mr-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">

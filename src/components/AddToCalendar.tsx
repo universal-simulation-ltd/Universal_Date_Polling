@@ -12,8 +12,15 @@ const MENU_WIDTH = 208 // matches w-52
  *  The menu is rendered in a portal with fixed positioning so it escapes the
  *  results card's `overflow-hidden` (which rounds the row corners but would
  *  otherwise clip a menu that drops below the slot). Closes on outside-click,
- *  Escape, or scroll/resize. */
-export default function AddToCalendar({ poll, slot, pollUrl }: { poll: Poll; slot: Slot; pollUrl: string }) {
+ *  Escape, or scroll/resize.
+ *
+ *  `guests` pre-fills the Google / Outlook guests box — the host's copy on a
+ *  confirmed poll passes everyone who was free at that time. The .ics never
+ *  carries them: RFC 5546 forbids ATTENDEE on a METHOD:PUBLISH event, and
+ *  switching to REQUEST would make the file an invitation from nobody. */
+export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
+  poll: Poll; slot: Slot; pollUrl: string; guests?: string[]
+}) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -83,10 +90,15 @@ export default function AddToCalendar({ poll, slot, pollUrl }: { poll: Poll; slo
           style={{ position: 'fixed', top: pos.top, left: pos.left, width: MENU_WIDTH }}
           className="z-[1100] overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-slate-200 pop-in"
         >
-          <MenuItem onClick={() => openExternal(googleCalendarUrl(poll, slot, pollUrl))}>
+          {guests.length > 0 && (
+            <p className="border-b border-slate-100 px-3 py-2 text-xs text-slate-500">
+              Invites the {guests.length === 1 ? 'person' : `${guests.length} people`} free then — they're in the guests box, and nothing is sent until you save.
+            </p>
+          )}
+          <MenuItem onClick={() => openExternal(googleCalendarUrl(poll, slot, pollUrl, guests))}>
             Google Calendar
           </MenuItem>
-          <MenuItem onClick={() => openExternal(outlookCalendarUrl(poll, slot, pollUrl))}>
+          <MenuItem onClick={() => openExternal(outlookCalendarUrl(poll, slot, pollUrl, guests))}>
             Outlook
           </MenuItem>
           <MenuItem onClick={() => { downloadIcs(poll, slot, pollUrl); setOpen(false) }}>
