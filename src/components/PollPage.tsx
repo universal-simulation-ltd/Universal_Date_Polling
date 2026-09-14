@@ -14,6 +14,8 @@ import {
   type CalendarProvider, type CalendarStatus,
 } from '../lib/hostCalendar'
 import { guestEmailsForSlot, uniqueEmails, type RespondentContact } from '../lib/confirmedEmail'
+import { hostIsEditing } from '../lib/editing'
+import { errorMessage } from '../lib/errors'
 import AddToCalendar from './AddToCalendar'
 import CopyAsText from './CopyAsText'
 import CopyEmail from './CopyEmail'
@@ -128,7 +130,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         setState('ready')
       } catch (e) {
         if (!live) return
-        setError(e instanceof Error ? e.message : 'Failed to load poll.')
+        setError(errorMessage(e, 'Failed to load poll.'))
         setState('error')
       }
     }
@@ -152,6 +154,23 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     // suiteUser/otpUser decide which client (if any) hostClientFor returns.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poll?.id, suiteUser?.id, otpUser?.id])
+
+  // While the host is changing the times, check back quietly every 15 seconds,
+  // so the page opens by itself once they save — no "Loading poll…" flash, and
+  // no need for the respondent to know to refresh.
+  const hostEditingNow = !!poll && hostIsEditing(poll)
+  useEffect(() => {
+    if (!hostEditingNow) return
+    const t = setInterval(async () => {
+      try {
+        const p = await getPollResilient(id)
+        if (!p) return
+        setPoll(p)
+        setResponses(await getResponses(id))
+      } catch { /* try again on the next tick */ }
+    }, 15_000)
+    return () => clearInterval(t)
+  }, [hostEditingNow, id])
 
   // The host's respondent addresses, for a confirmed ordinary poll. Not on a
   // booking page: its one guest was invited when they booked.
@@ -191,7 +210,10 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       return
     }
     const availability: Record<string, Availability> = {}
-    for (const [k, v] of Object.entries(mine)) if (v) availability[k] = v
+    // Only times the poll still has: the host may have changed them since this
+    // page loaded, and an answer to a time that no longer exists is noise.
+    const current = new Set(poll.slots.map((s) => s.id))
+    for (const [k, v] of Object.entries(mine)) if (v && current.has(k)) availability[k] = v
     // A brand-new responder (not this browser editing an existing entry) — used
     // to notify the host once per new person, not on every re-save.
     const isNewResponder = !responses.some((r) => r.name.trim().toLowerCase() === name.trim().toLowerCase())
@@ -211,13 +233,13 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         // the whole life of migration 0115: every save failed with a privilege
         // error the user was never shown, so "try saving again" was advice
         // that could not work. The RPC raises sentences meant to be read.
-        const why = e instanceof Error ? e.message.trim() : ''
+        const why = errorMessage(e, '')
         setError(`Your availability was saved, but your email couldn't be stored${why ? ` — ${why}` : ' — try saving again'}.`)
       }
       setResponses(await getResponses(poll.id))
       setSavedAt(Date.now())
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save your response.')
+      setError(errorMessage(e, 'Could not save your response.'))
     } finally {
       setSaving(false)
     }
@@ -256,7 +278,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         void removeConfirmedTimeFromCalendar(client, poll.id).catch(() => {})
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not confirm the time.')
+      setError(errorMessage(e, 'Could not confirm the time.'))
     } finally {
       setConfirming(false)
     }
@@ -287,7 +309,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       // booking.
       try { setResponses(await getResponses(poll.id)) } catch { /* cosmetic */ }
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Could not book that time.'
+      const message = errorMessage(e, 'Could not book that time.')
       setBooking({ status: 'error', message })
       // Somebody got there first. Reload rather than leaving the page showing
       // times that can no longer be booked — the confirmed banner is the
@@ -319,7 +341,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         setError("The booking is cancelled and the page is open again — but we couldn't email your guest. Please let them know yourself.")
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not cancel that booking.')
+      setError(errorMessage(e, 'Could not cancel that booking.'))
     } finally {
       setConfirming(false)
     }
@@ -338,7 +360,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       setNotifyState({ status: 'sent', sent })
       if (sent > 0 && poll.final_slot_id) setPoll({ ...poll, final_notified_slot_id: poll.final_slot_id })
     } catch (e) {
-      setNotifyState({ status: 'error', message: e instanceof Error ? e.message : 'Could not send the emails.' })
+      setNotifyState({ status: 'error', message: errorMessage(e, 'Could not send the emails.') })
     }
   }
 
@@ -367,7 +389,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       }
       setCalWrite({ status: 'error', message: "Couldn't add this to your calendar." })
     } catch (e) {
-      setCalWrite({ status: 'error', message: e instanceof Error ? e.message : "Couldn't add this to your calendar." })
+      setCalWrite({ status: 'error', message: errorMessage(e, "Couldn't add this to your calendar.") })
     }
   }
 
@@ -398,7 +420,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       }
       window.addEventListener('message', onMessage)
     } catch (e) {
-      setCalWrite({ status: 'error', message: e instanceof Error ? e.message : 'Could not start the reconnect.' })
+      setCalWrite({ status: 'error', message: errorMessage(e, 'Could not start the reconnect.') })
     }
   }
 
@@ -429,6 +451,10 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const pollUrl = pollLink(pollBase, id)
 
   const isHost = !!hostClientFor(poll)
+  // The host has gone back to change the times. They see their own page as
+  // normal; everyone else is asked to check back rather than answer times that
+  // are about to change (the server refuses those answers too — 0173).
+  const editing = !isHost && hostIsEditing(poll)
   // Only the guest-OTP host gets a "signed in" indicator here — a suite user's
   // identity is already visible via the shared navbar's profile/avatar.
   const isOtpHost = !!otpUser && otpUser.id === poll.host_user_id
@@ -464,6 +490,13 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           pollTz={poll.timezone} activeTz={activeTz} viewerTz={viewerTz} at={anchor}
           onChange={setDisplayTz}
         />
+      )}
+
+      {editing && (
+        <div role="status" className="mt-6 rounded-2xl bg-amber-50 px-5 py-4 text-center text-sm text-amber-900 ring-1 ring-amber-200">
+          <p className="font-semibold">The host is just changing the times, please check back shortly.</p>
+          <p className="mt-1 text-amber-800">This page will update by itself when they're done.</p>
+        </div>
       )}
 
       {finalSlot && (
@@ -537,7 +570,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       {/* Book (1:1 pages) — the guest's pick settles it, so there is no grid and
           no save-then-wait. Hidden from the host: a host booking their own page
           would be scheduling a meeting with themselves. */}
-      {isBooking && !expired && !finalSlot && !isHost && (
+      {isBooking && !expired && !finalSlot && !isHost && !editing && (
         <BookingPanel
           poll={poll} slots={slots} dayMode={dayMode} activeTz={activeTz} viewerTz={viewerTz} tzNote={tzNote}
           name={name} email={email} onName={setName} onEmail={setEmail}
@@ -552,14 +585,14 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       {/* Respond. Folded once a time is confirmed — the question has been
           answered — but still reachable, since someone may need to say they
           can no longer make it. */}
-      {!expired && !isBooking && finalSlot && !showRespond && (
+      {!expired && !isBooking && !editing && finalSlot && !showRespond && (
         <FoldedSection
           title={dayMode ? 'Are you free on these days?' : 'Are you free at these times?'}
           summary="A time is confirmed, so this is folded away. You can still change your answers."
           onOpen={() => setShowRespond(true)}
         />
       )}
-      {!expired && !isBooking && (!finalSlot || showRespond) && (
+      {!expired && !isBooking && !editing && (!finalSlot || showRespond) && (
         <section className="mt-7 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-6 pop-in">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-base font-bold text-slate-900">

@@ -3,7 +3,8 @@ import { useAppFreeToken, useFileDrop, useOrg, useOrgBranding, useSubscription, 
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
-import { createPoll, createPollGated, currentUser, sendHostCode, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollLocation as apiSetLocation, shortId, signOut, uploadPollLogo, verifyHostCode } from '../lib/api'
+import { createPoll, createPollGated, currentUser, sendHostCode, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollEditing, setPollLocation as apiSetLocation, shortId, signOut, updatePollDraft, uploadPollLogo, verifyHostCode } from '../lib/api'
+import { EDIT_HEARTBEAT_MS } from '../lib/editing'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { addLocalDays, formatTime, listTimezones, localTimezone, tzAbbrev, zonedDayAndMinute } from '../lib/time'
 import {
@@ -656,6 +657,80 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     }
   }
 
+  // "← Change the times" on the live panel. The poll being edited in place; the
+  // client that created it (the host's own session, the only one the edit RPCs
+  // accept); and the draft as it was, so Cancel can put it back.
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editError, setEditError] = useState<string | null>(null)
+  const createdClientRef = useRef<typeof suiteClient | null>(null)
+  const beforeEditRef = useRef<{
+    title: string; timezone: string; view: SlotView | null; slots: Slot[]; location: string
+    theme: Theme; bookingMode: boolean; validityDays: number | null; notifyOnResponse: boolean
+  } | null>(null)
+
+  // Keep "the host is changing the times" alive while they actually are. The
+  // server lets it lapse after EDIT_WINDOW_MS so an abandoned tab can't lock
+  // the poll; this renews it well inside that.
+  useEffect(() => {
+    const client = createdClientRef.current
+    if (!editingId || !client) return
+    const t = setInterval(() => { void setPollEditing(client, editingId, true).catch(() => {}) }, EDIT_HEARTBEAT_MS)
+    return () => clearInterval(t)
+  }, [editingId])
+
+  async function startEditing() {
+    const client = createdClientRef.current
+    if (!createdId || !client) return
+    setEditError(null)
+    try {
+      // Refused server-side once anyone has answered, with a sentence to show.
+      await setPollEditing(client, createdId, true)
+    } catch (e) {
+      setEditError(messageOf(e))
+      return
+    }
+    beforeEditRef.current = { title, timezone, view, slots, location, theme, bookingMode, validityDays, notifyOnResponse }
+    setEditingId(createdId)
+    setError(null)
+    setPhase('edit')
+  }
+
+  function cancelEditing() {
+    const client = createdClientRef.current
+    const was = beforeEditRef.current
+    if (was) {
+      setTitle(was.title); setTimezone(was.timezone); setView(was.view); setSlots(was.slots)
+      setLocation(was.location); setTheme(was.theme); setBookingMode(was.bookingMode)
+      setValidityDays(was.validityDays); setNotifyOnResponse(was.notifyOnResponse)
+    }
+    // Best-effort: if this fails the notice lapses on its own within the window.
+    if (client && editingId) void setPollEditing(client, editingId, false).catch(() => {})
+    setEditingId(null)
+    setError(null)
+    setPhase('done')
+  }
+
+  async function doUpdate() {
+    const client = createdClientRef.current
+    if (!client || !editingId) return
+    setPhase('creating')
+    try {
+      const d = draft(null)
+      await updatePollDraft(client, editingId, {
+        title: d.title, timezone: d.timezone, mode: d.mode, slots: d.slots, theme: d.theme,
+        location: d.location, booking_mode: d.booking_mode, expires_at: d.expires_at,
+      })
+      if (notifyOnResponse !== beforeEditRef.current?.notifyOnResponse) {
+        try { await apiSetNotify(client, editingId, notifyOnResponse && !bookingMode) } catch { /* the times are saved */ }
+      }
+      setEditingId(null)
+      setPhase('done')
+    } catch (e) {
+      setError(messageOf(e))
+      setPhase('edit')
+    }
+  }
+
   // `client` must be signed in as `hostUserId` (suite client for any Universal
   // ID user, app OTP client for guests) — RLS gates the insert and logo upload.
   async function doCreate(client: typeof suiteClient, hostUserId: string, hostEmail: string) {
@@ -688,6 +763,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       if (notifyOnResponse && !bookingMode) {
         try { await apiSetNotify(client, poll.id, true) } catch { /* poll still created */ }
       }
+      createdClientRef.current = client
       setCreatedId(poll.id)
       setPhase('done')
     } catch (e) {
@@ -700,6 +776,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     setError(null)
     const v = validateDraft()
     if (v) { setError(v); return }
+
+    // Changing the times on a poll that is already live: the host created it
+    // moments ago, so there is no code step and nothing new to create.
+    if (editingId) { await doUpdate(); return }
 
     // Any Universal ID session (free, pro, enterprise): skip OTP — the suite
     // session is already authenticated.
@@ -747,6 +827,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       <CreatedPanel
         pollBase={pollBase} id={createdId} theme={theme}
         poll={{ title, timezone, mode, slots, location: location.trim() || null, booking_mode: bookingMode }}
+        onEditTimes={createdClientRef.current ? startEditing : undefined}
+        editError={editError}
       />
     )
   }
@@ -789,6 +871,23 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         // has to be re-read or it keeps saying the token is in use.
         onDeleted={refreshPollToken}
       />
+
+      {editingId && (
+        <div role="status" className="mb-4 rounded-2xl bg-amber-50 px-5 py-4 text-sm text-amber-900 ring-1 ring-amber-200">
+          <p className="font-semibold">You're changing the times on your live poll.</p>
+          <p className="mt-1">
+            Until you save, anyone who opens the link is told you're changing the times and to check
+            back shortly. Nobody has answered yet, so nothing is lost. Your branding stays as it was.
+          </p>
+          <button
+            type="button"
+            onClick={cancelEditing}
+            className="mt-2 font-medium underline underline-offset-2 hover:text-amber-950"
+          >
+            Cancel — keep it as it was
+          </button>
+        </div>
+      )}
 
       {/* ONE column at every width, in the order the poll is actually built:
           title → where → availability → options → who you are and create.
@@ -1342,9 +1441,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             className="mt-4 w-full h-12 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
           >
             {phase === 'sending' && 'Sending code…'}
-            {phase === 'creating' && 'Creating poll…'}
+            {phase === 'creating' && (editingId ? 'Saving changes…' : 'Creating poll…')}
             {phase === 'code' && 'Verify & create poll'}
-            {phase === 'edit' && 'Create poll'}
+            {phase === 'edit' && (editingId ? 'Save changes' : 'Create poll')}
           </button>
         </div>
         </div>
@@ -1583,8 +1682,13 @@ function CalendarProviderRow({
   )
 }
 
-function CreatedPanel({ pollBase, id, theme, poll }: {
+function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError }: {
   pollBase: string; id: string; theme: Theme
+  /** "← Change the times" — back to the form, for as long as nobody has
+   *  answered. Absent when this screen has no host session to edit with. */
+  onEditTimes?: () => void
+  /** Why going back was refused (someone has answered), if it was. */
+  editError?: string | null
   /** The draft just created, for the plain-text "copy a list for an email"
    *  export — the created poll isn't re-fetched here, and doesn't need to be.
    *  Its `booking_mode` also switches this panel's copy: "share with everyone"
@@ -1646,6 +1750,21 @@ function CreatedPanel({ pollBase, id, theme, poll }: {
         >
           Open your poll →
         </a>
+
+        {onEditTimes && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={onEditTimes}
+              className="text-sm font-medium text-slate-500 hover:text-slate-800 underline underline-offset-2"
+            >
+              ← Change the times
+            </button>
+            <p className={`mt-1 text-xs ${editError ? 'text-red-600' : 'text-slate-500'}`}>
+              {editError ?? 'You can go back and change them until someone answers.'}
+            </p>
+          </div>
+        )}
 
         <div className="mt-6 border-t border-slate-200 pt-5">
           <CopyAsText poll={poll} url={url} />

@@ -14,86 +14,9 @@
 //
 //   node e2e/confirmed.e2e.mjs
 
-import { spawn } from 'node:child_process'
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { checker, freePort, launch, seedHostSession, startDevServer } from './harness.mjs'
 
-const HERE = path.dirname(fileURLToPath(import.meta.url))
-const ROOT = path.resolve(HERE, '..')
-
-// Playwright lives in whichever sibling app installed it (see booking.e2e.mjs).
-function resolvePlaywright() {
-  const apps = path.resolve(ROOT, '..')
-  for (const dir of fs.readdirSync(apps)) {
-    const candidate = path.join(apps, dir, 'node_modules', 'playwright', 'index.mjs')
-    if (fs.existsSync(candidate)) return pathToFileURL(candidate).href
-  }
-  throw new Error('No playwright install found in a sibling Universal app')
-}
-const { chromium } = await import(resolvePlaywright()).then((m) => m.default ?? m)
-
-async function launch() {
-  try {
-    return await chromium.launch()
-  } catch (e) {
-    const cache = path.join(process.env.HOME ?? '', 'Library/Caches/ms-playwright')
-    if (!fs.existsSync(cache)) throw e
-    const shells = fs.readdirSync(cache)
-      .filter((d) => d.startsWith('chromium_headless_shell-'))
-      .sort((a, b) => Number(b.split('-')[1]) - Number(a.split('-')[1]))
-    for (const shell of shells) {
-      const exe = path.join(cache, shell, 'chrome-headless-shell-mac-arm64', 'chrome-headless-shell')
-      if (fs.existsSync(exe)) {
-        console.log(`  (using ${shell} from the shared browser cache)`)
-        return await chromium.launch({ executablePath: exe })
-      }
-    }
-    throw e
-  }
-}
-
-let passed = 0
-const failures = []
-function check(name, condition, detail = '') {
-  if (condition) {
-    passed += 1
-    console.log(`  ok   ${name}`)
-  } else {
-    failures.push(`${name}${detail ? ` — ${detail}` : ''}`)
-    console.log(`  FAIL ${name}${detail ? ` — ${detail}` : ''}`)
-  }
-}
-
-async function freePort() {
-  const net = await import('node:net')
-  return new Promise((resolve) => {
-    const probe = net.createServer()
-    probe.listen(0, '127.0.0.1', () => {
-      const { port } = probe.address()
-      probe.close(() => resolve(port))
-    })
-  })
-}
-
-function startDevServer(port) {
-  const vite = path.resolve(ROOT, 'node_modules/vite/bin/vite.js')
-  const child = spawn(process.execPath, [vite, '--port', String(port), '--strictPort'], {
-    cwd: ROOT,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('dev server did not start in 90s')), 90000)
-    child.stdout.on('data', (chunk) => {
-      if (String(chunk).includes(String(port))) {
-        clearTimeout(timer)
-        setTimeout(() => resolve(child), 800)
-      }
-    })
-    child.stderr.on('data', (chunk) => process.stderr.write(chunk))
-    child.on('exit', (code) => reject(new Error(`dev server exited with ${code}`)))
-  })
-}
+const { check, finish } = checker()
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -140,13 +63,6 @@ const CONTACTS = [
   { name: 'Kim', email: 'kim@example.com' },
 ]
 
-/** A JWT-shaped token: supabase-js reads the claims off the access token, so a
- *  bare string would be rejected before it ever reached the stubbed endpoint. */
-function fakeJwt(sub, exp) {
-  const part = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
-  return `${part({ alg: 'HS256', typ: 'JWT' })}.${part({ sub, exp, role: 'authenticated', aud: 'authenticated' })}.sig`
-}
-
 async function stubBackend(page, { host, emailReads }) {
   // Reverse registration order — catch-alls first (see booking.e2e.mjs).
   await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }))
@@ -176,16 +92,6 @@ async function recordWindowOpen(page) {
     window.__opened = []
     window.open = (url) => { window.__opened.push(String(url)); return null }
   })
-}
-
-async function seedHostSession(page) {
-  const exp = Math.floor(Date.now() / 1000) + 3600
-  const session = {
-    access_token: fakeJwt(HOST_ID, exp), refresh_token: 'fake-refresh', token_type: 'bearer',
-    expires_in: 3600, expires_at: exp,
-    user: { id: HOST_ID, email: 'host@example.com', aud: 'authenticated', role: 'authenticated' },
-  }
-  await page.addInitScript((s) => { localStorage.setItem('unipoll-auth', s) }, JSON.stringify(session))
 }
 
 const text = (page) => page.locator('body').innerText()
@@ -240,7 +146,7 @@ try {
     const page = await context.newPage()
     const emailReads = []
     await recordWindowOpen(page)
-    await seedHostSession(page)
+    await seedHostSession(page, HOST_ID)
     await stubBackend(page, { host: true, emailReads })
     await page.goto(`${base}/p/conf123`, { waitUntil: 'networkidle' })
     await page.getByRole('button', { name: /Copy email/ }).waitFor({ timeout: 5000 })
@@ -298,8 +204,4 @@ try {
   server.kill()
 }
 
-console.log(`\n${passed} passed, ${failures.length} failed`)
-if (failures.length) {
-  for (const f of failures) console.log(`  - ${f}`)
-  process.exit(1)
-}
+finish()

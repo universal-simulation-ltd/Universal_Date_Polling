@@ -443,6 +443,26 @@ export async function getRespondentEmails(client: SupabaseClient, pollId: string
   return (data as { name: string; email: string }[] | null) ?? []
 }
 
+/** Host-only: start (`on`) or stop changing the times of a live poll. While on,
+ *  the poll page tells respondents to check back shortly and `submit_response`
+ *  refuses answers. Starting is refused once anyone has responded — the RPC's
+ *  message says so in a sentence the host can be shown. Migration 0173. */
+export async function setPollEditing(client: SupabaseClient, pollId: string, on: boolean): Promise<void> {
+  const { error } = await client.rpc('set_poll_editing', { p_poll_id: pollId, p_on: on })
+  if (error) throw error
+}
+
+/** The fields "Change the times" can save. Not branding (a logo is an upload,
+ *  and the poll keeps the one it was created with) and not the id. */
+export type PollDraftUpdate = Pick<NewPoll, 'title' | 'timezone' | 'mode' | 'slots' | 'theme' | 'location' | 'booking_mode' | 'expires_at'>
+
+/** Host-only: save the edited poll and end the edit. Refused if anyone has
+ *  answered in the meantime (migration 0173). */
+export async function updatePollDraft(client: SupabaseClient, pollId: string, fields: PollDraftUpdate): Promise<void> {
+  const { error } = await client.rpc('update_poll_draft', { p_poll_id: pollId, p_poll: fields })
+  if (error) throw error
+}
+
 /** Everyone's answers to one poll. See `getPoll` for why this is an RPC.
  *
  *  Ordering stays server-side (`order by created_at` inside the function), so

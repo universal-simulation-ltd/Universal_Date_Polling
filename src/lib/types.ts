@@ -82,6 +82,11 @@ export interface Poll {
   booking_notify_failed: 'host' | 'invitee' | 'both' | null
   /** When true, the host is emailed each time a new person responds. */
   notify_on_response: boolean
+  /** Set while the host has gone back to change the times, renewed every few
+   *  minutes while they edit, null otherwise (migration 0173). Only possible
+   *  before anyone has answered. Optional because rows read before 0173
+   *  don't carry it. See `lib/editing.ts` for when it counts as abandoned. */
+  editing_since?: string | null
   created_at: string
   expires_at: string | null
 }

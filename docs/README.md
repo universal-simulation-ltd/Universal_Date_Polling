@@ -54,6 +54,34 @@ Once a time is confirmed, the answer form and the results **fold** to one row
 each and open again on a click. The fold is derived from `final_slot_id`, so
 unconfirming opens them.
 
+## Changing the times before anyone answers
+
+"← Change the times" on the "Your poll is live" screen (`CreatedPanel` in
+`CreatePoll.tsx`) takes the host back to the same form, with everything still
+filled in. Migration 0173 adds three pieces, all host-only:
+- `set_poll_editing(id, on)` stamps `polls.editing_since`. It is refused once
+  anyone has answered.
+- `update_poll_draft(id, poll)` saves the title, timezone, mode, slots, theme,
+  location, booking mode and expiry, and clears the stamp. It does not save
+  branding.
+- `submit_response` refuses answers while the stamp is fresh.
+
+The stamp is a timestamp rather than a boolean, so a closed tab can't lock a
+poll. It counts for `EDIT_WINDOW_MS` (10 minutes, in `src/lib/editing.ts`),
+which must match the SQL's interval. The create screen renews it every 4
+minutes while the host edits.
+
+While the stamp is fresh, respondents see "The host is just changing the times,
+please check back shortly" in place of the form. The page re-reads the poll
+every 15 seconds, so it opens by itself after the save. Cancel restores the form
+as it was and clears the stamp. Covered by `npm run test:editing`.
+
+⚠️ **Errors: show `errorMessage(e, fallback)` (`src/lib/errors.ts`), never
+`e instanceof Error ? e.message : fallback`.** With the installed supabase-js, an
+RPC error is not an `Error`. The `instanceof` form therefore replaced every
+RPC's own sentence with the generic fallback, and that was already hiding "That
+poll no longer accepts responses" before 0173.
+
 ## "Your polls" — the way back to a poll you made
 
 A poll id is ten random URL-safe characters and nothing ever listed them, so

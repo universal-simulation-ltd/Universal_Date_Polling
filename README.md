@@ -22,6 +22,12 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
   email"), and it's never shown to other respondents.
 - **Decide** — the results view tallies every slot, shades it by how many people
   are free, and badges the winner(s).
+- **Change the times** — straight after creating a poll, **"← Change the
+  times"** takes the host back to the form, for as long as nobody has answered.
+  While they edit, the poll page tells visitors "The host is just changing the
+  times, please check back shortly" and opens by itself once they save. The
+  server refuses answers meanwhile, and an edit left open for ten minutes lapses
+  on its own.
 - **Confirm** — the host (and only the host) can click **"Confirm this time"** on
   a result slot. Everyone with the link then sees a prominent **"Confirmed"**
   banner with the chosen date/time. From that banner the host can **email every
