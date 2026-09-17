@@ -17,8 +17,9 @@ import { themeVars } from './theme'
 // paint, which is the only place early enough to matter. There is no way to
 // share one constant between a bundled module and a script that must run during
 // head parsing — so renaming either without the other fails here. The key IS
-// every user's saved choice: change it and everybody who chose dark is
-// silently back on light.
+// every user's saved choice for this app (since SDK 0.143, their override of the
+// global colour scheme): change it and everybody who chose dark here is silently
+// back to following global.
 
 function storeKey(): string {
   const match = /createThemeStore\('([^']+)'\)/.exec(themeStoreSource)
@@ -33,6 +34,15 @@ function headScript(): string {
 describe('the pre-paint theme script', () => {
   it('reads the same localStorage key as the theme store', () => {
     expect(headScript()).toContain(`localStorage.getItem('${storeKey()}')`)
+  })
+
+  // Since SDK 0.143 an absent app key means "follow Global preferences". Without
+  // this fallback someone whose only choice is the global Dark gets a light first
+  // frame and then a flip once the store loads.
+  it('falls back to the global colour scheme, then to light', () => {
+    expect(headScript()).toMatch(
+      new RegExp(`localStorage\\.getItem\\('${storeKey()}'\\)\\s*\\|\\|\\s*localStorage\\.getItem\\('universal:color-scheme'\\)\\s*\\|\\|\\s*'light'`),
+    )
   })
 
   it('puts the dark class on <html> before anything is painted', () => {

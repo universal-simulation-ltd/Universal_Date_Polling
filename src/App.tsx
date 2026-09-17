@@ -8,7 +8,6 @@ import credits from './generated/credits.json'
 import ProductLogo from './components/ProductLogo'
 import CreatePoll from './components/CreatePoll'
 import PollPage from './components/PollPage'
-import AppearanceRows from './components/AppearanceRows'
 import { CONTAINER_CREATE, CONTAINER_POLL } from './lib/layout'
 import { openAppSettings } from './lib/appSettings'
 import { useThemeStore } from './stores/themeStore'
@@ -69,9 +68,11 @@ export default function App() {
               draft the options belong to — a poll page would open nothing. */}
           {loc.view === 'create' && <AppSettingsRow />}
 
-          {/* Light / Dark / Match my device — on EVERY view, unlike App
-              Settings: someone opening a poll link can want dark too. */}
-          <AppearanceRows />
+          {/* No Appearance rows (Light / Dark / Match my device) any more:
+              since SDK 0.143 colour scheme is a Global preference, and this
+              app's override of it is the Colour scheme row in the SDK's App
+              preferences — offered on every view, so a voter opening a poll
+              link can still choose dark. See `themeStore` below. */}
 
           {/* Advanced — the SDK's own category, so every app in the suite has
              one in the same place, and whatever goes in it next is one change
@@ -90,6 +91,10 @@ export default function App() {
           </>
         }
         productHomeHref={BASE}
+        // App preferences' Colour scheme row (Follow global / Light / Dark /
+        // System) is bound to this store. With the menu's Appearance rows gone,
+        // that row is where this app's own light/dark override is chosen.
+        themeStore={useThemeStore}
         suiteSwitcherIconSrc={`${BASE}unisim-icon.png`}
         contentClassName={container}
       />

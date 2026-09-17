@@ -11,8 +11,15 @@
          already there when the stylesheet paints. This runs during head
          parsing, so a dark-mode user never sees a light frame first.
 
-         ⚠️ THE KEY IS DUPLICATED — src/stores/themeStore.ts holds the other
-         copy, and renaming one silently resets everybody to light. They are
+         Since SDK 0.143 the app key holds this app's OVERRIDE, set in App
+         preferences; absent, the app follows the suite-wide choice from Global
+         preferences, `universal:color-scheme`. ⚠️ Both fallbacks matter: read
+         only the app key and someone who chose Dark globally gets a light first
+         frame and then a flip.
+
+         ⚠️ THE APP KEY IS DUPLICATED — src/stores/themeStore.ts holds the other
+         copy, and renaming one silently puts everybody who chose something here
+         back to following global. They are
          held together by src/lib/darkMode.test.ts. Do not "tidy" either away.
 
          Light is the default (the suite rule), so this only ever ADDS `dark`.
@@ -20,6 +27,7 @@
     <script>
       try {
         var pref = localStorage.getItem('unisim-polling-theme')
+          || localStorage.getItem('universal:color-scheme') || 'light'
         if (pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark')
           document.documentElement.style.colorScheme = 'dark'
