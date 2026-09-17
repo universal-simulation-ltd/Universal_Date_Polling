@@ -59,14 +59,16 @@ export default function App() {
         product="polling"
         theme={theme}
         productLogo={<ProductLogo />}
+        // This poll's options are INSIDE "Tune this app" (SDK 0.148.0), rather
+        // than a second "App Settings" row sitting above it in the menu —
+        // James, 2026-09-17: "Can we combine app settings with app
+        // preferences?". They were two doors to nearly the same thing.
+        // Offered on the create screen alone, because that is the screen that
+        // owns the draft the options belong to — a poll page would open
+        // nothing.
+        appPreferences={loc.view === 'create' ? <AppSettingsRow /> : undefined}
         actions={
           <>
-          {/* App Settings — the ONLY way to a poll's options. They used to be a
-              "More options" fold on the create form; a host now reaches them
-              here, where every app in the suite keeps its settings. Offered on
-              the create screen alone, because that is the screen that owns the
-              draft the options belong to — a poll page would open nothing. */}
-          {loc.view === 'create' && <AppSettingsRow />}
 
           {/* No Appearance rows (Light / Dark / Match my device) any more:
               since SDK 0.143 colour scheme is a Global preference, and this
@@ -142,7 +144,7 @@ export default function App() {
   )
 }
 
-/** The "App Settings" row of the navbar's Actions menu.
+/** This poll's options — the first row inside "Tune this app".
  *
  *  Its own component only so it can call `useCloseAppMenu` — the hook reads the
  *  context the SDK wraps `actions` in, so it has to run inside those rows
@@ -155,7 +157,7 @@ function AppSettingsRow() {
   return (
     <AdvancedMenuItem
       theme={theme}
-      label="App Settings"
+      label="This poll's options"
       info="Booking page, link expiry, response alerts, calendar and timezone"
       icon={
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

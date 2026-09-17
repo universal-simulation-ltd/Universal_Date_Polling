@@ -95,7 +95,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
   // The settings panel: which section it opened on, or null while it is shut.
   // Everything that used to live in the create form's "More options" fold is in
-  // here now, reached from the navbar's Actions → App Settings (App.tsx) — or
+  // here now, reached from the navbar's Actions → Tune this app (App.tsx) — or
   // from the one in-page shortcut, "Change timezone?" beside the picker.
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null)
   const [showBranding, setShowBranding] = useState(false)
@@ -257,7 +257,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
   // "Don't show again" on the connect-a-calendar prompt. It is an offer, not a
   // step, so a host who has decided against it says so once and never sees it
-  // again — on this browser, on every poll. Nothing is taken away: App Settings
+  // again — on this browser, on every poll. Nothing is taken away: this poll's options
   // connects a calendar too, and offers this prompt back.
   const [calPromptHidden, setCalPromptHidden] = useState(calendarPromptHidden)
   function hideCalPrompt() {
@@ -273,7 +273,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const anyConfigured = !!calStatus && (calStatus.configured.google || calStatus.configured.microsoft)
   // Providers you could still connect: configured server-side, not yet linked.
   // Drives both offers — the prompt beside the calendar, where the shading it
-  // produces appears, and the same buttons in App Settings for a host who has
+  // produces appears, and the same buttons in this poll's options for a host who has
   // dismissed that prompt. Covers the "Google connected, Outlook not" case in
   // each place, so a second calendar is added wherever the host is looking.
   const connectable = {
@@ -1034,7 +1034,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           </span>
 
           {/* Where a calendar is connected in passing — beside the grid the
-              shading lands in. App Settings offers the same buttons for a host
+              shading lands in. This poll's options offers the same buttons for a host
               who would rather go and look for them (and for one who has
               dismissed this prompt). Shown while ANY configured provider is
               unlinked, so adding a second calendar to a first one lives here
@@ -1078,7 +1078,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 </button>
               </span>
               <span className="basis-full text-[11px] text-slate-400">
-                You can still connect one any time under Actions → App Settings.
+                You can still connect one any time under Actions → Tune this app.
               </span>
             </div>
           )}
@@ -1159,7 +1159,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         <div>
         {/* What the settings currently say, on the page the host is about to
             press Create on. Deliberately NOT controls — the options live in
-            Actions → App Settings and nowhere else now — but this poll is about
+            Actions → Tune this app and nowhere else now — but this poll is about
             to be created with them, and "Booking page" in particular changes
             what the link does, so it cannot be silent. */}
         <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 dark:border-slate-800 pt-4 text-xs text-slate-500 dark:text-slate-400">
@@ -1171,17 +1171,17 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             {!bookingMode && <> · {notifyOnResponse ? 'response alerts on' : 'no response alerts'}</>}
             {mode === 'times' && <> · {timezone}</>}
           </span>
-          <span className="text-slate-400">— change these under Actions → App Settings.</span>
+          <span className="text-slate-400">— change these under Actions → Tune this app.</span>
         </div>
 
         {/* The options themselves. Until 2026-09-11 this was a "More options"
             fold on this card; it is a dialog now, opened from the navbar's
-            Actions → App Settings, so the create form is the poll and nothing
+            Actions → Tune this app, so the create form is the poll and nothing
             else. `SettingsDialog` renders fixed, so it sits here in the tree
             (inheriting the theme variables) without occupying the layout. */}
         {settingsSection !== null && (
           <SettingsDialog
-            title="App Settings"
+            title="This poll's options"
             description="These apply to the poll you're creating now."
             onClose={() => setSettingsSection(null)}
           >
@@ -1405,7 +1405,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 We'll send a quick code to confirm it's you — that's how you'll manage this poll later
                 {notifyOnResponse
                   ? <> and where we'll send your response alerts.</>
-                  : <>. Want an email each time a guest responds? Turn that on under Actions → App Settings.</>}
+                  : <>. Want an email each time a guest responds? Turn that on under Actions → Tune this app.</>}
               </p>
             </label>
           )}
@@ -1790,7 +1790,7 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError }: {
  *  isn't the time it is. It ticks (every 15 seconds, so it is never more than a
  *  quarter-minute stale) rather than freezing at whatever it said on load.
  *
- *  "Change timezone?" opens App Settings on the timezone control — the one
+ *  "Change timezone?" opens this poll's options on the timezone control — the one
  *  shortcut into settings from the page, because this line raises the question
  *  and a line that raises a question should answer it. */
 function TimezoneLine({ timezone, onChange }: { timezone: string; onChange: () => void }) {

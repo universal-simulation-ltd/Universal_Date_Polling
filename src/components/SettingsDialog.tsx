@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
 
 /**
- * The modal the Actions → App Settings row opens.
+ * The modal the Actions → Tune this app ▸ "This poll's options" row opens.
  *
  * A dialog rather than a fold on the page, and rather than a settings route:
  * the options it holds belong to the poll the host is part-way through writing,

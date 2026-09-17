@@ -1,8 +1,8 @@
-// App Settings — the one place the poll's options live, and the preferences
+// This poll's options — the one place a poll's options live, and the preferences
 // that decide what the create page offers on its own.
 //
 // The options used to be a "More options" fold on the create form. They are now
-// reached only through the navbar's Actions → App Settings, which is the same
+// reached only through the navbar's Actions → Tune this app, which is the same
 // place every app in the suite keeps its settings — but the navbar is rendered
 // by App.tsx and the options belong to CreatePoll's draft state, so the two
 // need a wire between them that isn't a prop drilled through the SDK's bar.
@@ -37,7 +37,7 @@ export function onOpenAppSettings(fn: (section: SettingsSection) => void): () =>
 // The prompt beside the calendar grid is an offer, not a step, and a host who
 // has decided against it should be able to say so once rather than scroll past
 // it on every poll they ever make. Dismissing it does NOT take the feature
-// away: App Settings connects a calendar too, and offers this prompt back.
+// away: this poll's options connects a calendar too, and offers this prompt back.
 
 const HIDE_CALENDAR_PROMPT_KEY = 'unisim.polling.calendarPrompt.hidden'
 
