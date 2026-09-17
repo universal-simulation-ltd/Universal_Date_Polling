@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { isOwnEmailLinkReturn } from './authReturn'
 
 // The shared suite Supabase project. The anon key below is a PUBLISHABLE key —
 // it's designed to ship in the browser bundle (every Supabase web app exposes
@@ -39,5 +40,11 @@ export const supabase = createClient(url, anon, {
     persistSession: true,
     autoRefreshToken: true,
     storageKey: 'unipoll-auth',
+    // ⚠️ Take the auth result out of the URL only when it is OURS — a link we
+    // emailed. The suite client reads the URL too, and the first client to look
+    // consumes the tokens, so with the default (`true`) this client swallowed
+    // the return from a suite Apple/Google/Microsoft sign-in and the suite
+    // session was never established. See `authReturn.ts`.
+    detectSessionInUrl: (_url, params) => isOwnEmailLinkReturn(params),
   },
 })

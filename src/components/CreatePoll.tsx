@@ -5,6 +5,7 @@ import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
 import { createPoll, createPollGated, currentUser, sendHostCode, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollEditing, setPollLocation as apiSetLocation, shortId, signOut, updatePollDraft, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { EDIT_HEARTBEAT_MS } from '../lib/editing'
+import { useOtpUser } from '../lib/otpSession'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { addLocalDays, formatTime, listTimezones, localTimezone, tzAbbrev, zonedDayAndMinute } from '../lib/time'
 import {
@@ -220,16 +221,21 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     setBrandOverride(true)
   }
 
-  // A returning guest host already has an OTP session — skip the email step.
+  // A returning guest host already has a session of their own — skip the email
+  // step. This follows the client rather than reading it once, so signing out
+  // from the navbar (which clears this session too) puts the email step back
+  // instead of leaving the old address on screen as "verified".
+  const guestUser = useOtpUser()
   useEffect(() => {
     if (!SUPABASE_CONFIGURED) return
-    currentUser().then((u) => {
-      if (u?.email) {
-        setEmail(u.email)
-        setVerified(true)
-      }
-    })
-  }, [])
+    if (guestUser === undefined) return
+    if (guestUser?.email) {
+      setEmail(guestUser.email)
+      setVerified(true)
+    } else {
+      setVerified(false)
+    }
+  }, [guestUser])
 
   // --- Host-calendar free/busy overlay (Phase 3) ------------------------------
   // Any authenticated host (suite session or a returning guest's OTP session)

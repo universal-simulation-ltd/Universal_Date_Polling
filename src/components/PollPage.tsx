@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Chip, useUser, useUniversal, ValueChip } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { bookSlot, BookingError, cancelBooking, currentUser, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, submitResponse } from '../lib/api'
+import { bookSlot, BookingError, cancelBooking, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, submitResponse } from '../lib/api'
+import { useOtpUser } from '../lib/otpSession'
 import { supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
 import { useThemeStore } from '../stores/themeStore'
@@ -105,14 +106,12 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // their client is the one RLS will accept the "confirm slot" update on.
   const { user: suiteUser } = useUser()
   const { supabase: suiteClient } = useUniversal()
-  const [otpUser, setOtpUser] = useState<{ id: string; email: string | null } | null>(null)
-  useEffect(() => {
-    currentUser().then(setOtpUser).catch(() => setOtpUser(null))
-  }, [])
+  // Follows this app's client, so a sign-out anywhere — here, the navbar, or
+  // another tab — is reflected without a reload.
+  const otpUser = useOtpUser()
 
   async function handleSignOut() {
     await signOut()
-    setOtpUser(null)
   }
 
   useEffect(() => {

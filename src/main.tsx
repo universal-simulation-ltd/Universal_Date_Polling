@@ -5,6 +5,7 @@ import type { ProductCode } from '@unisim/sdk'
 import App from './App'
 import { UsageTracker } from '@unisim/sdk'
 import { SUITE_SUPABASE_URL, SUITE_SUPABASE_ANON } from './lib/supabase'
+import { useGuestSessionFollowsSuiteSignOut } from './lib/otpSession'
 import './index.css'
 
 console.log(`build: ${import.meta.env.VITE_BUILD_SHA}`)
@@ -37,10 +38,24 @@ const universalConfig = {
   ...(import.meta.env.PROD ? { cookieDomain: '.unisim.co.uk' } : {}),
 }
 
+/** Signing out from the navbar signs the guest host out of this app too.
+ *
+ *  Renders nothing; it exists because the two clients above keep SEPARATE
+ *  sessions, so the SDK's "Sign out" left this app's guest session in place and
+ *  the page went on naming the account the user had just signed out of
+ *  (2026-09-17). Mounted here rather than in App so it sits beside the other
+ *  suite-wide concern, and inside the provider because it reads the suite
+ *  session. See `lib/otpSession.ts`. */
+function GuestSessionSync() {
+  useGuestSessionFollowsSuiteSignOut()
+  return null
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <UniversalProvider config={universalConfig}>
       <UsageTracker />
+      <GuestSessionSync />
       <App />
     </UniversalProvider>
   </React.StrictMode>
