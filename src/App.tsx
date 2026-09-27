@@ -11,6 +11,7 @@ import PollPage from './components/PollPage'
 import { CONTAINER_CREATE, CONTAINER_POLL } from './lib/layout'
 import { openAppSettings } from './lib/appSettings'
 import { useThemeStore } from './stores/themeStore'
+import { KNOWLEDGE_BASE } from './knowledge'
 
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_Date_Polling'
 const BASE = import.meta.env.BASE_URL // '/' in dev, '/polling/' in production
@@ -68,8 +69,8 @@ export default function App() {
         // nothing.
         appPreferences={loc.view === 'create' ? <AppSettingsRow /> : undefined}
         // "About this app" is drawn by the SDK at the foot of "Tune this app"
-        // (SDK 0.161.0+). It was the only row in the Advanced actions menu, so
-        // that menu is gone. No Appearance rows either: colour scheme is the
+        // (SDK 0.161.0+). It was the only row in the Advanced actions menu, which
+        // now holds the knowledge base instead (below). No Appearance rows either: colour scheme is the
         // Colour scheme row in App preferences — see `themeStore` below.
         about={{
           repo: REPO_URL,
@@ -79,6 +80,9 @@ export default function App() {
           credits,
           noticesHref: `${REPO_URL}/blob/main/THIRD-PARTY-NOTICES.md`,
         }}
+        // Actions ▸ Advanced ▸ Knowledge base (SDK 0.163.0): this app's own
+        // articles, bundled from ./knowledge so they read offline.
+        knowledgeBase={KNOWLEDGE_BASE}
         productHomeHref={BASE}
         // App preferences' Colour scheme row (Follow global / Light / Dark /
         // System) is bound to this store. With the menu's Appearance rows gone,
