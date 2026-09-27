@@ -26,6 +26,19 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<!-- ⚠️ A MISSING USAGE STRING IS A CRASH, not a refusal: iOS terminates
+	     the process the moment a privacy-gated resource is reached without
+	     one (see Docs_UNI_SIM/landmines.md).
+
+	     Nothing here calls the camera directly. The web layer reaches it by proxy: the
+	     logo picker on a new poll accepts images, so the WebView offers "Take
+	     Photo" beside the photo library. It is the SDK's `useFileDrop`, so the
+	     accept is an object property in CreatePoll.tsx, not an accept="" in the
+	     markup — grep for both.
+	     This app accepts no video anywhere, so iOS never offers "Take Video"
+	     and no NSMicrophoneUsageDescription is needed. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo to use as the logo on your poll. Photos stay on this device unless you publish the poll.</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>armv7</string>
