@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AdvancedMenu, AdvancedMenuItem, UniversalAppsNavBar, UpdateNotice, useCloseAppMenu } from '@unisim/sdk'
+import { AdvancedMenuItem, UniversalAppsNavBar, UpdateNotice, useCloseAppMenu } from '@unisim/sdk'
 // Generated — `npm run credits` after any dependency change. Never edit it by
 // hand: it is read off the installed tree, so a hand-kept list drifts from the
 // lockfile the first time anyone upgrades anything, and a credits list naming a
@@ -67,31 +67,18 @@ export default function App() {
         // owns the draft the options belong to — a poll page would open
         // nothing.
         appPreferences={loc.view === 'create' ? <AppSettingsRow /> : undefined}
-        actions={
-          <>
-
-          {/* No Appearance rows (Light / Dark / Match my device) any more:
-              since SDK 0.143 colour scheme is a Global preference, and this
-              app's override of it is the Colour scheme row in the SDK's App
-              preferences — offered on every view, so a voter opening a poll
-              link can still choose dark. See `themeStore` below. */}
-
-          {/* Advanced — the SDK's own category, so every app in the suite has
-             one in the same place, and whatever goes in it next is one change
-             rather than nineteen. "About this app" is always its last row. */}
-          <AdvancedMenu
-            theme={theme}
-            about={{
-              repo:    'https://github.com/universal-simulation-ltd/Universal_Date_Polling',
-              // Server-backed: the local-first claim is not true here.
-              privacy: false,
-              version: __APP_VERSION__,
-              credits,
-              noticesHref: 'https://github.com/universal-simulation-ltd/Universal_Date_Polling/blob/main/THIRD-PARTY-NOTICES.md',
-            }}
-          />
-          </>
-        }
+        // "About this app" is drawn by the SDK at the foot of "Tune this app"
+        // (SDK 0.161.0+). It was the only row in the Advanced actions menu, so
+        // that menu is gone. No Appearance rows either: colour scheme is the
+        // Colour scheme row in App preferences — see `themeStore` below.
+        about={{
+          repo: REPO_URL,
+          // Server-backed: the local-first claim is not true here.
+          privacy: false,
+          version: __APP_VERSION__,
+          credits,
+          noticesHref: `${REPO_URL}/blob/main/THIRD-PARTY-NOTICES.md`,
+        }}
         productHomeHref={BASE}
         // App preferences' Colour scheme row (Follow global / Light / Dark /
         // System) is bound to this store. With the menu's Appearance rows gone,
