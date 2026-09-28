@@ -85,8 +85,13 @@ export default function SettingsDialog({ title, description, onClose, children }
         <div className="px-5 py-5 sm:px-7">{children}</div>
 
         {/* Nothing to save: every control writes straight to the draft, so this
-            is a way out, not a commit. Labelled as such. */}
-        <div className="sticky bottom-0 border-t border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-5 py-3 backdrop-blur sm:px-7">
+            is a way out, not a commit. Labelled as such.
+            On a phone the sheet sits on the bottom edge, so in the native build
+            the button would be under the home indicator / gesture bar: the
+            bottom padding grows to the safe-area inset where there is one
+            (max(), so 0.75rem — py-3 — everywhere else). From sm the dialog is
+            centred with the backdrop's own margin, so it stays plain py-3. */}
+        <div className="sticky bottom-0 border-t border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-7 sm:pb-3">
           <button
             type="button"
             onClick={onClose}

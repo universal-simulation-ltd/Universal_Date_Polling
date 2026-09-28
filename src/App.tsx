@@ -11,6 +11,7 @@ import PollPage from './components/PollPage'
 import { CONTAINER_CREATE, CONTAINER_POLL } from './lib/layout'
 import { openAppSettings } from './lib/appSettings'
 import { useThemeStore } from './stores/themeStore'
+import { useSystemBarsStyle } from './lib/systemBars'
 import { KNOWLEDGE_BASE } from './knowledge'
 
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_Date_Polling'
@@ -46,6 +47,8 @@ export default function App() {
   // The SDK's bar, dropdown and Advanced rows are inline-styled, so they cannot
   // follow the `.dark` class and have to be told.
   const theme = useThemeStore((s) => s.effective)
+  // The native status-bar glyphs follow it wherever the page is under them.
+  useSystemBarsStyle(theme)
 
   return (
     // ⚠️ pt-[env(safe-area-inset-top)] is for the native (Capacitor) build, not
