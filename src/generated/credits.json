@@ -1,8 +1,8 @@
 {
   "app": "universal-polling",
   "appVersion": "0.1.0",
-  "generated": "2026-09-08",
-  "noticesCount": 112,
+  "generated": "2026-09-28",
+  "noticesCount": 118,
   "ships": [
     {
       "name": "@capacitor/*",
