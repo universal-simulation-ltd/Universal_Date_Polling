@@ -104,7 +104,7 @@ Para um encontro a dois. Em vez de reunir a disponibilidade de todos, a pessoa p
 
 ## Validade do link
 
-O link de uma enquete funciona por 7, 30, 90 ou 180 dias. De propósito, não existe a opção "nunca expira", porque esses links são compartilhados livremente. Depois que o link expira, a enquete fica somente leitura: ainda dá para vê-la, mas nenhuma resposta nova é aceita.
+O link de uma enquete funciona por 7, 30, 90 ou 180 dias. De propósito, não existe a opção "nunca expira", porque esses links são compartilhados livremente. Depois que o link expira, a enquete fica somente leitura: ainda dá para vê-la, mas nenhuma resposta nova é aceita. 30 dias depois que o link expira, a enquete e as respostas dela são apagadas.
 
 ## Alertas de resposta
 
@@ -174,7 +174,7 @@ Tudo trafega por conexões criptografadas e é protegido por regras de acesso. N
 
 ## Por quanto tempo
 
-Quando o link de uma enquete expira, ela deixa de aceitar respostas e fica somente leitura. Ela não é apagada nesse momento: continua lá até quem organiza excluí-la, e a lista de enquetes permite excluir de uma só vez todas as expiradas.
+Quando o link de uma enquete expira, ela deixa de aceitar respostas e fica somente leitura. Ela não é apagada nesse momento, para que quem organiza ainda possa consultar as respostas. 30 dias depois que o link expira, a enquete é apagada automaticamente, junto com tudo o que está listado abaixo. Quem organiza pode excluí-la antes, e a lista de enquetes permite excluir de uma só vez todas as expiradas.
 
 Excluir uma enquete exclui junto as respostas, os e-mails dos participantes e os dados de agenda ligados a ela. Cancelar um agendamento apaga o e-mail da outra pessoa, depois que o app tenta avisá-la.
 

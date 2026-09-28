@@ -118,8 +118,12 @@ describe('expiryLabel', () => {
     expect(expiryLabel(poll({ expires_at: '2026-06-13T13:00:00.000Z' }), NOW)).toBe('Expires in 12 days')
   })
 
-  it('reads as expired once the moment has passed', () => {
-    expect(expiryLabel(poll({ expires_at: '2026-06-01T11:59:59.000Z' }), NOW)).toBe('Expired')
+  it('reads as expired once the moment has passed, with when it is deleted', () => {
+    expect(expiryLabel(poll({ expires_at: '2026-06-01T11:59:59.000Z' }), NOW)).toBe('Expired · deleted in 29 days')
+    expect(expiryLabel(poll({ expires_at: '2026-05-03T13:00:00.000Z' }), NOW)).toBe('Expired · deleted tomorrow')
+    expect(expiryLabel(poll({ expires_at: '2026-05-02T13:00:00.000Z' }), NOW)).toBe('Expired · deleted today')
+    // Past the grace but not yet swept (the job runs once a day).
+    expect(expiryLabel(poll({ expires_at: '2026-04-01T12:00:00.000Z' }), NOW)).toBe('Expired · deleted today')
   })
 })
 

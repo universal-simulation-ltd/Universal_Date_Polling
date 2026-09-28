@@ -104,7 +104,7 @@ For a one-to-one meeting. Instead of collecting everyone's availability, the per
 
 ## Link validity
 
-A poll's link works for 7, 30, 90 or 180 days. There is deliberately no "never expires" option, because poll links are shared freely. Once the link expires, the poll becomes read-only: people can still see it, but no new answers are accepted.
+A poll's link works for 7, 30, 90 or 180 days. There is deliberately no "never expires" option, because poll links are shared freely. Once the link expires, the poll becomes read-only: people can still see it, but no new answers are accepted. 30 days after the link expires, the poll and its answers are deleted.
 
 ## Response alerts
 
@@ -174,7 +174,7 @@ Everything travels over encrypted connections and is protected by access rules. 
 
 ## How long
 
-When a poll's link expires, it stops accepting answers and becomes read-only. It is not deleted at that moment. It stays until the host deletes it, and the host's list of polls has a single step to delete all expired polls.
+When a poll's link expires, it stops accepting answers and becomes read-only. It is not deleted at that moment, so the host can still look back at the answers. 30 days after the link expires, the poll is deleted automatically, together with everything listed below. The host can delete it sooner, and the host's list of polls has a single step to delete all expired polls.
 
 Deleting a poll deletes its answers, respondents' email addresses and calendar details with it. Cancelling a booking deletes the guest's email address, after the app has tried to let them know.
 

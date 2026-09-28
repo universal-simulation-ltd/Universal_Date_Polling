@@ -23,6 +23,7 @@ import type { SlotView } from './SlotPicker'
 import { CONTAINER_CREATE, centreScrollTop } from '../lib/layout'
 import { useThemeStore } from '../stores/themeStore'
 import { pollLink } from '../lib/appUrl'
+import { PURGE_GRACE_DAYS } from '../lib/myPolls'
 import {
   calendarPromptHidden, onOpenAppSettings, setCalendarPromptHidden, type SettingsSection,
 } from '../lib/appSettings'
@@ -33,6 +34,7 @@ const VALIDITY = [
   { label: '90 days', days: 90 },
   // No "never expires": polls are public, link-shared, and we don't want
   // respondent data living on the server forever. 180 days is the long option.
+  // An expired poll is deleted PURGE_GRACE_DAYS later by a daily job (0191).
   { label: '180 days', days: 180 },
 ]
 
@@ -1223,6 +1225,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     <option key={v.label} value={String(v.days)}>{v.label}</option>
                   ))}
                 </select>
+                <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                  Then it's read-only for {PURGE_GRACE_DAYS} days, and deleted with its answers.
+                </span>
               </div>
 
               {/* Response alerts. Not offered on a booking page: the booking

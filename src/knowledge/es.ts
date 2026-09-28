@@ -104,7 +104,7 @@ Para una reunión a solas con una persona. En lugar de recoger la disponibilidad
 
 ## Validez del enlace
 
-El enlace de una encuesta funciona durante 7, 30, 90 o 180 días. No existe a propósito la opción «no caduca nunca», porque estos enlaces se comparten libremente. Cuando el enlace caduca, la encuesta pasa a ser de solo lectura: se puede seguir viendo, pero no se aceptan respuestas nuevas.
+El enlace de una encuesta funciona durante 7, 30, 90 o 180 días. No existe a propósito la opción «no caduca nunca», porque estos enlaces se comparten libremente. Cuando el enlace caduca, la encuesta pasa a ser de solo lectura: se puede seguir viendo, pero no se aceptan respuestas nuevas. 30 días después de que caduque el enlace, la encuesta y sus respuestas se eliminan.
 
 ## Avisos de respuesta
 
@@ -174,7 +174,7 @@ Todo viaja por conexiones cifradas y está protegido por reglas de acceso. No es
 
 ## Durante cuánto tiempo
 
-Cuando caduca el enlace de una encuesta, deja de aceptar respuestas y pasa a ser de solo lectura. No se elimina en ese momento: sigue ahí hasta que el organizador la elimina, y su lista de encuestas permite eliminar de una sola vez todas las caducadas.
+Cuando caduca el enlace de una encuesta, deja de aceptar respuestas y pasa a ser de solo lectura. No se elimina en ese momento, para que el organizador pueda seguir consultando las respuestas. 30 días después de que caduque el enlace, la encuesta se elimina automáticamente, junto con todo lo que se indica a continuación. El organizador puede eliminarla antes, y su lista de encuestas permite eliminar de una sola vez todas las caducadas.
 
 Eliminar una encuesta elimina con ella sus respuestas, los correos de los participantes y los datos de calendario asociados. Cancelar una reserva elimina el correo de la otra persona, después de que la aplicación haya intentado avisarle.
 

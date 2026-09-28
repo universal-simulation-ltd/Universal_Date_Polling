@@ -104,7 +104,7 @@ Bire bir görüşmeler içindir. Herkesin uygunluğunu toplamak yerine, bağlant
 
 ## Bağlantının geçerlilik süresi
 
-Bir anketin bağlantısı 7, 30, 90 veya 180 gün çalışır. Bu bağlantılar serbestçe paylaşıldığı için bilerek "hiç sona ermesin" seçeneği yoktur. Bağlantının süresi dolduğunda anket salt okunur hâle gelir: görüntülenebilir, ancak yeni yanıt kabul edilmez.
+Bir anketin bağlantısı 7, 30, 90 veya 180 gün çalışır. Bu bağlantılar serbestçe paylaşıldığı için bilerek "hiç sona ermesin" seçeneği yoktur. Bağlantının süresi dolduğunda anket salt okunur hâle gelir: görüntülenebilir, ancak yeni yanıt kabul edilmez. Bağlantının süresi dolduktan 30 gün sonra anket ve yanıtları silinir.
 
 ## Yanıt bildirimleri
 
@@ -174,7 +174,7 @@ Her şey şifreli bağlantılar üzerinden iletilir ve erişim kurallarıyla kor
 
 ## Ne kadar süreyle
 
-Bir anketin bağlantısının süresi dolduğunda anket yanıt kabul etmeyi bırakır ve salt okunur hâle gelir. O anda silinmez: düzenleyen kişi silene kadar kalır ve düzenleyenin anket listesi, süresi dolan tüm anketleri tek adımda silmeye olanak tanır.
+Bir anketin bağlantısının süresi dolduğunda anket yanıt kabul etmeyi bırakır ve salt okunur hâle gelir. Düzenleyen kişi yanıtlara yine bakabilsin diye o anda silinmez. Bağlantının süresi dolduktan 30 gün sonra anket, aşağıda sayılan her şeyle birlikte otomatik olarak silinir. Düzenleyen kişi onu daha önce de silebilir ve düzenleyenin anket listesi, süresi dolan tüm anketleri tek adımda silmeye olanak tanır.
 
 Bir anketi silmek; yanıtlarını, katılımcıların e-posta adreslerini ve ilgili takvim bilgilerini de siler. Bir randevuyu iptal etmek, uygulama karşı tarafa haber vermeyi denedikten sonra o kişinin e-posta adresini siler.
 

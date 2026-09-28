@@ -104,7 +104,7 @@ Pour un rendez-vous en tête-à-tête. Au lieu de recueillir les disponibilités
 
 ## Validité du lien
 
-Le lien d’un sondage fonctionne pendant 7, 30, 90 ou 180 jours. Il n’existe volontairement pas d’option « n’expire jamais », car ces liens circulent librement. Une fois le lien expiré, le sondage passe en lecture seule : on peut encore le consulter, mais aucune nouvelle réponse n’est acceptée.
+Le lien d’un sondage fonctionne pendant 7, 30, 90 ou 180 jours. Il n’existe volontairement pas d’option « n’expire jamais », car ces liens circulent librement. Une fois le lien expiré, le sondage passe en lecture seule : on peut encore le consulter, mais aucune nouvelle réponse n’est acceptée. 30 jours après l’expiration du lien, le sondage et ses réponses sont supprimés.
 
 ## Alertes de réponse
 
@@ -174,7 +174,7 @@ Tout circule par des connexions chiffrées et est protégé par des règles d’
 
 ## Pendant combien de temps
 
-Quand le lien d’un sondage expire, le sondage n’accepte plus de réponses et passe en lecture seule. Il n’est pas supprimé à ce moment-là : il reste jusqu’à ce que l’organisateur le supprime, et la liste des sondages de l’organisateur permet de supprimer en une seule étape tous les sondages expirés.
+Quand le lien d’un sondage expire, le sondage n’accepte plus de réponses et passe en lecture seule. Il n’est pas supprimé à ce moment-là, afin que l’organisateur puisse encore consulter les réponses. 30 jours après l’expiration du lien, le sondage est supprimé automatiquement, avec tout ce qui est énuméré ci-dessous. L’organisateur peut le supprimer plus tôt, et sa liste de sondages permet de supprimer en une seule étape tous les sondages expirés.
 
 Supprimer un sondage supprime avec lui ses réponses, les adresses e-mail des participants et les informations d’agenda associées. Annuler une réservation supprime l’adresse e-mail de la personne, après que l’application a tenté de la prévenir.
 

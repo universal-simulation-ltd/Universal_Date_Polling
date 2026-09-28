@@ -104,7 +104,7 @@ Per un incontro a due. Invece di raccogliere le disponibilità di tutti, la pers
 
 ## Validità del link
 
-Il link di un sondaggio funziona per 7, 30, 90 o 180 giorni. Di proposito non c’è l’opzione «non scade mai», perché questi link vengono condivisi liberamente. Quando il link scade, il sondaggio diventa di sola lettura: si può ancora vedere, ma non si accettano nuove risposte.
+Il link di un sondaggio funziona per 7, 30, 90 o 180 giorni. Di proposito non c’è l’opzione «non scade mai», perché questi link vengono condivisi liberamente. Quando il link scade, il sondaggio diventa di sola lettura: si può ancora vedere, ma non si accettano nuove risposte. 30 giorni dopo la scadenza del link, il sondaggio e le sue risposte vengono eliminati.
 
 ## Avvisi di risposta
 
@@ -174,7 +174,7 @@ Tutto viaggia su connessioni crittografate ed è protetto da regole di accesso. 
 
 ## Per quanto tempo
 
-Quando il link di un sondaggio scade, il sondaggio smette di accettare risposte e diventa di sola lettura. Non viene eliminato in quel momento: resta finché chi organizza non lo elimina, e l’elenco dei sondaggi permette di eliminare in un solo passaggio tutti quelli scaduti.
+Quando il link di un sondaggio scade, il sondaggio smette di accettare risposte e diventa di sola lettura. Non viene eliminato in quel momento, così chi organizza può ancora rileggere le risposte. 30 giorni dopo la scadenza del link, il sondaggio viene eliminato automaticamente, insieme a tutto ciò che è elencato qui sotto. Chi organizza può eliminarlo prima, e l’elenco dei sondaggi permette di eliminare in un solo passaggio tutti quelli scaduti.
 
 Eliminando un sondaggio si eliminano anche le sue risposte, gli indirizzi email dei partecipanti e i dati di calendario collegati. Annullando una prenotazione si elimina l’indirizzo email dell’altra persona, dopo che l’app ha provato ad avvisarla.
 

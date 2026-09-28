@@ -17,6 +17,7 @@ import {
 } from '../lib/hostCalendar'
 import { guestEmailsForSlot, uniqueEmails, type RespondentContact } from '../lib/confirmedEmail'
 import { hostIsEditing } from '../lib/editing'
+import { PURGE_GRACE_DAYS } from '../lib/myPolls'
 import { errorMessage } from '../lib/errors'
 import AddToCalendar from './AddToCalendar'
 import CopyAsText from './CopyAsText'
@@ -565,7 +566,8 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
 
       {expired && (
         <div className="mt-6 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm">
-          This poll's link has expired — it's read-only now.
+          This poll's link has expired — it's read-only now, and it will be deleted{' '}
+          {PURGE_GRACE_DAYS} days after it expired, answers and all.
         </div>
       )}
 

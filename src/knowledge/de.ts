@@ -104,7 +104,7 @@ Für ein Treffen zu zweit. Statt die Verfügbarkeit aller zu sammeln, wählt die
 
 ## Gültigkeit des Links
 
-Der Link einer Umfrage funktioniert 7, 30, 90 oder 180 Tage lang. Eine Option „läuft nie ab“ gibt es bewusst nicht, weil solche Links frei weitergegeben werden. Nach Ablauf ist die Umfrage schreibgeschützt: Man kann sie noch ansehen, aber es werden keine neuen Antworten angenommen.
+Der Link einer Umfrage funktioniert 7, 30, 90 oder 180 Tage lang. Eine Option „läuft nie ab“ gibt es bewusst nicht, weil solche Links frei weitergegeben werden. Nach Ablauf ist die Umfrage schreibgeschützt: Man kann sie noch ansehen, aber es werden keine neuen Antworten angenommen. 30 Tage nach Ablauf des Links werden die Umfrage und ihre Antworten gelöscht.
 
 ## Benachrichtigungen bei Antworten
 
@@ -174,7 +174,7 @@ Alles wird über verschlüsselte Verbindungen übertragen und durch Zugriffsrege
 
 ## Wie lange
 
-Wenn der Link einer Umfrage abläuft, nimmt sie keine Antworten mehr an und wird schreibgeschützt. Gelöscht wird sie in diesem Moment nicht: Sie bleibt bestehen, bis die einladende Person sie löscht, und in deren Umfrageliste lassen sich alle abgelaufenen Umfragen in einem Schritt löschen.
+Wenn der Link einer Umfrage abläuft, nimmt sie keine Antworten mehr an und wird schreibgeschützt. Gelöscht wird sie in diesem Moment nicht, damit die einladende Person die Antworten noch nachlesen kann. 30 Tage nach Ablauf des Links wird die Umfrage automatisch gelöscht, zusammen mit allem, was unten aufgeführt ist. Die einladende Person kann sie auch früher löschen, und in deren Umfrageliste lassen sich alle abgelaufenen Umfragen in einem Schritt löschen.
 
 Wird eine Umfrage gelöscht, werden damit auch ihre Antworten, die E-Mail-Adressen der Teilnehmenden und die zugehörigen Kalenderangaben gelöscht. Wird eine Buchung storniert, wird die E-Mail-Adresse der gebuchten Person gelöscht, nachdem die App versucht hat, sie zu benachrichtigen.
 

@@ -65,7 +65,11 @@ A collapsible "More options" panel on the create screen covers:
 - **Booking-page colour** — pastel orange / blue / pink / green themes.
 - **Link validity** — 7 / 30 / 90 / 180 days. There is deliberately no
   "never expires": polls are public and link-shared, so respondents' answers
-  shouldn't live on the server forever.
+  shouldn't live on the server forever. Once the link expires the poll is
+  read-only, and **30 days after expiry a daily server job deletes it** with its
+  answers, respondents' email addresses and calendar records (the host can
+  delete it sooner). The app shows the countdown on the expired banner and in
+  "Your polls".
 - **Timezone** — defaults to the host's, override to any IANA zone.
 
 > Host calendar integration (check the host's own availability while building a

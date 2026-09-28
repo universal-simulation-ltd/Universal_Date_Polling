@@ -104,7 +104,7 @@ Para um encontro a dois. Em vez de recolher a disponibilidade de todos, a pessoa
 
 ## Validade da ligação
 
-A ligação de uma sondagem funciona durante 7, 30, 90 ou 180 dias. Propositadamente, não existe a opção "nunca expira", porque estas ligações são partilhadas livremente. Depois de a ligação expirar, a sondagem fica só de leitura: continua visível, mas não são aceites novas respostas.
+A ligação de uma sondagem funciona durante 7, 30, 90 ou 180 dias. Propositadamente, não existe a opção "nunca expira", porque estas ligações são partilhadas livremente. Depois de a ligação expirar, a sondagem fica só de leitura: continua visível, mas não são aceites novas respostas. 30 dias depois de a ligação expirar, a sondagem e as respetivas respostas são apagadas.
 
 ## Alertas de resposta
 
@@ -174,7 +174,7 @@ Tudo circula por ligações encriptadas e está protegido por regras de acesso. 
 
 ## Durante quanto tempo
 
-Quando a ligação de uma sondagem expira, esta deixa de aceitar respostas e fica só de leitura. Não é apagada nesse momento: mantém-se até quem organiza a eliminar, e a lista de sondagens permite eliminar de uma só vez todas as expiradas.
+Quando a ligação de uma sondagem expira, esta deixa de aceitar respostas e fica só de leitura. Não é apagada nesse momento, para que quem organiza ainda possa consultar as respostas. 30 dias depois de a ligação expirar, a sondagem é apagada automaticamente, juntamente com tudo o que é indicado abaixo. Quem organiza pode eliminá-la antes, e a lista de sondagens permite eliminar de uma só vez todas as expiradas.
 
 Eliminar uma sondagem elimina também as respostas, os endereços de e-mail dos participantes e os dados de calendário associados. Cancelar uma marcação apaga o endereço de e-mail da outra pessoa, depois de a aplicação tentar avisá-la.
 

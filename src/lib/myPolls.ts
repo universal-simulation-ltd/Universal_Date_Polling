@@ -143,17 +143,30 @@ export function deleteAllActivePrompt(polls: MyPoll[]): string {
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-/** "Expires today" / "Expires tomorrow" / "Expires in 12 days" / "Expired", or
- *  null for a poll with no expiry at all.
+/** How long an expired poll is kept before the server deletes it, answers and
+ *  all. Must match the interval in the platform's `purge_expired_polls()`
+ *  (migration 0191, run daily by pg_cron) — this number is only what the app
+ *  TELLS the host; the job is what does it. */
+export const PURGE_GRACE_DAYS = 30
+
+/** "Expires today" / "Expires tomorrow" / "Expires in 12 days", or — once the
+ *  link has lapsed — "Expired · deleted in 12 days", or null for a poll with no
+ *  expiry at all.
  *
  *  Counted in whole days of remaining time rather than calendar days: this sits
  *  next to a link the host is deciding whether to re-send, so "how long have I
  *  got" is the question, and it must never round up to a day that isn't there.
- *  Anything under 24h left reads as "today". */
+ *  Anything under 24h left reads as "today". The deletion countdown rounds the
+ *  same way, so it can only ever say "sooner" than the daily job actually runs. */
 export function expiryLabel(poll: MyPoll, now: number = Date.now()): string | null {
   if (!poll.expires_at) return null
   const left = Date.parse(poll.expires_at) - now
-  if (left <= 0) return 'Expired'
+  if (left <= 0) {
+    const days = Math.floor((left + PURGE_GRACE_DAYS * DAY_MS) / DAY_MS)
+    if (days <= 0) return 'Expired · deleted today'
+    if (days === 1) return 'Expired · deleted tomorrow'
+    return `Expired · deleted in ${days} days`
+  }
   const days = Math.floor(left / DAY_MS)
   if (days === 0) return 'Expires today'
   if (days === 1) return 'Expires tomorrow'
