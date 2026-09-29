@@ -47,7 +47,7 @@ export default function App() {
   // The SDK's bar, dropdown and Advanced rows are inline-styled, so they cannot
   // follow the `.dark` class and have to be told.
   const theme = useThemeStore((s) => s.effective)
-  // The native status-bar glyphs follow it wherever the page is under them.
+  // The native status bar (its strip on Android, and the glyphs) follows it.
   useSystemBarsStyle(theme)
 
   return (
