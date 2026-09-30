@@ -16,16 +16,15 @@ import { suggestFreeSlots, SUGGEST_COUNT } from '../lib/autoSlots'
 import type { TextListPoll } from '../lib/textExport'
 import CopyAsText from './CopyAsText'
 import MyPolls from './MyPolls'
-import SlotPicker from './SlotPicker'
+import SlotPicker, { useSlotViewDefault, type SlotView } from './SlotPicker'
 import ProductLogo from './ProductLogo'
 import SettingsDialog from './SettingsDialog'
-import type { SlotView } from './SlotPicker'
 import { CONTAINER_CREATE, centreScrollTop } from '../lib/layout'
 import { useThemeStore } from '../stores/themeStore'
 import { pollLink } from '../lib/appUrl'
 import { PURGE_GRACE_DAYS } from '../lib/myPolls'
 import {
-  calendarPromptHidden, onOpenAppSettings, setCalendarPromptHidden, type SettingsSection,
+  calendarPromptHidden, onAppPreferencesReset, onOpenAppSettings, setCalendarPromptHidden, type SettingsSection,
 } from '../lib/appSettings'
 
 const VALIDITY = [
@@ -64,8 +63,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   // no view is chosen and no picker is shown until the host picks one, so all
   // three ways of proposing availability are offered evenly. (Before
   // 2026-08-30 it defaulted to the drag-to-pick calendar, which read as the
-  // only option with two tabs above it.)
-  const [view, setView] = useState<SlotView | null>(null)
+  // only option with two tabs above it.) A host who has double-tapped one of
+  // the three to make it their default (James, 2026-09-30) opens on that one
+  // instead; nobody else sees any change.
+  const slotViewDefault = useSlotViewDefault().defaultView
+  const [view, setView] = useState<SlotView | null>(slotViewDefault === 'none' ? null : slotViewDefault)
   const mode: PollMode = view === 'days' ? 'days' : 'times'
   const [slots, setSlots] = useState<Slot[]>([])
   const [theme, setTheme] = useState<Theme>('orange')
@@ -262,6 +264,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   // again — on this browser, on every poll. Nothing is taken away: this poll's options
   // connects a calendar too, and offers this prompt back.
   const [calPromptHidden, setCalPromptHidden] = useState(calendarPromptHidden)
+  // Tune this app ▸ Reset to defaults offers the prompt back at once, not on
+  // the next visit.
+  useEffect(() => onAppPreferencesReset(() => setCalPromptHidden(false)), [])
   function hideCalPrompt() {
     setCalendarPromptHidden(true)
     setCalPromptHidden(true)

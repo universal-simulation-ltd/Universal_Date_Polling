@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Chip } from '@unisim/sdk'
+import { Chip, useDefaultView, type UseDefaultView } from '@unisim/sdk'
 import type { Slot } from '../lib/types'
 import type { DaySegment } from '../lib/hostCalendar'
 import { shortId } from '../lib/api'
@@ -15,6 +15,20 @@ const ALL_DAY_MINS = 1440
  *  the calendar, and naming it after its dates and times said nothing that
  *  told it apart from the other two. */
 export type SlotView = 'form' | 'calendar' | 'days'
+
+/** The slot picker's double-tap default (James, 2026-09-30: "allow the user to
+ *  double click the button to set that as their default view"). 'none' is the
+ *  app's own default — nothing picked, all three offered evenly — so a host who
+ *  never double-taps gets the create page exactly as before. */
+export type SlotViewDefault = SlotView | 'none'
+export const SLOT_VIEW_DEFAULT_ID = 'slot-view'
+export const SLOT_VIEW_DEFAULTS: readonly SlotViewDefault[] = ['none', 'form', 'calendar', 'days']
+export const SLOT_VIEW_LABELS: Record<SlotView, string> = { form: 'Manual', calendar: 'Calendar', days: 'Whole days' }
+
+/** The view the create page opens on: the double-tapped default, else null. */
+export function useSlotViewDefault(): UseDefaultView<SlotViewDefault> {
+  return useDefaultView<SlotViewDefault>(SLOT_VIEW_DEFAULT_ID, 'none', { views: SLOT_VIEW_DEFAULTS })
+}
 
 /** Local (not UTC) YYYY-MM-DD for a Date — keeps the date input's `min` and the
  *  rollforward comparison on the user's own calendar day. */
@@ -62,17 +76,20 @@ export default function SlotPicker({
   /** A day the calendar view should jump to — see CalendarWeekView. */
   focus?: { day: string } | null
 }) {
+  // Double-tap a tab to make it the one the create page opens on. A single tap
+  // still only switches — `onViewChange` is untouched.
+  const dv = useSlotViewDefault()
   return (
     <div>
       {/* Manual / Calendar both edit timed slots, so they sit in one group;
           Whole days is a separate mode, set apart with a gap. */}
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium">
         <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-700 p-0.5">
-          <SelectorTab view={view} value="form" onSelect={onViewChange}>Manual</SelectorTab>
-          <SelectorTab view={view} value="calendar" onSelect={onViewChange}>Calendar</SelectorTab>
+          <SelectorTab view={view} value="form" onSelect={onViewChange} dv={dv} />
+          <SelectorTab view={view} value="calendar" onSelect={onViewChange} dv={dv} />
         </div>
         <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-700 p-0.5">
-          <SelectorTab view={view} value="days" onSelect={onViewChange}>Whole days</SelectorTab>
+          <SelectorTab view={view} value="days" onSelect={onViewChange} dv={dv} />
         </div>
       </div>
 
@@ -92,24 +109,31 @@ export default function SlotPicker({
 }
 
 function SelectorTab({
-  view, value, onSelect, children,
+  view, value, onSelect, dv,
 }: {
   view: SlotView | null
   value: SlotView
   onSelect: (v: SlotView) => void
-  children: React.ReactNode
+  dv: UseDefaultView<SlotViewDefault>
 }) {
+  const label = SLOT_VIEW_LABELS[value]
   return (
     <button
       type="button"
-      onClick={() => onSelect(value)}
+      {...dv.buttonProps(value, label)}
+      onClick={() => { dv.tap(value); onSelect(value) }}
       aria-pressed={view === value}
+      // The default is orange whatever the poll's accent: filled while it is
+      // the picker showing, an orange ring while it is not (Jukebox's look —
+      // SDK README ▸ Default views).
       className={
         'rounded-md px-3 py-1.5 transition-colors ' +
-        (view === value ? 'bg-[var(--accent)] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800')
+        (view === value
+          ? 'bg-[var(--accent)] text-white data-[default-view=true]:bg-gradient-to-br data-[default-view=true]:from-[#FE8C01] data-[default-view=true]:to-[#E05504]'
+          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 data-[default-view=true]:text-orange-700 dark:data-[default-view=true]:text-orange-400 data-[default-view=true]:ring-1 data-[default-view=true]:ring-inset data-[default-view=true]:ring-orange-400/70')
       }
     >
-      {children}
+      {label}
     </button>
   )
 }
