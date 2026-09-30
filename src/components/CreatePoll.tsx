@@ -157,8 +157,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   // Free-tier suite users are subject to the 1-poll token gate.
   const freeGated = suiteLoggedIn && !!subscription && subscription.tier === 'free'
   // Every org has one free returnable Polling token (migration 0045) —
-  // create_poll_gated spends it before the purchased wallet, so the banner
-  // shouldn't read "0 tokens" while the free one is still available.
+  // create_poll_gated spends it before the purchased wallet, so the "reached
+  // your free limit" banner only shows once it is held AND the wallet is empty.
   const { status: pollFreeToken, refresh: refreshPollToken } = useAppFreeToken('polling')
 
   // Temporary diagnostic: visit the create page with ?diag=1 to see exactly
@@ -878,8 +878,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         suiteClient={suiteLoggedIn ? suiteClient : null}
         otpClient={verified ? supabase : null}
         // Deleting a poll hands the free token straight back (the row is what
-        // holds it — migration 0045), so the "1 token per poll" banner below
-        // has to be re-read or it keeps saying the token is in use.
+        // holds it — migration 0045), so the "reached your free limit" banner
+        // below has to be re-read or it keeps saying there is no room.
         onDeleted={refreshPollToken}
       />
 
@@ -1361,17 +1361,20 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
         {/* Identity + create */}
         <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-5">
-          {freeGated && (
+          {/* Free-tier hosts hear about the limit only once they reach it: the
+              org's free Polling allowance is held by an active poll and there
+              are no purchased tokens to fall back on. Within the allowance
+              there is no token talk at all — just a quiet count if they have
+              bought some. */}
+          {freeGated && subscription && pollFreeToken && pollFreeToken !== 'available' && subscription.credits <= 0 && (
             <div className="mb-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
-              <strong>1 token per poll.</strong> Free accounts can run one active poll at a time — your token is returned automatically when the poll expires or you delete it.
-              {subscription && (
-                <span className="ml-1 text-amber-700 dark:text-amber-300">
-                  {pollFreeToken === 'available'
-                    ? `(free token available${subscription.credits > 0 ? ` + ${subscription.credits} purchased` : ''})`
-                    : `(${subscription.credits} token${subscription.credits !== 1 ? 's' : ''} available)`}
-                </span>
-              )}
+              You've reached your free limit of active polls. Delete a poll or wait for one to finish to make room, or get more at unisim.co.uk.
             </div>
+          )}
+          {freeGated && subscription && subscription.credits > 0 && (
+            <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+              {subscription.credits} purchased token{subscription.credits !== 1 ? 's' : ''}
+            </p>
           )}
 
           {enterprise ? (
@@ -1844,13 +1847,13 @@ function messageOf(e: unknown): string {
   if (e && typeof e === 'object' && 'message' in e) {
     const msg = String((e as { message: unknown }).message)
     if (msg.includes('free_poll_limit'))
-      return 'You already have an active poll. Delete it first to create a new one, or upgrade to Pro for unlimited polls.'
+      return "You've reached your free limit of active polls. Delete a poll or wait for one to finish to make room, or upgrade to Pro for unlimited polls."
     if (msg.includes('token_in_use:')) {
-      const what = msg.split('token_in_use:')[1]?.trim() || 'an active poll'
-      return `Your free Polling token is in use (${what}). Delete that poll to get it back, or purchase tokens at unisim.co.uk.`
+      const what = msg.split('token_in_use:')[1]?.trim()
+      return `You've reached your free limit of active polls${what ? ` (held by ${what})` : ''}. Delete a poll or wait for one to finish to make room, or get more at unisim.co.uk.`
     }
     if (msg.includes('no_credits'))
-      return 'No tokens available — purchase tokens at unisim.co.uk to create a poll.'
+      return "You've reached your free limit of active polls. Delete a poll or wait for one to finish to make room, or get more at unisim.co.uk."
     return msg
   }
   return 'Something went wrong. Please try again.'

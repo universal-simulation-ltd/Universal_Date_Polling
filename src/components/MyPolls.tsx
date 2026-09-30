@@ -48,8 +48,8 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
   otpClient: SupabaseClient | null
   /** Called after anything is actually deleted. The create page uses it to
    *  re-read the free-token gate: a free-tier host who deletes their one active
-   *  poll gets the token back immediately, and the banner above the Create
-   *  button would otherwise still say it was in use. */
+   *  poll gets the token back immediately, and the "reached your free limit"
+   *  banner above the Create button would otherwise still be showing. */
   onDeleted?: () => void
 }) {
   const [data, setData] = useState<Loaded | null>(null)
