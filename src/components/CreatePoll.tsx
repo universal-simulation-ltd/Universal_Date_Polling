@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Chip, useAppFreeToken, useFileDrop, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
+import { Chip, useFileDrop, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
 import { createPoll, createPollGated, currentUser, sendHostCode, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollEditing, setPollLocation as apiSetLocation, shortId, signOut, updatePollDraft, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { EDIT_HEARTBEAT_MS } from '../lib/editing'
 import { useOtpUser } from '../lib/otpSession'
+import { atLimitCopy, isAtLimit, isNearLimit, nearLimitCopy } from '../lib/freeAllowance'
+import { useFreeAllowance } from '../lib/useFreeAllowance'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { addLocalDays, formatTime, listTimezones, localTimezone, tzAbbrev, zonedDayAndMinute } from '../lib/time'
 import {
@@ -154,12 +156,14 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   // Any verified Universal ID session (free, pro, or enterprise) — these users
   // skip the email OTP step since they're already authenticated via the suite.
   const suiteLoggedIn = !!suiteUser
-  // Free-tier suite users are subject to the 1-poll token gate.
+  // Free-tier suite users create through the gated RPC, which counts their
+  // company's free active polls (platform 0199) before the purchased wallet.
   const freeGated = suiteLoggedIn && !!subscription && subscription.tier === 'free'
-  // Every org has one free returnable Polling token (migration 0045) —
-  // create_poll_gated spends it before the purchased wallet, so the "reached
-  // your free limit" banner only shows once it is held AND the wallet is empty.
-  const { status: pollFreeToken, refresh: refreshPollToken } = useAppFreeToken('polling')
+  // How many of those free polls are live, from free_allowance_status. Not the
+  // app_free_tokens flag: that is only recomputed on a create or delete, so a
+  // poll that merely EXPIRED left it reading "full" and the banner below stuck.
+  // Null (no company, signed out, any error) means say nothing.
+  const { status: pollAllowance, refresh: refreshAllowance } = useFreeAllowance(freeGated)
 
   // Temporary diagnostic: visit the create page with ?diag=1 to see exactly
   // where enterprise detection stops (session → org → subscription tier).
@@ -780,6 +784,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     } catch (e) {
       setError(messageOf(e))
       setPhase('edit')
+    } finally {
+      // A free create spends a place (or was refused for want of one): either
+      // way the count shown next time has changed or needs confirming.
+      if (freeGated) refreshAllowance()
     }
   }
 
@@ -877,10 +885,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         pollBase={pollBase}
         suiteClient={suiteLoggedIn ? suiteClient : null}
         otpClient={verified ? supabase : null}
-        // Deleting a poll hands the free token straight back (the row is what
-        // holds it — migration 0045), so the "reached your free limit" banner
-        // below has to be re-read or it keeps saying there is no room.
-        onDeleted={refreshPollToken}
+        // Deleting a poll frees its place in the allowance straight away, so
+        // the count and the "used all" banner below are re-read.
+        onDeleted={refreshAllowance}
       />
 
       {editingId && (
@@ -1361,15 +1368,21 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
         {/* Identity + create */}
         <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-5">
-          {/* Free-tier hosts hear about the limit only once they reach it: the
-              org's free Polling allowance is held by an active poll and there
-              are no purchased tokens to fall back on. Within the allowance
-              there is no token talk at all — just a quiet count if they have
-              bought some. */}
-          {freeGated && subscription && pollFreeToken && pollFreeToken !== 'available' && subscription.credits <= 0 && (
-            <div className="mb-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
-              You've reached your free limit of active polls. Delete a poll or wait for one to finish to make room, or get more at unisim.co.uk.
+          {/* Free-tier hosts hear about the limit only once they come close:
+              from 80% of their free active polls a quiet count, and once every
+              place is taken — with no purchased tokens to fall back on — the
+              banner. Numbers come from free_allowance_status (tunable on the
+              backend), never typed in. A host with no company gets neither:
+              the RPC has no company to count for, and they are not gated. */}
+          {freeGated && subscription && isAtLimit(pollAllowance) && subscription.credits <= 0 && (
+            <div data-testid="free-allowance-limit" className="mb-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+              {atLimitCopy(pollAllowance)}
             </div>
+          )}
+          {freeGated && isNearLimit(pollAllowance) && (
+            <p data-testid="free-allowance-usage" className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+              {nearLimitCopy(pollAllowance)}
+            </p>
           )}
           {freeGated && subscription && subscription.credits > 0 && (
             <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
