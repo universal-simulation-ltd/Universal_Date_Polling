@@ -39,9 +39,14 @@ export function nearLimitCopy(s: FreeAllowanceStatus): string {
   return `You've used ${s.used} of your ${s.limit} free active polls.`
 }
 
+/** Nothing is for sale for the everyday apps (2026-10-03). Under the at-limit
+ *  banner one quiet link asks hosts who need more to tell us — that is the
+ *  signal for when a paid tier is worth building. */
+export const NEED_MORE_URL = 'https://www.unisim.co.uk/support'
+
 /** The at-limit banner. Names the limit when the backend gave one; the make-room
  *  advice is the one the create errors give too. */
 export function atLimitCopy(s: FreeAllowanceStatus): string {
   const what = s.limit > 0 ? `all ${s.limit} of your free active polls` : 'your free active polls'
-  return `You've used ${what}. Delete a poll or wait for one to finish to make room, or get more at unisim.co.uk.`
+  return `You've used ${what}. Delete a poll or wait for one to finish to make room.`
 }

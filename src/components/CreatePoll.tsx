@@ -6,7 +6,7 @@ import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
 import { createPoll, createPollGated, currentUser, sendHostCode, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollEditing, setPollLocation as apiSetLocation, shortId, signOut, updatePollDraft, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { EDIT_HEARTBEAT_MS } from '../lib/editing'
 import { useOtpUser } from '../lib/otpSession'
-import { atLimitCopy, isAtLimit, isNearLimit, nearLimitCopy } from '../lib/freeAllowance'
+import { NEED_MORE_URL, atLimitCopy, isAtLimit, isNearLimit, nearLimitCopy } from '../lib/freeAllowance'
 import { useFreeAllowance } from '../lib/useFreeAllowance'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { addLocalDays, formatTime, listTimezones, localTimezone, tzAbbrev, zonedDayAndMinute } from '../lib/time'
@@ -1376,7 +1376,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               the RPC has no company to count for, and they are not gated. */}
           {freeGated && subscription && isAtLimit(pollAllowance) && subscription.credits <= 0 && (
             <div data-testid="free-allowance-limit" className="mb-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
-              {atLimitCopy(pollAllowance)}
+              <p>{atLimitCopy(pollAllowance)}</p>
+              <a href={NEED_MORE_URL} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-50">
+                Need more? Tell us
+              </a>
             </div>
           )}
           {freeGated && isNearLimit(pollAllowance) && (
@@ -1860,13 +1863,13 @@ function messageOf(e: unknown): string {
   if (e && typeof e === 'object' && 'message' in e) {
     const msg = String((e as { message: unknown }).message)
     if (msg.includes('free_poll_limit'))
-      return "You've reached your free limit of active polls. Delete a poll or wait for one to finish to make room, or upgrade to Pro for unlimited polls."
+      return "You've reached your free limit of active polls. Delete a poll or wait for one to finish to make room."
     if (msg.includes('token_in_use:')) {
       const what = msg.split('token_in_use:')[1]?.trim()
-      return `You've reached your free limit of active polls${what ? ` (held by ${what})` : ''}. Delete a poll or wait for one to finish to make room, or get more at unisim.co.uk.`
+      return `You've reached your free limit of active polls${what ? ` (held by ${what})` : ''}. Delete a poll or wait for one to finish to make room.`
     }
     if (msg.includes('no_credits'))
-      return "You've reached your free limit of active polls. Delete a poll or wait for one to finish to make room, or get more at unisim.co.uk."
+      return "You've reached your free limit of active polls. Delete a poll or wait for one to finish to make room."
     return msg
   }
   return 'Something went wrong. Please try again.'
