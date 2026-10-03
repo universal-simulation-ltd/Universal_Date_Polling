@@ -27,6 +27,20 @@ import TimezonePicker from './TimezonePicker'
 type Load = 'loading' | 'ready' | 'notfound' | 'error'
 
 const NAME_KEY = 'unipoll:name'
+/** Per poll: the name THIS browser last saved an answer under. Answers are
+ *  keyed by (poll, name) on the server, so typing a name somebody else already
+ *  used replaces their answers — this is how the page tells "editing my own
+ *  answer" from "about to overwrite Sam's". */
+const answeredKey = (pollId: string) => `unipoll:answered:${pollId}`
+const fold = (s: string) => s.trim().toLowerCase()
+
+function readAnswered(pollId: string): string | null {
+  try {
+    return localStorage.getItem(answeredKey(pollId))
+  } catch {
+    return null
+  }
+}
 const EMAIL_KEY = 'unipoll:email'
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
@@ -74,6 +88,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // See answeredKey. Re-read when the poll arrives (the id is a prop, but the
+  // key only matters once there is a poll to answer).
+  const [answeredAs, setAnsweredAs] = useState<string | null>(() => readAnswered(id))
   const [confirming, setConfirming] = useState(false)
   // 1:1 booking pages (poll.booking_mode): the guest's own pick, and which slot
   // they chose while the page waits for the reload to catch up.
@@ -200,6 +217,15 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
 
   const expired = !!poll?.expires_at && new Date(poll.expires_at).getTime() < Date.now()
 
+  // Somebody has already answered under the name in the box, and it was not
+  // this browser. Saving would replace their answers (server key: poll + name).
+  // Usually it IS the same person on another device, so this warns rather than
+  // blocks — but it says so before the click, not after.
+  const nameClash =
+    !!name.trim() &&
+    responses.some((r) => fold(r.name) === fold(name)) &&
+    (answeredAs === null || fold(answeredAs) !== fold(name))
+
   function cycle(slotId: string, value: Availability) {
     setMine((m) => ({ ...m, [slotId]: m[slotId] === value ? undefined : value }))
   }
@@ -224,6 +250,12 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     try {
       await submitResponse(poll.id, name, availability)
       localStorage.setItem(NAME_KEY, name.trim())
+      try {
+        localStorage.setItem(answeredKey(poll.id), name.trim())
+      } catch {
+        /* storage blocked: the warning just can't remember this browser */
+      }
+      setAnsweredAs(name.trim())
       if (isNewResponder) void notifyPollHost(poll.id, name.trim())
       // The email row rides on the response row (RLS requires it to exist), so
       // this runs after the availability save. Its failure shouldn't read as
@@ -628,6 +660,12 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
               />
             </label>
           </div>
+          {nameClash && (
+            <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30">
+              “{name.trim()}” has already answered this poll. Saving will replace those answers — fine if
+              they’re yours. If not, add an initial or your surname so you don’t overwrite someone else.
+            </p>
+          )}
           <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
             Leave your email and you'll get the final date (with a calendar invite) once the host confirms it. Only the host can see it — never other respondents.
           </p>
@@ -690,7 +728,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
               disabled={saving}
               className="h-11 px-5 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
             >
-              {saving ? 'Saving…' : 'Save my availability'}
+              {saving ? 'Saving…' : nameClash ? `Replace ${name.trim()}’s answers` : 'Save my availability'}
             </button>
             {savedAt && <span className="text-sm text-green-600 dark:text-green-400">Saved — thanks!</span>}
           </div>
