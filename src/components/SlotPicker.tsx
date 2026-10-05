@@ -11,9 +11,10 @@ const ALL_DAY_MINS = 1440
 
 /** The three ways to propose availability — the first two are timed, the last
  *  switches the whole poll to whole-day mode. Drives the segmented selector.
- *  'form' is labelled "Manual": it is the type-it-in alternative to dragging
+ *  'form' is labelled "Type in": it is the type-it-in alternative to dragging
  *  the calendar, and naming it after its dates and times said nothing that
- *  told it apart from the other two. */
+ *  told it apart from the other two. (It was "Manual" until 2026-10-05 —
+ *  plain words for a first-time host, and it matches the line above.) */
 export type SlotView = 'form' | 'calendar' | 'days'
 
 /** Local (not UTC) YYYY-MM-DD for a Date — keeps the date input's `min` and the
@@ -64,11 +65,11 @@ export default function SlotPicker({
 }) {
   return (
     <div>
-      {/* Manual / Calendar both edit timed slots, so they sit in one group;
+      {/* Type in / Calendar both edit timed slots, so they sit in one group;
           Whole days is a separate mode, set apart with a gap. */}
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium">
         <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-700 p-0.5">
-          <SelectorTab view={view} value="form" onSelect={onViewChange}>Manual</SelectorTab>
+          <SelectorTab view={view} value="form" onSelect={onViewChange}>Type in</SelectorTab>
           <SelectorTab view={view} value="calendar" onSelect={onViewChange}>Calendar</SelectorTab>
         </div>
         <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-700 p-0.5">

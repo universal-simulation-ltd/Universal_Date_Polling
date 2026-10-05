@@ -636,6 +636,11 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
             </h2>
             {finalSlot && <FoldButton onClick={() => setShowRespond(false)} />}
           </div>
+          {/* What's being asked, in one line, for a guest who has only ever
+              been sent a link — and that there is nothing to sign up for. */}
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Add your name, answer each {dayMode ? 'day' : 'time'}, then save. No account needed.
+          </p>
           <div className="mt-3 flex flex-col sm:flex-row gap-3">
             <label className="block">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Your name</span>
@@ -732,6 +737,16 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
             </button>
             {savedAt && <span className="text-sm text-green-600 dark:text-green-400">Saved — thanks!</span>}
           </div>
+          {/* What happens next — otherwise "Saved" is where a guest's
+              understanding of the poll stops. Not for the host, who is the
+              one doing the confirming, nor once a time is already set. */}
+          {savedAt && !isHost && !finalSlot && (
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              {email.trim()
+                ? "The host picks the final time once everyone's answered — we'll email it to you then, with a calendar invite."
+                : "The host picks the final time once everyone's answered. Open this link again to see it, or add your email above and save again to have it sent to you."}
+            </p>
+          )}
         </section>
       )}
 
@@ -786,7 +801,7 @@ function BookingPanel({ poll, slots, dayMode, activeTz, viewerTz, tzNote, name, 
         {dayMode ? 'Pick a day' : 'Pick a time'}
       </h2>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        Whichever you choose is booked straight away — there's nothing else to send back.
+        Whichever you choose is booked straight away — there's nothing else to send back, and no account needed.
       </p>
 
       <div className="mt-4 space-y-2">
@@ -951,7 +966,9 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
         {foldable && <FoldButton onClick={() => onOpenChange(false)} />}
       </div>
       {total === 0 ? (
-        <p className="mt-2 px-1 text-sm text-slate-500 dark:text-slate-400">No responses yet — share the link to get started.</p>
+        <p className="mt-2 px-1 text-sm text-slate-500 dark:text-slate-400">
+          {isHost ? 'No responses yet — share the link to get started.' : "No responses yet — yours will be the first."}
+        </p>
       ) : (
         <div className="mt-3 space-y-4">
           {groupByDay(slots).map(([day, list]) => (

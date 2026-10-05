@@ -150,7 +150,7 @@ try {
   }
 
   // 5. The host goes back a step from "Your poll is live" --------------------
-  // Through the real create form: a returning email-code host, the Manual
+  // Through the real create form: a returning email-code host, the Type in
   // times, Create — then back, change, save; back, change, cancel; and back
   // once someone has answered.
   {
@@ -186,7 +186,7 @@ try {
     await page.goto(base, { waitUntil: 'networkidle' })
     await page.getByText('(verified)').waitFor({ timeout: 5000 }).catch(() => {})
     await page.getByLabel('Poll title').fill('Team dinner')
-    await page.getByText('Manual', { exact: true }).click()
+    await page.getByText('Type in', { exact: true }).click()
     await page.getByLabel('Date', { exact: true }).fill('2026-10-14')
     await page.getByLabel('Time', { exact: true }).fill('14:00')
     await page.getByRole('button', { name: 'Add time' }).click()

@@ -943,6 +943,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             Find a time that<br />
             <span className="text-orange-600 dark:text-orange-400">works for everyone</span>
           </h1>
+          {/* The whole idea in one line, for someone who has never used a
+              date poll — and the answer to "do I have to sign up?" before
+              they wonder. True for both sides: guests answer with just a
+              name, and the host confirms an email with a code, not an
+              account. Hidden while editing a live poll: that host knows. */}
+          {!editingId && (
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              Offer a few times, share the link, and everyone ticks the ones they can make. No account needed — for you or them.
+            </p>
+          )}
         </div>
 
         {/* What and where */}
@@ -984,10 +994,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
         {/* Availability (slots) */}
         <div ref={availabilityRef} className="mt-6">
-          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Availability</span>
+          {/* "Times to offer", not "Availability": a newcomer couldn't tell
+              whether that meant their own diary or their guests'. */}
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Times to offer</span>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {view === null ? (
-              <>Choose how you'd like to propose times — type them in, drag them on a calendar, or offer whole days.</>
+              <>How would you like to add them? Type them in, drag them on a calendar, or offer whole days.</>
             ) : mode === 'days' ? (
               <>Respondents tick whole days they're free — good for trips and multi-day plans.</>
             ) : (
