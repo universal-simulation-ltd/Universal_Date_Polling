@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Chip, useFileDrop, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
+import { Chip, SignInDialog, useFileDrop, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
@@ -148,6 +148,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const { org, orgs, loading: orgLoading } = useOrg()
   const orgBranding = useOrgBranding()
   const { supabase: suiteClient } = useUniversal()
+  // "Sign in to import your branding" opens the SDK's in-app sign-in rather
+  // than linking to the hub: the hub's /login sent a newcomer on to the Assess
+  // portal afterwards and dropped the poll they were half-way through.
+  const [signInOpen, setSignInOpen] = useState(false)
   const enterprise =
     !!suiteUser &&
     subscription?.tier === 'enterprise' &&
@@ -1518,9 +1522,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               </span>
             </button>
             {!suiteLoggedIn && (
-              <a href="https://app.unisim.co.uk/login" className="text-xs font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] hover:underline whitespace-nowrap">
-                Sign in to import your branding →
-              </a>
+              <>
+                <button type="button" onClick={() => setSignInOpen(true)} className="text-xs font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] hover:underline whitespace-nowrap">
+                  Sign in to import your branding →
+                </button>
+                <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
+              </>
             )}
           </div>
 
