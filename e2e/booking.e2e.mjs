@@ -310,7 +310,7 @@ try {
     // The menu is the profile pill's ("Hey · Profile") — "Tune this app" left
     // the old Actions pill when the SDK folded app preferences into it.
     await page.getByRole('button', { name: /Profile/ }).first().hover()
-    // By role: the create card's "change these under Profile → Tune this app"
+    // By role: the create card's "change these in your profile menu … → Tune this app"
     // line carries the same words and is not the thing to click.
     await page.getByRole('menuitem', { name: /Tune this app/ }).click()
     // Inside the Tune this app panel: the create card's "… → This poll's options"
