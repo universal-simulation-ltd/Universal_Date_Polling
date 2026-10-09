@@ -96,7 +96,7 @@ When you are signed in as the host, the create page lists your active polls, wit
     title: 'Booking pages, link expiry, alerts and calendars',
     summary: 'What each of "This poll\'s options" does.',
     group: 'How it works',
-    body: `The options for the poll you are creating are in the **Actions** menu, under **This poll's options**. They apply only to that poll.
+    body: `The options for the poll you are creating are under your profile, in **Tune this app** → **This poll's options**. They apply only to that poll.
 
 ## Booking page ("Just the two of us")
 

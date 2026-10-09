@@ -2,7 +2,7 @@
 // that decide what the create page offers on its own.
 //
 // The options used to be a "More options" fold on the create form. They are now
-// reached only through the navbar's Actions → Tune this app, which is the same
+// reached only through the profile pill's Tune this app, which is the same
 // place every app in the suite keeps its settings — but the navbar is rendered
 // by App.tsx and the options belong to CreatePoll's draft state, so the two
 // need a wire between them that isn't a prop drilled through the SDK's bar.

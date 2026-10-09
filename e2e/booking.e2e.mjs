@@ -310,10 +310,12 @@ try {
     // The menu is the profile pill's ("Hey · Profile") — "Tune this app" left
     // the old Actions pill when the SDK folded app preferences into it.
     await page.getByRole('button', { name: /Profile/ }).first().hover()
-    // By role: the create card's "change these under Actions → Tune this app"
+    // By role: the create card's "change these under Profile → Tune this app"
     // line carries the same words and is not the thing to click.
     await page.getByRole('menuitem', { name: /Tune this app/ }).click()
-    await page.getByText("This poll's options").first().click()
+    // Inside the Tune this app panel: the create card's "… → This poll's options"
+    // hint carries the same words and sits underneath it.
+    await page.getByRole('dialog', { name: /Tune this app/ }).getByText("This poll's options").first().click()
     await page.getByText('Just the two of us').waitFor({ timeout: 5000 })
     const opened = await page.locator('body').innerText()
     check("This poll's options offers the booking page", opened.includes('Just the two of us'))

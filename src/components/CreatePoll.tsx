@@ -101,7 +101,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
   // The settings panel: which section it opened on, or null while it is shut.
   // Everything that used to live in the create form's "More options" fold is in
-  // here now, reached from the navbar's Actions → Tune this app (App.tsx) — or
+  // here now, reached from the profile pill's Tune this app ▸ "This poll's options" (App.tsx) — or
   // from the one in-page shortcut, "Change timezone?" beside the picker.
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null)
   const [showBranding, setShowBranding] = useState(false)
@@ -127,7 +127,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     return all.includes(timezone) ? all : [timezone, ...all]
   }, [timezone])
 
-  // Opened from the navbar's Actions menu, which is rendered by App and has no
+  // Opened from the profile pill's Tune this app, which is rendered by App and has no
   // way to reach this component's state — hence the window event in between.
   useEffect(() => onOpenAppSettings(setSettingsSection), [])
 
@@ -1108,7 +1108,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 </button>
               </span>
               <span className="basis-full text-[11px] text-slate-400">
-                You can still connect one any time under Actions → Tune this app.
+                You can still connect one any time under Profile → Tune this app → This poll's options.
               </span>
             </div>
           )}
@@ -1189,7 +1189,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         <div>
         {/* What the settings currently say, on the page the host is about to
             press Create on. Deliberately NOT controls — the options live in
-            Actions → Tune this app and nowhere else now — but this poll is about
+            Profile → Tune this app and nowhere else now — but this poll is about
             to be created with them, and "Booking page" in particular changes
             what the link does, so it cannot be silent. */}
         <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 dark:border-slate-800 pt-4 text-xs text-slate-500 dark:text-slate-400">
@@ -1201,12 +1201,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             {!bookingMode && <> · {notifyOnResponse ? 'response alerts on' : 'no response alerts'}</>}
             {mode === 'times' && <> · {timezone}</>}
           </span>
-          <span className="text-slate-400">— change these under Actions → Tune this app.</span>
+          <span className="text-slate-400">— change these under Profile → Tune this app → This poll's options.</span>
         </div>
 
         {/* The options themselves. Until 2026-09-11 this was a "More options"
             fold on this card; it is a dialog now, opened from the navbar's
-            Actions → Tune this app, so the create form is the poll and nothing
+            Profile → Tune this app, so the create form is the poll and nothing
             else. `SettingsDialog` renders fixed, so it sits here in the tree
             (inheriting the theme variables) without occupying the layout. */}
         {settingsSection !== null && (
@@ -1450,7 +1450,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 We'll send a quick code to confirm it's you — that's how you'll manage this poll later
                 {notifyOnResponse
                   ? <> and where we'll send your response alerts.</>
-                  : <>. Want an email each time a guest responds? Turn that on under Actions → Tune this app.</>}
+                  : <>. Want an email each time a guest responds? Turn that on under Profile → Tune this app → This poll's options.</>}
               </p>
             </label>
           )}

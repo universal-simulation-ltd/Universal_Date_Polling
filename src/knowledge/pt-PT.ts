@@ -96,7 +96,7 @@ Com sessão iniciada como organizador, a página de criação lista as suas sond
     title: 'Páginas de marcação, validade, alertas e calendários',
     summary: 'Para que serve cada uma das opções em "This poll’s options".',
     group: 'Como funciona',
-    body: `As opções da sondagem que está a criar estão no menu **Actions**, em **This poll's options**. Aplicam-se apenas a essa sondagem.
+    body: `As opções da sondagem que está a criar estão no seu menu de perfil, em **Tune this app** → **This poll's options**. Aplicam-se apenas a essa sondagem.
 
 ## Página de marcação ("Just the two of us")
 

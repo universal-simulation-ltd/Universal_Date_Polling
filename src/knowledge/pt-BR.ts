@@ -96,7 +96,7 @@ Quando você está conectado como organizador, a página de criação lista suas
     title: 'Páginas de agendamento, validade, alertas e agendas',
     summary: 'Para que serve cada uma das opções em "This poll’s options".',
     group: 'Como funciona',
-    body: `As opções da enquete que você está criando ficam no menu **Actions**, em **This poll's options**. Elas valem só para essa enquete.
+    body: `As opções da enquete que você está criando ficam no seu menu de perfil, em **Tune this app** → **This poll's options**. Elas valem só para essa enquete.
 
 ## Página de agendamento ("Just the two of us")
 

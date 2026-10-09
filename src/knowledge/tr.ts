@@ -96,7 +96,7 @@ Düzenleyen kişi olarak oturum açtığınızda, oluşturma sayfası etkin anke
     title: 'Randevu sayfaları, bağlantı süresi, bildirimler ve takvimler',
     summary: '"This poll’s options" altındaki her seçeneğin ne işe yaradığı.',
     group: 'Nasıl çalışır',
-    body: `Oluşturduğunuz anketin seçenekleri **Actions** menüsünde, **This poll's options** altında yer alır. Yalnızca o anket için geçerlidir.
+    body: `Oluşturduğunuz anketin seçenekleri profil menünüzde, **Tune this app** → **This poll's options** altında yer alır. Yalnızca o anket için geçerlidir.
 
 ## Randevu sayfası ("Just the two of us")
 

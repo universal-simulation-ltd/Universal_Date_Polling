@@ -96,7 +96,7 @@ Quando hai effettuato l’accesso come organizzatore, la pagina di creazione ele
     title: 'Pagine di prenotazione, scadenza, avvisi e calendari',
     summary: 'A cosa serve ciascuna delle opzioni di «This poll’s options».',
     group: 'Come funziona',
-    body: `Le opzioni del sondaggio che stai creando si trovano nel menu **Actions**, sotto **This poll's options**. Valgono solo per quel sondaggio.
+    body: `Le opzioni del sondaggio che stai creando si trovano nel menu del tuo profilo, sotto **Tune this app** → **This poll's options**. Valgono solo per quel sondaggio.
 
 ## Pagina di prenotazione («Just the two of us»)
 

@@ -96,7 +96,7 @@ Wenn Sie als einladende Person angemeldet sind, listet die Erstellungsseite Ihre
     title: 'Buchungsseiten, Ablauf, Benachrichtigungen und Kalender',
     summary: 'Wofür jede der Optionen unter „This poll’s options“ gut ist.',
     group: 'So funktioniert es',
-    body: `Die Optionen für die Umfrage, die Sie gerade erstellen, finden Sie im Menü **Actions** unter **This poll's options**. Sie gelten nur für diese Umfrage.
+    body: `Die Optionen für die Umfrage, die Sie gerade erstellen, finden Sie in Ihrem Profilmenü unter **Tune this app** → **This poll's options**. Sie gelten nur für diese Umfrage.
 
 ## Buchungsseite („Just the two of us“)
 

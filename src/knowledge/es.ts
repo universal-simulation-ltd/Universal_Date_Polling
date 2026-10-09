@@ -96,7 +96,7 @@ Cuando ha iniciado sesión como organizador, la página de creación muestra sus
     title: 'Páginas de reserva, caducidad, avisos y calendarios',
     summary: 'Para qué sirve cada una de las opciones de «This poll’s options».',
     group: 'Cómo funciona',
-    body: `Las opciones de la encuesta que está creando están en el menú **Actions**, en **This poll's options**. Solo se aplican a esa encuesta.
+    body: `Las opciones de la encuesta que está creando están en su menú de perfil, en **Tune this app** → **This poll's options**. Solo se aplican a esa encuesta.
 
 ## Página de reserva («Just the two of us»)
 

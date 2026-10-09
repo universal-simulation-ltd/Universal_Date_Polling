@@ -96,7 +96,7 @@ Lorsque vous êtes connecté en tant qu’organisateur, la page de création lis
     title: 'Pages de réservation, expiration, alertes et agendas',
     summary: 'À quoi sert chacune des options « This poll’s options ».',
     group: 'Comment ça marche',
-    body: `Les options du sondage que vous créez se trouvent dans le menu **Actions**, sous **This poll's options**. Elles ne s’appliquent qu’à ce sondage.
+    body: `Les options du sondage que vous créez se trouvent dans votre menu de profil, sous **Tune this app** → **This poll's options**. Elles ne s’appliquent qu’à ce sondage.
 
 ## Page de réservation (« Just the two of us »)
 
