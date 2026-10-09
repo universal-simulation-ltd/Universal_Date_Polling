@@ -295,23 +295,28 @@ try {
 
   // 4. The create screen's opt-in --------------------------------------------
   // Since 068da56 (2026-09-11) the poll's options are a dialog behind the
-  // navbar's Actions → App Settings; the card's "More options" fold is gone.
+  // navbar's menu; the card's "More options" fold is gone. Since SDK
+  // 0.148.0 that menu row is "Tune this app", and the poll's options are its
+  // first row ("This poll's options") rather than a separate "App Settings".
   {
     const page = await browser.newPage()
     const bookings = []
     await stubBackend(page, { row: poll(), bookings })
     await page.goto(base, { waitUntil: 'networkidle' })
     const before = await page.locator('body').innerText()
-    check('the booking toggle is behind App Settings', !before.includes('Just the two of us'))
+    check('the booking toggle is behind Tune this app', !before.includes('Just the two of us'))
     // HOVER, not click: the pill opens on hover, and a click lands after the
     // hover has already opened it — so it toggles the menu shut again.
-    await page.getByRole('button', { name: /Actions/ }).first().hover()
-    // By role: the create card's "change these under Actions → App Settings"
+    // The menu is the profile pill's ("Hey · Profile") — "Tune this app" left
+    // the old Actions pill when the SDK folded app preferences into it.
+    await page.getByRole('button', { name: /Profile/ }).first().hover()
+    // By role: the create card's "change these under Actions → Tune this app"
     // line carries the same words and is not the thing to click.
-    await page.getByRole('menuitem', { name: /App Settings/ }).click()
+    await page.getByRole('menuitem', { name: /Tune this app/ }).click()
+    await page.getByText("This poll's options").first().click()
     await page.getByText('Just the two of us').waitFor({ timeout: 5000 })
     const opened = await page.locator('body').innerText()
-    check('App Settings offers the booking page', opened.includes('Just the two of us'))
+    check("This poll's options offers the booking page", opened.includes('Just the two of us'))
     check('and explains what it does', opened.includes('They pick a time, it books itself'))
 
     const toggle = page.getByRole('checkbox').first()
