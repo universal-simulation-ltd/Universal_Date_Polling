@@ -70,3 +70,23 @@ export function calendarPromptHidden(): boolean {
 export function setCalendarPromptHidden(hidden: boolean): void {
   writeFlag(HIDE_CALENDAR_PROMPT_KEY, hidden)
 }
+
+// --- Tune this app ▸ Reset to defaults (SDK 0.170) ----------------------------
+// The SDK clears the default views (the slot picker's double-tapped tab), the
+// language and the colour scheme override itself. This app's only other
+// preference is the calendar prompt above. The name and email remembered for
+// answering polls are NOT preferences — they are who you are — and stay.
+
+const RESET_EVENT = 'unisim-polling:app-preferences-reset'
+
+export function resetAppPreferences(): void {
+  setCalendarPromptHidden(false)
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(RESET_EVENT))
+}
+
+/** For a screen holding one of the preferences above in state. Returns the unsubscribe. */
+export function onAppPreferencesReset(fn: () => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+  window.addEventListener(RESET_EVENT, fn)
+  return () => window.removeEventListener(RESET_EVENT, fn)
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AdvancedMenuItem, UniversalAppsNavBar, UpdateNotice, useCloseAppMenu } from '@unisim/sdk'
+import { AdvancedMenuItem, DefaultViewSelect, UniversalAppsNavBar, UpdateNotice, useCloseAppMenu } from '@unisim/sdk'
 // Generated — `npm run credits` after any dependency change. Never edit it by
 // hand: it is read off the installed tree, so a hand-kept list drifts from the
 // lockfile the first time anyone upgrades anything, and a credits list naming a
@@ -9,7 +9,8 @@ import ProductLogo from './components/ProductLogo'
 import CreatePoll from './components/CreatePoll'
 import PollPage from './components/PollPage'
 import { CONTAINER_CREATE, CONTAINER_POLL } from './lib/layout'
-import { openAppSettings } from './lib/appSettings'
+import { openAppSettings, resetAppPreferences } from './lib/appSettings'
+import { SLOT_VIEW_DEFAULT_ID, SLOT_VIEW_DEFAULTS, SLOT_VIEW_LABELS, type SlotViewDefault } from './components/SlotPicker'
 import { useThemeStore } from './stores/themeStore'
 import { useSystemBarsStyle } from './lib/systemBars'
 import { KNOWLEDGE_BASE } from './knowledge'
@@ -69,8 +70,12 @@ export default function App() {
         // preferences?". They were two doors to nearly the same thing.
         // Offered on the create screen alone, because that is the screen that
         // owns the draft the options belong to — a poll page would open
-        // nothing.
-        appPreferences={loc.view === 'create' ? <AppSettingsRow /> : undefined}
+        // nothing. The slot picker's "Opens on" row is create-screen-only for
+        // the same reason: that is the only screen with a slot picker.
+        appPreferences={loc.view === 'create' ? <><AppSettingsRow /><SlotViewPreference /></> : undefined}
+        // Reset to defaults: the calendar prompt comes back (see
+        // resetAppPreferences); the SDK does the rest.
+        onResetDefaults={resetAppPreferences}
         // "About this app" is drawn by the SDK at the foot of "Tune this app"
         // (SDK 0.161.0+). It was the only row in the Advanced actions menu, which
         // now holds the knowledge base instead (below). No Appearance rows either: colour scheme is the
@@ -145,6 +150,19 @@ export default function App() {
  *  rather than in App itself. Closing matters here: the panel it opens is a
  *  dialog, and leaving the dropdown hanging over it would put two layers of
  *  menu on the screen at once. */
+/** Tune this app ▸ the slot picker's double-tapped default, as a row — for
+ *  anybody who cannot double-tap (James, 2026-09-30). */
+function SlotViewPreference() {
+  return (
+    <DefaultViewSelect<SlotViewDefault>
+      id={SLOT_VIEW_DEFAULT_ID}
+      label="Availability opens on"
+      fallback="none"
+      views={SLOT_VIEW_DEFAULTS.map((v) => ({ value: v, label: v === 'none' ? 'Nothing picked' : SLOT_VIEW_LABELS[v] }))}
+    />
+  )
+}
+
 function AppSettingsRow() {
   const closeMenu = useCloseAppMenu()
   const theme = useThemeStore((s) => s.effective)
