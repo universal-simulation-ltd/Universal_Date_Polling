@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Sonuçlar her seçeneğin yanıtlarını toplar; böylece en çok kişiye uyan zamanlar öne çıkar.
 5. Düzenleyen kişi kazanan zamanı onaylar ve bağlantıyı açan herkes bunu görür.
 
-Yanıt vermek için kimsenin hesaba ihtiyacı yoktur. Düzenleyen kişinin de gerekmez: oturum açabilir, bir e-posta adresini doğrulayabilir ya da yalnızca anketin özel yönetim bağlantısını saklayabilir.
+Yanıt vermek için kimsenin hesaba ihtiyacı yoktur. Düzenleyen kişinin de gerekmez: oturum açmadan, anketi yönetmek için özel bir yönetim bağlantısı alır ve bildirim isterse bir e-posta adresi ekleyebilir.
 
 ## İki tür anket
 
@@ -66,7 +66,7 @@ Seyahatteyken anket oluşturursanız cihazınız bulunduğunuz yerin saat dilimi
 
 1. Ankete bir başlık veriniz ve saatli ya da tam gün türünü seçiniz.
 2. Seçeneklerinizi ekleyiniz. Bir takvim bağladıysanız meşgul olduğunuz saatler gölgeli görünür ve **Suggest times**, anketi boş zamanınızdan dört seçenekle doldurabilir: yalnızca hafta içi, anketin saat diliminde 10.00 ile 16.00 arası ve bir günde en fazla bir sabah ile bir öğleden sonra.
-3. Universal ID'nizle oturum açınız ya da e-posta adresinizi ekleyip tek kullanımlık bir kodla doğrulayınız. E-posta isteğe bağlıdır: boş bırakırsanız bunun yerine özel bir yönetim bağlantısı alırsınız (aşağıya bakınız).
+3. Universal ID'nizle oturum açınız ya da oturum açmadan devam ediniz. Oturum açmazsanız anketi yönetmek için özel bir yönetim bağlantısı alırsınız (aşağıya bakınız) ve e-posta adresi isteğe bağlıdır: yanıt bildirimleri, bir randevu sayfası istiyorsanız ya da anketlerinizi başka bir cihazdan bulmak istiyorsanız adresinizi ekleyip tek kullanımlık bir kodla doğrulayınız.
 4. Bağlantıyı paylaşınız.
 
 ## Fikrinizi değiştirmek
@@ -89,11 +89,16 @@ Her sonuçta ve onay bandında Google Takvim, Outlook ya da Apple Takvim gibi uy
 
 ## Özel yönetim bağlantınız
 
-Oturum açmadan bir anket oluşturursanız özel bir yönetim bağlantısı da alırsınız. Bu bağlantıyı açan herkes anketi yönetebilir: bir zamanı onaylayabilir, değiştirebilir veya anketi silebilir. Bu nedenle bağlantıyı kendinize saklayınız ve güvenli bir yerde tutunuz. Bir e-posta adresi vermediyseniz, anketi başka bir cihazdan yönetmenin tek yolu budur. Bu cihaz bağlantıyı hatırlar ve anket sayfasından yeniden kopyalayabilirsiniz. Sunucularımız bağlantının yalnızca tek yönlü bir parmak izini (hash) saklar, bağlantının kendisini asla saklamaz.
+Universal ID'nizle oturum açmadan bir anket oluşturursanız özel bir yönetim bağlantısı da alırsınız. Bağlantıyı kendinize saklayınız ve güvenli bir yerde tutunuz.
+
+- **Bir e-posta adresi vermediyseniz**, bağlantıyı açan herkes anketi yönetebilir: bir zamanı onaylayabilir, değiştirebilir veya anketi silebilir. Anketi başka bir cihazdan yönetmenin tek yolu budur. Bağlantı başka bir cihazda açılınca anket o cihaza geçer; önceki cihaz, bağlantıyı orada yeniden açana kadar anketi listelemez.
+- **Bir e-posta adresini doğruladıysanız**, anket bağlantıya değil o adrese aittir. Bağlantı yalnızca aynı adresi doğruladığınız bir cihazda çalışır.
+
+Bu cihaz bağlantıyı hatırlar ve anketi yönettiği sürece anket sayfasından bağlantıyı yeniden kopyalayabilirsiniz. Sunucularımız bağlantının yalnızca tek yönlü bir parmak izini (hash) saklar, bağlantının kendisini asla saklamaz.
 
 ## Anketlerinizi yeniden bulmak
 
-Anketleri oluşturduğunuz cihazda ya da düzenleyen kişi olarak oturum açtığınız her zaman, oluşturma sayfası etkin anketlerinizi listeler: kaç kişinin yanıt verdiği, varsa onaylanan zaman ve her bağlantının ne zaman sona ereceği. Bir bağlantıyı kopyalayabilir, bir anketi silebilir veya süresi dolan tüm anketlerinizi tek adımda silebilirsiniz.`,
+Anketleri oluşturduğunuz cihazda, bir anketin yönetim bağlantısını açtığınız bir cihazda ya da düzenleyen kişi olarak oturum açtığınız her zaman, oluşturma sayfası etkin anketlerinizi listeler: kaç kişinin yanıt verdiği, varsa onaylanan zaman ve her bağlantının ne zaman sona ereceği. Bir bağlantıyı kopyalayabilir, bir anketi silebilir veya süresi dolan tüm anketlerinizi tek adımda silebilirsiniz.`,
   },
   {
     id: 'poll-options',
@@ -144,7 +149,7 @@ Anket bağlantıları on rastgele karakterden oluşur ve bu da tahmin edilmeleri
 ## Yalnızca düzenleyen kişi görebilir
 
 - Katılımcıların bırakmayı seçtiği e-posta adreslerini. Bunlar onaylanan zamanı göndermek ve takvim davetlerini doldurmak için kullanılır ve diğer katılımcılara hiçbir zaman gösterilmez.
-- Düzenleyen kişi kendine sakladığı sürece anketin özel yönetim bağlantısı. Bu bağlantıya sahip olan herkes anketi yönetebilir.
+- Düzenleyen kişi kendine sakladığı sürece anketin özel yönetim bağlantısı. Düzenleyen kişi bir e-posta adresi doğrulamadıysa, bu bağlantıya sahip olan herkes anketi yönetebilir.
 
 ## Başka kimse göremez
 
@@ -172,9 +177,10 @@ Bir anketin herkesin erişebileceği bir yerde durması gerekir; bu yüzden anke
 - Anketin kendisi: başlığı, seçenekleri, saat dilimi, ayarları ve verdiyse düzenleyen kişinin e-posta adresi.
 - Her yanıt: verilen ad, yapılan seçimler ve kaydedildiği zaman.
 - Katılımcıların bırakmayı seçtiği e-posta adresleri ile randevu sayfasında randevu alan kişinin adı ve e-posta adresi.
-- Düzenleyen kişinin yüklediği bir logo. Anket sayfasının logoyu gösterebilmesi için logolar, anket bağlantısına sahip herkesin yükleyebileceği bir yerde saklanır.
+- Düzenleyen kişinin yüklediği bir logo. Anket sayfasının logoyu göstermesi gerektiğinden anket, logoya giden uzun süreli bir bağlantı içerir; anket bağlantısına sahip herkes logoyu yükleyebilir.
 - Düzenleyen kişi bir takvim bağladıysa o bağlantının erişim anahtarları. Bunlar yalnızca sunucuda tutulur, uygulamaya hiçbir zaman gönderilmez ve yalnızca düzenleyen kişinin istediği işler için kullanılır. Bağlantıyı kesmek bunları siler.
 - Özel yönetim bağlantısı olan bir ankette, bağlantı açıldığında doğrulamak için kullanılan tek yönlü bir parmak izi (hash). Bağlantının kendisi saklanmaz.
+- E-posta adresi vermeyen bir düzenleyen kişi için, adı veya e-postası olmayan ve anketin ait olduğu anonim bir misafir kimliği.
 
 Her şey şifreli bağlantılar üzerinden iletilir ve erişim kurallarıyla korunur. Uçtan uca şifreli değildir; yani sistemlerimiz teknik olarak bunları okuyabilir.
 

@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. The results add up the answers for every option, so the times that suit the most people stand out.
 5. The host confirms the winning time, and everyone who opens the link sees it.
 
-Nobody needs an account to answer. The host doesn't need one either: they can sign in, confirm an email address, or simply keep the poll's private admin link.
+Nobody needs an account to answer. The host doesn't need one either: without signing in, they get a private admin link to manage the poll, and can add an email address if they want alerts.
 
 ## Two kinds of poll
 
@@ -66,7 +66,7 @@ If you create a poll while travelling, your device may be set to the zone you ar
 
 1. Give the poll a title and choose times or whole days.
 2. Add your options. If you have connected a calendar, times you are already busy are shaded, and **Suggest times** can fill the poll with four options from your free time: weekdays only, between 10:00 and 16:00 in the poll's time zone, and at most one morning and one afternoon on any day.
-3. Sign in with your Universal ID, or add your email address and confirm it with a one-time code. The email is optional: leave it out and you get a private admin link instead (see below).
+3. Sign in with your Universal ID, or carry on without one. Without one, you get a private admin link to manage the poll (see below), and your email address is optional: add it and confirm it with a one-time code if you want response alerts, a booking page, or to find your polls from another device.
 4. Share the link.
 
 ## Changing your mind
@@ -89,11 +89,16 @@ Every result, and the confirmed banner, has an **Add to calendar** button with G
 
 ## Your private admin link
 
-If you create a poll without signing in, you also get a private admin link. Anyone who opens it can manage the poll: confirm a time, change it or delete it. So keep it to yourself, and save it somewhere safe. If you didn't give an email address, it is the only way to manage the poll from another device. This device remembers it, and the poll page lets you copy it again. Our servers keep only a one-way fingerprint (a hash) of it, never the link itself.
+If you create a poll without signing in with your Universal ID, you also get a private admin link. Keep it to yourself, and save it somewhere safe.
+
+- **If you didn't give an email address**, anyone who opens the link can manage the poll: confirm a time, change it or delete it. It is the only way to manage the poll from another device. Opening it on another device moves the poll there, so the device you used before stops listing it until you open the link there again.
+- **If you confirmed an email address**, the poll belongs to that address, not to the link. The link only works on a device where you have confirmed the same address.
+
+This device remembers the link, and while it manages the poll, the poll page lets you copy it again. Our servers keep only a one-way fingerprint (a hash) of it, never the link itself.
 
 ## Finding your polls again
 
-On the device you created them on, or whenever you are signed in as the host, the create page lists your active polls, with how many people have answered, the confirmed time if there is one, and when each link expires. You can copy a link, delete a poll, or delete all your expired polls in one go.`,
+On the device you created them on, on a device where you opened a poll's admin link, or whenever you are signed in as the host, the create page lists your active polls, with how many people have answered, the confirmed time if there is one, and when each link expires. You can copy a link, delete a poll, or delete all your expired polls in one go.`,
   },
   {
     id: 'poll-options',
@@ -144,7 +149,7 @@ Poll links are made of ten random characters, which makes them very hard to gues
 ## Only the host can see
 
 - Email addresses that respondents chose to leave. They are used to send the confirmed time and to fill in calendar invitations, and they are never shown to other respondents.
-- The poll's private admin link, as long as the host keeps it to themselves. Anyone who has it can manage the poll.
+- The poll's private admin link, as long as the host keeps it to themselves. Unless the host confirmed an email address, anyone who has it can manage the poll.
 
 ## Nobody else sees
 
@@ -172,9 +177,10 @@ A poll has to live somewhere everyone can reach it, so polls and answers are sto
 - The poll itself: its title, options, time zone, settings, and the host's email address if they gave one.
 - Each answer: the name given, the choices made, and when it was saved.
 - Email addresses respondents chose to leave, and a booking guest's name and email address.
-- A logo the host uploaded. Logos are stored where anyone with the poll link can load them, because the poll page needs to show them.
+- A logo the host uploaded. The poll page has to show it, so the poll carries a long-lived link to the logo that anyone with the poll link can load.
 - If the host connected a calendar, the access keys for that connection. These are kept on the server only, are never sent to the app, and are used only to do what the host asked. Disconnecting deletes them.
 - For a poll with a private admin link, a one-way fingerprint (a hash) of it, used to check the link when it is opened. The link itself is not stored.
+- For a host who gave no email address, an anonymous guest ID with no name or email attached, which the poll belongs to.
 
 Everything travels over encrypted connections and is protected by access rules. It is not end-to-end encrypted, so our systems can technically read it.
 

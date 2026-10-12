@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Die Ergebnisse zählen die Antworten für jede Option zusammen, sodass die Termine hervortreten, die den meisten passen.
 5. Wer einlädt, bestätigt den besten Termin, und alle, die den Link öffnen, sehen ihn.
 
-Zum Antworten braucht niemand ein Konto. Auch die einladende Person nicht: Sie kann sich anmelden, eine E-Mail-Adresse bestätigen oder einfach den privaten Verwaltungslink der Umfrage aufbewahren.
+Zum Antworten braucht niemand ein Konto. Auch die einladende Person nicht: Ohne Anmeldung erhält sie einen privaten Verwaltungslink für die Umfrage und kann eine E-Mail-Adresse angeben, wenn sie Benachrichtigungen möchte.
 
 ## Zwei Arten von Umfragen
 
@@ -66,7 +66,7 @@ Wenn Sie eine Umfrage auf Reisen erstellen, ist Ihr Gerät vielleicht auf die Zo
 
 1. Geben Sie der Umfrage einen Titel und wählen Sie zwischen Uhrzeiten und ganzen Tagen.
 2. Fügen Sie Ihre Optionen hinzu. Wenn Sie einen Kalender verbunden haben, sind belegte Zeiten schattiert, und **Suggest times** kann die Umfrage mit vier Optionen aus Ihrer freien Zeit füllen: nur werktags, zwischen 10:00 und 16:00 in der Zeitzone der Umfrage und höchstens eine am Vormittag und eine am Nachmittag pro Tag.
-3. Melden Sie sich mit Ihrer Universal ID an, oder geben Sie Ihre E-Mail-Adresse ein und bestätigen Sie sie mit einem Einmalcode. Die E-Mail-Adresse ist freiwillig: Ohne sie erhalten Sie stattdessen einen privaten Verwaltungslink (siehe unten).
+3. Melden Sie sich mit Ihrer Universal ID an, oder machen Sie ohne weiter. Ohne Anmeldung erhalten Sie einen privaten Verwaltungslink für die Umfrage (siehe unten), und Ihre E-Mail-Adresse ist freiwillig: Geben Sie sie an und bestätigen Sie sie mit einem Einmalcode, wenn Sie Benachrichtigungen bei neuen Antworten, eine Buchungsseite oder Ihre Umfragen auf einem anderen Gerät wiederfinden möchten.
 4. Teilen Sie den Link.
 
 ## Es sich anders überlegen
@@ -89,11 +89,16 @@ Jedes Ergebnis und auch das Bestätigungsbanner hat eine Schaltfläche **Add to 
 
 ## Ihr privater Verwaltungslink
 
-Wenn Sie eine Umfrage erstellen, ohne sich anzumelden, erhalten Sie zusätzlich einen privaten Verwaltungslink. Wer ihn öffnet, kann die Umfrage verwalten: einen Termin bestätigen, ihn ändern oder die Umfrage löschen. Behalten Sie ihn daher für sich und bewahren Sie ihn sicher auf. Wenn Sie keine E-Mail-Adresse angegeben haben, ist er der einzige Weg, die Umfrage von einem anderen Gerät aus zu verwalten. Dieses Gerät merkt sich den Link, und auf der Umfrageseite können Sie ihn erneut kopieren. Unsere Server speichern nur einen nicht umkehrbaren Fingerabdruck (einen Hash) davon, nie den Link selbst.
+Wenn Sie eine Umfrage erstellen, ohne sich mit Ihrer Universal ID anzumelden, erhalten Sie zusätzlich einen privaten Verwaltungslink. Behalten Sie ihn für sich und bewahren Sie ihn sicher auf.
+
+- **Wenn Sie keine E-Mail-Adresse angegeben haben**, kann jede Person, die den Link öffnet, die Umfrage verwalten: einen Termin bestätigen, ihn ändern oder die Umfrage löschen. Er ist der einzige Weg, die Umfrage von einem anderen Gerät aus zu verwalten. Wird er auf einem anderen Gerät geöffnet, wechselt die Umfrage dorthin: Das bisherige Gerät listet sie nicht mehr auf, bis Sie den Link dort wieder öffnen.
+- **Wenn Sie eine E-Mail-Adresse bestätigt haben**, gehört die Umfrage zu dieser Adresse, nicht zum Link. Der Link funktioniert dann nur auf einem Gerät, auf dem Sie dieselbe Adresse bestätigt haben.
+
+Dieses Gerät merkt sich den Link, und solange es die Umfrage verwaltet, können Sie ihn auf der Umfrageseite erneut kopieren. Unsere Server speichern nur einen nicht umkehrbaren Fingerabdruck (einen Hash) davon, nie den Link selbst.
 
 ## Ihre Umfragen wiederfinden
 
-Auf dem Gerät, auf dem Sie sie erstellt haben, oder immer wenn Sie als einladende Person angemeldet sind, listet die Erstellungsseite Ihre aktiven Umfragen auf, jeweils mit der Zahl der Antworten, dem bestätigten Termin, falls vorhanden, und dem Ablaufdatum des Links. Sie können einen Link kopieren, eine Umfrage löschen oder alle abgelaufenen Umfragen in einem Schritt löschen.`,
+Auf dem Gerät, auf dem Sie sie erstellt haben, auf einem Gerät, auf dem Sie den Verwaltungslink einer Umfrage geöffnet haben, oder immer wenn Sie als einladende Person angemeldet sind, listet die Erstellungsseite Ihre aktiven Umfragen auf, jeweils mit der Zahl der Antworten, dem bestätigten Termin, falls vorhanden, und dem Ablaufdatum des Links. Sie können einen Link kopieren, eine Umfrage löschen oder alle abgelaufenen Umfragen in einem Schritt löschen.`,
   },
   {
     id: 'poll-options',
@@ -144,7 +149,7 @@ Umfragelinks bestehen aus zehn zufälligen Zeichen und sind daher sehr schwer zu
 ## Nur die einladende Person sieht
 
 - Die E-Mail-Adressen, die Teilnehmende freiwillig hinterlassen haben. Sie dienen dazu, den bestätigten Termin zu verschicken und Kalendereinladungen auszufüllen, und werden anderen Teilnehmenden nie angezeigt.
-- Den privaten Verwaltungslink der Umfrage, solange die einladende Person ihn für sich behält. Wer ihn hat, kann die Umfrage verwalten.
+- Den privaten Verwaltungslink der Umfrage, solange die einladende Person ihn für sich behält. Sofern die einladende Person keine E-Mail-Adresse bestätigt hat, kann jede Person, die ihn hat, die Umfrage verwalten.
 
 ## Niemand sonst sieht
 
@@ -172,9 +177,10 @@ Eine Umfrage muss an einem Ort liegen, den alle erreichen können. Deshalb werde
 - Die Umfrage selbst: Titel, Optionen, Zeitzone, Einstellungen und, falls angegeben, die E-Mail-Adresse der einladenden Person.
 - Jede Antwort: der angegebene Name, die getroffene Auswahl und der Zeitpunkt der Speicherung.
 - E-Mail-Adressen, die Teilnehmende freiwillig hinterlassen haben, sowie Name und E-Mail-Adresse der Person, die auf einer Buchungsseite bucht.
-- Ein Logo, das die einladende Person hochgeladen hat. Logos liegen dort, wo alle mit dem Umfragelink sie laden können, weil die Seite sie anzeigen muss.
+- Ein Logo, das die einladende Person hochgeladen hat. Die Umfrageseite muss es anzeigen, deshalb enthält die Umfrage einen lange gültigen Link zum Logo, den alle mit dem Umfragelink laden können.
 - Wenn die einladende Person einen Kalender verbunden hat, die Zugangsschlüssel dieser Verbindung. Sie bleiben ausschließlich auf dem Server, werden nie an die App geschickt und nur für das verwendet, worum die einladende Person gebeten hat. Beim Trennen werden sie gelöscht.
 - Bei einer Umfrage mit privatem Verwaltungslink ein nicht umkehrbarer Fingerabdruck (ein Hash) davon, mit dem der Link beim Öffnen geprüft wird. Der Link selbst wird nicht gespeichert.
+- Bei einer einladenden Person ohne E-Mail-Adresse eine anonyme Gast-ID ohne Namen oder E-Mail-Adresse, der die Umfrage gehört.
 
 Alles wird über verschlüsselte Verbindungen übertragen und durch Zugriffsregeln geschützt. Es ist nicht Ende-zu-Ende-verschlüsselt, unsere Systeme können es also technisch lesen.
 

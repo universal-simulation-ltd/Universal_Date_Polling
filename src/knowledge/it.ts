@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. I risultati sommano le risposte di ogni opzione, così gli orari che vanno bene a più persone risaltano.
 5. Chi organizza conferma l’orario scelto, e chiunque apra il link lo vede.
 
-Nessuno ha bisogno di un account per rispondere. Nemmeno chi organizza: può accedere, confermare un indirizzo email o semplicemente conservare il link di amministrazione privato del sondaggio.
+Nessuno ha bisogno di un account per rispondere. Nemmeno chi organizza: senza accedere riceve un link di amministrazione privato per gestire il sondaggio, e può aggiungere un indirizzo email se vuole gli avvisi.
 
 ## Due tipi di sondaggio
 
@@ -66,7 +66,7 @@ Se crei un sondaggio mentre sei in viaggio, il tuo dispositivo potrebbe essere i
 
 1. Dai un titolo al sondaggio e scegli tra orari e giornate intere.
 2. Aggiungi le opzioni. Se hai collegato un calendario, gli orari in cui sei già occupato sono ombreggiati, e **Suggest times** può riempire il sondaggio con quattro opzioni prese dal tuo tempo libero: solo nei giorni feriali, tra le 10:00 e le 16:00 nel fuso del sondaggio, e al massimo una al mattino e una al pomeriggio nello stesso giorno.
-3. Accedi con il tuo Universal ID, oppure aggiungi il tuo indirizzo email e confermalo con un codice monouso. L’email è facoltativa: se la lasci vuota ricevi invece un link di amministrazione privato (vedi sotto).
+3. Accedi con il tuo Universal ID, oppure prosegui senza. Senza, ricevi un link di amministrazione privato per gestire il sondaggio (vedi sotto) e l’indirizzo email è facoltativo: aggiungilo e confermalo con un codice monouso se vuoi gli avvisi di risposta, una pagina di prenotazione o ritrovare i tuoi sondaggi da un altro dispositivo.
 4. Condividi il link.
 
 ## Cambiare idea
@@ -89,11 +89,16 @@ Ogni risultato, e anche il banner di conferma, ha un pulsante **Add to calendar*
 
 ## Il tuo link di amministrazione privato
 
-Se crei un sondaggio senza accedere, ricevi anche un link di amministrazione privato. Chiunque lo apra può gestire il sondaggio: confermare un orario, modificarlo o eliminarlo. Quindi tienilo per te e conservalo in un posto sicuro. Se non hai indicato un indirizzo email, è l’unico modo per gestire il sondaggio da un altro dispositivo. Questo dispositivo lo ricorda, e dalla pagina del sondaggio puoi copiarlo di nuovo. I nostri server ne conservano solo un’impronta a senso unico (un hash), mai il link stesso.
+Se crei un sondaggio senza accedere con il tuo Universal ID, ricevi anche un link di amministrazione privato. Tienilo per te e conservalo in un posto sicuro.
+
+- **Se non hai indicato un indirizzo email**, chiunque apra il link può gestire il sondaggio: confermare un orario, modificarlo o eliminarlo. È l’unico modo per gestire il sondaggio da un altro dispositivo. Aprirlo su un altro dispositivo vi sposta il sondaggio, quindi il dispositivo usato prima smette di elencarlo finché non riapri il link lì.
+- **Se hai confermato un indirizzo email**, il sondaggio appartiene a quell’indirizzo, non al link. Il link funziona solo su un dispositivo in cui hai confermato lo stesso indirizzo.
+
+Questo dispositivo ricorda il link e, finché gestisce il sondaggio, dalla pagina del sondaggio puoi copiarlo di nuovo. I nostri server ne conservano solo un’impronta a senso unico (un hash), mai il link stesso.
 
 ## Ritrovare i tuoi sondaggi
 
-Sul dispositivo in cui li hai creati, o ogni volta che hai effettuato l’accesso come organizzatore, la pagina di creazione elenca i tuoi sondaggi attivi, con quante persone hanno risposto, l’orario confermato se c’è e quando scade ogni link. Puoi copiare un link, eliminare un sondaggio o eliminare in un colpo solo tutti i sondaggi scaduti.`,
+Sul dispositivo in cui li hai creati, su un dispositivo in cui hai aperto il link di amministrazione di un sondaggio, o ogni volta che hai effettuato l’accesso come organizzatore, la pagina di creazione elenca i tuoi sondaggi attivi, con quante persone hanno risposto, l’orario confermato se c’è e quando scade ogni link. Puoi copiare un link, eliminare un sondaggio o eliminare in un colpo solo tutti i sondaggi scaduti.`,
   },
   {
     id: 'poll-options',
@@ -144,7 +149,7 @@ I link dei sondaggi sono composti da dieci caratteri casuali, il che li rende mo
 ## Solo chi organizza può vedere
 
 - Gli indirizzi email che i partecipanti hanno scelto di lasciare. Servono per inviare l’orario confermato e per compilare gli inviti di calendario, e non vengono mai mostrati agli altri partecipanti.
-- Il link di amministrazione privato del sondaggio, finché chi organizza lo tiene per sé. Chiunque lo abbia può gestire il sondaggio.
+- Il link di amministrazione privato del sondaggio, finché chi organizza lo tiene per sé. A meno che chi organizza non abbia confermato un indirizzo email, chiunque lo abbia può gestire il sondaggio.
 
 ## Nessun altro vede
 
@@ -172,9 +177,10 @@ Un sondaggio deve stare in un posto raggiungibile da tutti, quindi sondaggi e ri
 - Il sondaggio stesso: titolo, opzioni, fuso orario, impostazioni e, se indicato, l’indirizzo email di chi organizza.
 - Ogni risposta: il nome indicato, le scelte fatte e quando è stata salvata.
 - Gli indirizzi email che i partecipanti hanno scelto di lasciare, e il nome e l’indirizzo email di chi prenota su una pagina di prenotazione.
-- Un logo caricato da chi organizza. I loghi sono conservati dove chiunque abbia il link del sondaggio può caricarli, perché la pagina deve poterli mostrare.
+- Un logo caricato da chi organizza. La pagina del sondaggio deve mostrarlo, quindi il sondaggio contiene un link di lunga durata al logo, che chiunque abbia il link del sondaggio può caricare.
 - Se chi organizza ha collegato un calendario, le chiavi di accesso di quella connessione. Restano solo sul server, non vengono mai inviate all’app e servono solo a fare ciò che chi organizza ha chiesto. Scollegando il calendario vengono eliminate.
 - Per un sondaggio con link di amministrazione privato, un’impronta a senso unico (un hash) del link, usata per verificarlo quando viene aperto. Il link stesso non viene conservato.
+- Per chi organizza senza indicare un indirizzo email, un identificativo ospite anonimo, senza nome né email, a cui appartiene il sondaggio.
 
 Tutto viaggia su connessioni crittografate ed è protetto da regole di accesso. Non è crittografato end-to-end, quindi i nostri sistemi possono tecnicamente leggerlo.
 

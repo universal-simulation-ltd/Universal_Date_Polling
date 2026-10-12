@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Os resultados somam as respostas de cada opção, e os horários que servem para mais gente se destacam.
 5. Quem organiza confirma o horário escolhido, e todos que abrirem o link passam a vê-lo.
 
-Ninguém precisa de conta para responder. Nem quem organiza: dá para entrar, confirmar um e-mail ou simplesmente guardar o link de administração privado da enquete.
+Ninguém precisa de conta para responder. Nem quem organiza: sem entrar, recebe um link de administração privado para gerenciar a enquete, e pode informar um e-mail se quiser alertas.
 
 ## Dois tipos de enquete
 
@@ -66,7 +66,7 @@ Se você criar uma enquete durante uma viagem, seu dispositivo pode estar no fus
 
 1. Dê um título à enquete e escolha entre horários ou dias inteiros.
 2. Adicione as opções. Se você conectou uma agenda, os horários em que já está ocupado aparecem sombreados, e **Suggest times** pode preencher a enquete com quatro opções do seu tempo livre: só em dias úteis, entre 10:00 e 16:00 no fuso da enquete, e no máximo uma de manhã e uma à tarde no mesmo dia.
-3. Entre com seu Universal ID, ou informe seu e-mail e confirme-o com um código de uso único. O e-mail é opcional: sem ele, você recebe um link de administração privado (veja abaixo).
+3. Entre com seu Universal ID, ou continue sem ele. Sem ele, você recebe um link de administração privado para gerenciar a enquete (veja abaixo), e o e-mail é opcional: informe-o e confirme-o com um código de uso único se quiser alertas de respostas, uma página de agendamento ou encontrar suas enquetes de outro dispositivo.
 4. Compartilhe o link.
 
 ## Mudar de ideia
@@ -89,11 +89,16 @@ Cada resultado, e também o aviso de confirmação, tem um botão **Add to calen
 
 ## Seu link de administração privado
 
-Se você criar uma enquete sem entrar, também recebe um link de administração privado. Qualquer pessoa que o abrir pode gerenciar a enquete: confirmar um horário, alterá-lo ou excluí-la. Por isso, guarde-o só para você, em um lugar seguro. Se você não informou um e-mail, ele é a única forma de gerenciar a enquete de outro dispositivo. Este dispositivo se lembra dele, e a página da enquete permite copiá-lo de novo. Nossos servidores guardam só uma impressão digital de mão única (um hash), nunca o link em si.
+Se você criar uma enquete sem entrar com seu Universal ID, também recebe um link de administração privado. Guarde-o só para você, em um lugar seguro.
+
+- **Se você não informou um e-mail**, qualquer pessoa que abrir o link pode gerenciar a enquete: confirmar um horário, alterá-lo ou excluí-la. Ele é a única forma de gerenciar a enquete de outro dispositivo. Abri-lo em outro dispositivo leva a enquete para lá, então o dispositivo que você usava antes deixa de listá-la até você abrir o link nele de novo.
+- **Se você confirmou um e-mail**, a enquete pertence a esse endereço, não ao link. O link só funciona em um dispositivo em que você confirmou o mesmo endereço.
+
+Este dispositivo se lembra do link e, enquanto gerenciar a enquete, a página da enquete permite copiá-lo de novo. Nossos servidores guardam só uma impressão digital de mão única (um hash), nunca o link em si.
 
 ## Encontrar suas enquetes de novo
 
-No dispositivo em que você as criou, ou sempre que estiver conectado como organizador, a página de criação lista suas enquetes ativas, com quantas pessoas responderam, o horário confirmado se houver e quando cada link expira. Você pode copiar um link, excluir uma enquete ou excluir de uma vez todas as enquetes expiradas.`,
+No dispositivo em que você as criou, em um dispositivo em que abriu o link de administração de uma enquete, ou sempre que estiver conectado como organizador, a página de criação lista suas enquetes ativas, com quantas pessoas responderam, o horário confirmado se houver e quando cada link expira. Você pode copiar um link, excluir uma enquete ou excluir de uma vez todas as enquetes expiradas.`,
   },
   {
     id: 'poll-options',
@@ -144,7 +149,7 @@ Os links das enquetes têm dez caracteres aleatórios, o que os torna muito dif�
 ## Só quem organiza pode ver
 
 - Os e-mails que os participantes escolheram deixar. Eles servem para enviar o horário confirmado e preencher os convites de agenda, e nunca são mostrados aos outros participantes.
-- O link de administração privado da enquete, desde que quem organiza o guarde para si. Qualquer pessoa que o tenha pode gerenciar a enquete.
+- O link de administração privado da enquete, desde que quem organiza o guarde para si. A menos que quem organiza tenha confirmado um e-mail, qualquer pessoa que o tenha pode gerenciar a enquete.
 
 ## Ninguém mais vê
 
@@ -172,9 +177,10 @@ Uma enquete precisa ficar em algum lugar que todos consigam acessar, então enqu
 - A enquete em si: título, opções, fuso horário, configurações e, se informado, o e-mail de quem organiza.
 - Cada resposta: o nome informado, as escolhas feitas e quando foi salva.
 - Os e-mails que os participantes escolheram deixar, e o nome e o e-mail de quem agenda em uma página de agendamento.
-- Um logotipo enviado por quem organiza. Os logotipos ficam em um lugar onde qualquer pessoa com o link da enquete pode carregá-los, porque a página precisa exibi-los.
+- Um logotipo enviado por quem organiza. A página da enquete precisa exibi-lo, então a enquete leva um link de longa duração para o logotipo, que qualquer pessoa com o link da enquete pode carregar.
 - Se quem organiza conectou uma agenda, as chaves de acesso dessa conexão. Elas ficam só no servidor, nunca são enviadas ao app e só são usadas para fazer o que quem organiza pediu. Desconectar apaga essas chaves.
 - Para uma enquete com link de administração privado, uma impressão digital de mão única (um hash) desse link, usada para conferi-lo quando é aberto. O link em si não é guardado.
+- Para quem organiza sem informar um e-mail, um ID de convidado anônimo, sem nome nem e-mail, ao qual a enquete pertence.
 
 Tudo trafega por conexões criptografadas e é protegido por regras de acesso. Não há criptografia de ponta a ponta, então nossos sistemas conseguem tecnicamente ler esses dados.
 

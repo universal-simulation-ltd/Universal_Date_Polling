@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Los resultados suman las respuestas de cada opción, de modo que destacan las que mejor encajan con más personas.
 5. El organizador confirma la opción ganadora y todo el que abra el enlace la ve.
 
-Nadie necesita una cuenta para responder. El organizador tampoco: puede iniciar sesión, confirmar un correo electrónico o simplemente guardar el enlace de administración privado de la encuesta.
+Nadie necesita una cuenta para responder. El organizador tampoco: sin iniciar sesión, recibe un enlace de administración privado para gestionar la encuesta, y puede añadir un correo electrónico si quiere avisos.
 
 ## Dos tipos de encuesta
 
@@ -66,7 +66,7 @@ Si crea una encuesta mientras viaja, su dispositivo puede estar en la zona del l
 
 1. Ponga un título a la encuesta y elija entre horas o días completos.
 2. Añada sus opciones. Si ha conectado un calendario, las horas en las que ya está ocupado aparecen sombreadas, y **Suggest times** puede rellenar la encuesta con cuatro opciones de su tiempo libre: solo días laborables, entre las 10:00 y las 16:00 en la zona horaria de la encuesta, y como mucho una por la mañana y otra por la tarde en un mismo día.
-3. Inicie sesión con su Universal ID, o añada su correo electrónico y confírmelo con un código de un solo uso. El correo es opcional: si no lo indica, recibirá en su lugar un enlace de administración privado (vea más abajo).
+3. Inicie sesión con su Universal ID, o continúe sin él. Sin él, recibe un enlace de administración privado para gestionar la encuesta (vea más abajo), y su correo electrónico es opcional: añádalo y confírmelo con un código de un solo uso si quiere avisos de respuestas, una página de reserva o encontrar sus encuestas desde otro dispositivo.
 4. Comparta el enlace.
 
 ## Cambiar de opinión
@@ -89,11 +89,16 @@ Cada resultado, y también el aviso de confirmación, tiene un botón **Add to c
 
 ## Su enlace de administración privado
 
-Si crea una encuesta sin iniciar sesión, también recibe un enlace de administración privado. Cualquiera que lo abra puede gestionar la encuesta: confirmar una hora, cambiarla o eliminarla. Por eso, no lo comparta y guárdelo en un lugar seguro. Si no indicó un correo electrónico, es la única forma de gestionar la encuesta desde otro dispositivo. Este dispositivo lo recuerda, y la página de la encuesta le permite volver a copiarlo. Nuestros servidores solo guardan una huella de un solo sentido (un hash), nunca el enlace en sí.
+Si crea una encuesta sin iniciar sesión con su Universal ID, también recibe un enlace de administración privado. No lo comparta y guárdelo en un lugar seguro.
+
+- **Si no indicó un correo electrónico**, cualquiera que abra el enlace puede gestionar la encuesta: confirmar una hora, cambiarla o eliminarla. Es la única forma de gestionar la encuesta desde otro dispositivo. Abrirlo en otro dispositivo traslada allí la encuesta, así que el dispositivo que usaba antes deja de mostrarla hasta que vuelva a abrir el enlace en él.
+- **Si confirmó un correo electrónico**, la encuesta pertenece a esa dirección, no al enlace. El enlace solo funciona en un dispositivo donde haya confirmado la misma dirección.
+
+Este dispositivo recuerda el enlace y, mientras gestione la encuesta, la página de la encuesta le permite volver a copiarlo. Nuestros servidores solo guardan una huella de un solo sentido (un hash), nunca el enlace en sí.
 
 ## Volver a encontrar sus encuestas
 
-En el dispositivo donde las creó, o siempre que haya iniciado sesión como organizador, la página de creación muestra sus encuestas activas, con cuántas personas han respondido, la hora confirmada si la hay y cuándo caduca cada enlace. Puede copiar un enlace, eliminar una encuesta o eliminar de una vez todas sus encuestas caducadas.`,
+En el dispositivo donde las creó, en un dispositivo donde abrió el enlace de administración de una encuesta, o siempre que haya iniciado sesión como organizador, la página de creación muestra sus encuestas activas, con cuántas personas han respondido, la hora confirmada si la hay y cuándo caduca cada enlace. Puede copiar un enlace, eliminar una encuesta o eliminar de una vez todas sus encuestas caducadas.`,
   },
   {
     id: 'poll-options',
@@ -144,7 +149,7 @@ Los enlaces de las encuestas tienen diez caracteres aleatorios, lo que los hace 
 ## Solo el organizador puede ver
 
 - Las direcciones de correo que los participantes decidieron dejar. Se usan para enviar la hora confirmada y rellenar las invitaciones de calendario, y nunca se muestran a los demás participantes.
-- El enlace de administración privado de la encuesta, mientras el organizador no lo comparta. Cualquiera que lo tenga puede gestionar la encuesta.
+- El enlace de administración privado de la encuesta, mientras el organizador no lo comparta. Salvo que el organizador haya confirmado un correo electrónico, cualquiera que lo tenga puede gestionar la encuesta.
 
 ## Nadie más ve
 
@@ -172,9 +177,10 @@ Una encuesta tiene que estar en algún sitio al que todos puedan acceder, así q
 - La encuesta en sí: título, opciones, zona horaria, ajustes y, si lo indicó, el correo del organizador.
 - Cada respuesta: el nombre indicado, lo que se eligió y cuándo se guardó.
 - Las direcciones de correo que los participantes decidieron dejar, y el nombre y el correo de quien reserva en una página de reserva.
-- Un logotipo que haya subido el organizador. Los logotipos se guardan donde cualquiera con el enlace de la encuesta puede cargarlos, porque la página necesita mostrarlos.
+- Un logotipo que haya subido el organizador. La página de la encuesta tiene que mostrarlo, así que la encuesta lleva un enlace de larga duración al logotipo que cualquiera con el enlace de la encuesta puede cargar.
 - Si el organizador conectó un calendario, las claves de acceso de esa conexión. Se guardan solo en el servidor, nunca se envían a la aplicación y solo se usan para hacer lo que el organizador pidió. Al desconectar se eliminan.
 - En una encuesta con enlace de administración privado, una huella de un solo sentido (un hash) de ese enlace, que sirve para comprobarlo cuando se abre. El enlace en sí no se guarda.
+- Para un organizador que no indicó correo electrónico, un identificador de invitado anónimo, sin nombre ni correo, al que pertenece la encuesta.
 
 Todo viaja por conexiones cifradas y está protegido por reglas de acceso. No está cifrado de extremo a extremo, así que nuestros sistemas pueden leerlo técnicamente.
 

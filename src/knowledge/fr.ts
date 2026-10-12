@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Les résultats additionnent les réponses pour chaque option : les créneaux qui conviennent au plus grand nombre ressortent.
 5. L’organisateur confirme le créneau retenu, et toute personne qui ouvre le lien le voit.
 
-Personne n’a besoin de compte pour répondre. L’organisateur non plus : il peut se connecter, confirmer une adresse e-mail, ou simplement garder le lien d’administration privé du sondage.
+Personne n’a besoin de compte pour répondre. L’organisateur non plus : sans se connecter, il reçoit un lien d’administration privé pour gérer le sondage, et peut ajouter une adresse e-mail s’il veut des alertes.
 
 ## Deux types de sondage
 
@@ -66,7 +66,7 @@ Si vous créez un sondage en voyage, votre appareil est peut-être réglé sur l
 
 1. Donnez un titre au sondage et choisissez entre horaires et journées entières.
 2. Ajoutez vos options. Si vous avez connecté un agenda, les moments où vous êtes déjà occupé sont grisés, et **Suggest times** peut remplir le sondage avec quatre options prises dans votre temps libre : en semaine uniquement, entre 10:00 et 16:00 dans le fuseau du sondage, et au plus un créneau le matin et un l’après-midi par jour.
-3. Connectez-vous avec votre Universal ID, ou ajoutez votre adresse e-mail et confirmez-la avec un code à usage unique. L’e-mail est facultatif : sans lui, vous recevez à la place un lien d’administration privé (voir plus bas).
+3. Connectez-vous avec votre Universal ID, ou continuez sans. Sans Universal ID, vous recevez un lien d’administration privé pour gérer le sondage (voir plus bas), et votre adresse e-mail est facultative : ajoutez-la et confirmez-la avec un code à usage unique si vous voulez des alertes de réponse, une page de réservation, ou retrouver vos sondages depuis un autre appareil.
 4. Partagez le lien.
 
 ## Changer d’avis
@@ -89,11 +89,16 @@ Chaque résultat, ainsi que la bannière de confirmation, propose un bouton **Ad
 
 ## Votre lien d’administration privé
 
-Si vous créez un sondage sans vous connecter, vous recevez aussi un lien d’administration privé. Toute personne qui l’ouvre peut gérer le sondage : confirmer un créneau, le modifier ou le supprimer. Gardez-le donc pour vous, et conservez-le en lieu sûr. Si vous n’avez pas donné d’adresse e-mail, c’est le seul moyen de gérer le sondage depuis un autre appareil. Cet appareil s’en souvient, et la page du sondage vous permet de le copier à nouveau. Nos serveurs n’en gardent qu’une empreinte à sens unique (un hachage), jamais le lien lui-même.
+Si vous créez un sondage sans vous connecter avec votre Universal ID, vous recevez aussi un lien d’administration privé. Gardez-le pour vous, et conservez-le en lieu sûr.
+
+- **Si vous n’avez pas donné d’adresse e-mail**, toute personne qui ouvre le lien peut gérer le sondage : confirmer un créneau, le modifier ou le supprimer. C’est le seul moyen de gérer le sondage depuis un autre appareil. L’ouvrir sur un autre appareil y transfère le sondage : l’appareil utilisé jusque-là ne le liste plus, jusqu’à ce que vous y rouvriez le lien.
+- **Si vous avez confirmé une adresse e-mail**, le sondage appartient à cette adresse, pas au lien. Le lien ne fonctionne que sur un appareil où vous avez confirmé la même adresse.
+
+Cet appareil se souvient du lien et, tant qu’il gère le sondage, la page du sondage vous permet de le copier à nouveau. Nos serveurs n’en gardent qu’une empreinte à sens unique (un hachage), jamais le lien lui-même.
 
 ## Retrouver vos sondages
 
-Sur l’appareil où vous les avez créés, ou chaque fois que vous êtes connecté en tant qu’organisateur, la page de création liste vos sondages actifs, avec le nombre de réponses, le créneau confirmé s’il y en a un, et la date d’expiration de chaque lien. Vous pouvez copier un lien, supprimer un sondage, ou supprimer d’un coup tous vos sondages expirés.`,
+Sur l’appareil où vous les avez créés, sur un appareil où vous avez ouvert le lien d’administration d’un sondage, ou chaque fois que vous êtes connecté en tant qu’organisateur, la page de création liste vos sondages actifs, avec le nombre de réponses, le créneau confirmé s’il y en a un, et la date d’expiration de chaque lien. Vous pouvez copier un lien, supprimer un sondage, ou supprimer d’un coup tous vos sondages expirés.`,
   },
   {
     id: 'poll-options',
@@ -144,7 +149,7 @@ Les liens de sondage sont composés de dix caractères aléatoires, ce qui les r
 ## Seul l’organisateur peut voir
 
 - Les adresses e-mail que les participants ont choisi de laisser. Elles servent à envoyer le créneau confirmé et à remplir les invitations d’agenda, et ne sont jamais montrées aux autres participants.
-- Le lien d’administration privé du sondage, tant que l’organisateur le garde pour lui. Toute personne qui l’a peut gérer le sondage.
+- Le lien d’administration privé du sondage, tant que l’organisateur le garde pour lui. Sauf si l’organisateur a confirmé une adresse e-mail, toute personne qui l’a peut gérer le sondage.
 
 ## Personne d’autre ne voit
 
@@ -172,9 +177,10 @@ Un sondage doit être accessible à tous : les sondages et les réponses sont do
 - Le sondage lui-même : titre, options, fuseau horaire, réglages et, s’il l’a donnée, adresse e-mail de l’organisateur.
 - Chaque réponse : le nom indiqué, les choix faits et la date d’enregistrement.
 - Les adresses e-mail que les participants ont choisi de laisser, ainsi que le nom et l’adresse e-mail de la personne qui réserve sur une page de réservation.
-- Un logo envoyé par l’organisateur. Les logos sont stockés à un endroit où toute personne ayant le lien du sondage peut les charger, car la page doit pouvoir les afficher.
+- Un logo envoyé par l’organisateur. La page du sondage doit l’afficher : le sondage contient donc un lien de longue durée vers le logo, que toute personne ayant le lien du sondage peut charger.
 - Si l’organisateur a connecté un agenda, les clés d’accès de cette connexion. Elles restent uniquement sur le serveur, ne sont jamais envoyées à l’application, et ne servent qu’à faire ce que l’organisateur a demandé. La déconnexion les supprime.
 - Pour un sondage doté d’un lien d’administration privé, une empreinte à sens unique (un hachage) de ce lien, qui sert à le vérifier quand il est ouvert. Le lien lui-même n’est pas conservé.
+- Pour un organisateur qui n’a pas donné d’adresse e-mail, un identifiant d’invité anonyme, sans nom ni e-mail, auquel le sondage appartient.
 
 Tout circule par des connexions chiffrées et est protégé par des règles d’accès. Ce n’est pas chiffré de bout en bout : nos systèmes peuvent techniquement lire ces données.
 

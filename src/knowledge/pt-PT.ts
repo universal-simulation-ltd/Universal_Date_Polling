@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Os resultados somam as respostas de cada opção, e os horários que servem a mais pessoas destacam-se.
 5. Quem organiza confirma o horário escolhido, e todos os que abrirem a ligação passam a vê-lo.
 
-Ninguém precisa de conta para responder. Nem quem organiza: pode iniciar sessão, confirmar um endereço de e-mail ou simplesmente guardar a ligação de administração privada da sondagem.
+Ninguém precisa de conta para responder. Nem quem organiza: sem iniciar sessão, recebe uma ligação de administração privada para gerir a sondagem, e pode indicar um endereço de e-mail se quiser alertas.
 
 ## Dois tipos de sondagem
 
@@ -66,7 +66,7 @@ Se criar uma sondagem durante uma viagem, o seu dispositivo pode estar no fuso d
 
 1. Dê um título à sondagem e escolha entre horas ou dias inteiros.
 2. Adicione as opções. Se tiver ligado um calendário, as horas em que já está ocupado aparecem sombreadas, e **Suggest times** pode preencher a sondagem com quatro opções do seu tempo livre: só em dias úteis, entre as 10:00 e as 16:00 no fuso da sondagem, e no máximo uma de manhã e uma à tarde no mesmo dia.
-3. Inicie sessão com o seu Universal ID, ou indique o seu endereço de e-mail e confirme-o com um código de utilização única. O e-mail é opcional: sem ele, recebe em vez disso uma ligação de administração privada (ver abaixo).
+3. Inicie sessão com o seu Universal ID, ou continue sem ele. Sem ele, recebe uma ligação de administração privada para gerir a sondagem (ver abaixo), e o endereço de e-mail é opcional: indique-o e confirme-o com um código de utilização única se quiser alertas de respostas, uma página de marcação ou encontrar as suas sondagens a partir de outro dispositivo.
 4. Partilhe a ligação.
 
 ## Mudar de ideias
@@ -89,11 +89,16 @@ Cada resultado, e também o aviso de confirmação, tem um botão **Add to calen
 
 ## A sua ligação de administração privada
 
-Se criar uma sondagem sem iniciar sessão, recebe também uma ligação de administração privada. Qualquer pessoa que a abra pode gerir a sondagem: confirmar um horário, alterá-lo ou eliminá-la. Por isso, guarde-a só para si, num local seguro. Se não indicou um endereço de e-mail, é a única forma de gerir a sondagem a partir de outro dispositivo. Este dispositivo lembra-se dela, e a página da sondagem permite copiá-la novamente. Os nossos servidores guardam apenas uma impressão digital de sentido único (um hash), nunca a própria ligação.
+Se criar uma sondagem sem iniciar sessão com o seu Universal ID, recebe também uma ligação de administração privada. Guarde-a só para si, num local seguro.
+
+- **Se não indicou um endereço de e-mail**, qualquer pessoa que abra a ligação pode gerir a sondagem: confirmar um horário, alterá-lo ou eliminá-la. É a única forma de gerir a sondagem a partir de outro dispositivo. Abri-la noutro dispositivo leva a sondagem para lá, pelo que o dispositivo que usava antes deixa de a listar até voltar a abrir a ligação nele.
+- **Se confirmou um endereço de e-mail**, a sondagem pertence a esse endereço, não à ligação. A ligação só funciona num dispositivo em que tenha confirmado o mesmo endereço.
+
+Este dispositivo lembra-se da ligação e, enquanto gerir a sondagem, a página da sondagem permite copiá-la novamente. Os nossos servidores guardam apenas uma impressão digital de sentido único (um hash), nunca a própria ligação.
 
 ## Voltar a encontrar as suas sondagens
 
-No dispositivo em que as criou, ou sempre que tiver sessão iniciada como organizador, a página de criação lista as suas sondagens ativas, com quantas pessoas responderam, o horário confirmado se existir e quando expira cada ligação. Pode copiar uma ligação, eliminar uma sondagem ou eliminar de uma só vez todas as sondagens expiradas.`,
+No dispositivo em que as criou, num dispositivo em que abriu a ligação de administração de uma sondagem, ou sempre que tiver sessão iniciada como organizador, a página de criação lista as suas sondagens ativas, com quantas pessoas responderam, o horário confirmado se existir e quando expira cada ligação. Pode copiar uma ligação, eliminar uma sondagem ou eliminar de uma só vez todas as sondagens expiradas.`,
   },
   {
     id: 'poll-options',
@@ -144,7 +149,7 @@ As ligações das sondagens têm dez caracteres aleatórios, o que as torna muit
 ## Só quem organiza pode ver
 
 - Os endereços de e-mail que os participantes escolheram deixar. Servem para enviar o horário confirmado e preencher os convites de calendário, e nunca são mostrados aos outros participantes.
-- A ligação de administração privada da sondagem, desde que quem organiza a guarde para si. Qualquer pessoa que a tenha pode gerir a sondagem.
+- A ligação de administração privada da sondagem, desde que quem organiza a guarde para si. A menos que quem organiza tenha confirmado um endereço de e-mail, qualquer pessoa que a tenha pode gerir a sondagem.
 
 ## Mais ninguém vê
 
@@ -172,9 +177,10 @@ Uma sondagem tem de estar num sítio a que todos consigam aceder, por isso as so
 - A própria sondagem: título, opções, fuso horário, definições e, se indicado, o endereço de e-mail de quem organiza.
 - Cada resposta: o nome indicado, as escolhas feitas e quando foi guardada.
 - Os endereços de e-mail que os participantes escolheram deixar, e o nome e o endereço de e-mail de quem marca numa página de marcação.
-- Um logótipo carregado por quem organiza. Os logótipos ficam num local onde qualquer pessoa com a ligação da sondagem os pode carregar, porque a página precisa de os mostrar.
+- Um logótipo carregado por quem organiza. A página da sondagem precisa de o mostrar, por isso a sondagem leva uma ligação de longa duração para o logótipo, que qualquer pessoa com a ligação da sondagem pode carregar.
 - Se quem organiza ligou um calendário, as chaves de acesso dessa ligação. Ficam apenas no servidor, nunca são enviadas para a aplicação e só são usadas para fazer o que quem organiza pediu. Desligar o calendário apaga-as.
 - Numa sondagem com ligação de administração privada, uma impressão digital de sentido único (um hash) dessa ligação, usada para a verificar quando é aberta. A própria ligação não é guardada.
+- Para quem organiza sem indicar um endereço de e-mail, um ID de convidado anónimo, sem nome nem e-mail, ao qual a sondagem pertence.
 
 Tudo circula por ligações encriptadas e está protegido por regras de acesso. Não tem encriptação ponto a ponto, por isso os nossos sistemas conseguem tecnicamente lê-lo.
 
