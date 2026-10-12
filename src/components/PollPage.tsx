@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Chip, useUser, useUniversal, ValueChip } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { bookSlot, BookingError, cancelBooking, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, submitResponse } from '../lib/api'
+import { bookSlot, BookingError, cancelBooking, claimPoll, currentUser, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, startGuestSession, submitResponse } from '../lib/api'
+import { adminTokenFromHash, hashWithoutAdminToken, rememberAdminToken, storedAdminToken } from '../lib/adminLink'
 import { useOtpUser } from '../lib/otpSession'
 import { supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
@@ -10,7 +11,7 @@ import {
   formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, sameCalendarDay, slotDayKey, slotInstant, tzAbbrev,
 } from '../lib/time'
 import { CONTAINER_POLL } from '../lib/layout'
-import { pollLink } from '../lib/appUrl'
+import { adminLink, pollLink } from '../lib/appUrl'
 import {
   addConfirmedTimeToCalendar, calendarStatus, removeConfirmedTimeFromCalendar, startCalendarConnect,
   type CalendarProvider, type CalendarStatus,
@@ -20,6 +21,7 @@ import { hostIsEditing } from '../lib/editing'
 import { PURGE_GRACE_DAYS } from '../lib/myPolls'
 import { errorMessage } from '../lib/errors'
 import AddToCalendar from './AddToCalendar'
+import AdminLinkBox from './AdminLinkBox'
 import CopyAsText from './CopyAsText'
 import CopyEmail from './CopyEmail'
 import TimezonePicker from './TimezonePicker'
@@ -131,6 +133,53 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   async function handleSignOut() {
     await signOut()
   }
+
+  // ---- Private admin link (lib/adminLink.ts) --------------------------------
+  // Opened as /p/<id>#admin=<token>: read the token once, take it straight out
+  // of the address bar (so it is not left on screen, in a screenshot or in a
+  // link copied from there), then swap it for host rights with claim_poll.
+  const [adminToken] = useState(() => adminTokenFromHash(window.location.hash))
+  const [adminClaim, setAdminClaim] = useState<'idle' | 'claiming' | 'done' | 'failed' | 'unsupported'>('idle')
+  const claimStarted = useRef(false)
+  useEffect(() => {
+    if (!adminToken) return
+    const { pathname, search, hash } = window.location
+    window.history.replaceState(window.history.state, '', pathname + search + hashWithoutAdminToken(hash))
+  }, [adminToken])
+  useEffect(() => {
+    // Wait for the poll, and for this app's own session to be known, so a host
+    // who is already signed in here is not sent through a claim they don't need.
+    if (!adminToken || !poll || otpUser === undefined || claimStarted.current) return
+    claimStarted.current = true
+    if (hostClientFor(poll)) {
+      rememberAdminToken(poll.id, adminToken)
+      setAdminClaim('done')
+      return
+    }
+    // Not cancelled by a re-render: signing in anonymously changes `otpUser`
+    // mid-claim, and the claim must still finish. `claimStarted` stops a second.
+    setAdminClaim('claiming')
+    void (async () => {
+      try {
+        // The claim makes THIS app's session the host — an anonymous one if
+        // there is no session here yet. No email, no account.
+        if (!(await currentUser())) await startGuestSession()
+        const ok = await claimPoll(supabase, poll.id, adminToken)
+        if (!ok) { setAdminClaim('failed'); return }
+        rememberAdminToken(poll.id, adminToken)
+        // host_user_id has changed, so read the poll again; the session hook
+        // has picked up a new anonymous session by now.
+        const fresh = await getPollResilient(poll.id)
+        if (fresh) setPoll(fresh)
+        setAdminClaim('done')
+      } catch (e) {
+        const code = (e as { code?: string } | null)?.code
+        setAdminClaim(code === 'PGRST202' || code === '42883' ? 'unsupported' : 'failed')
+      }
+    })()
+    // hostClientFor reads suiteUser/otpUser; claimStarted guards re-entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminToken, poll?.id, otpUser, suiteUser?.id])
 
   useEffect(() => {
     let live = true
@@ -493,6 +542,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // Only the guest-OTP host gets a "signed in" indicator here — a suite user's
   // identity is already visible via the shared navbar's profile/avatar.
   const isOtpHost = !!otpUser && otpUser.id === poll.host_user_id
+  // The admin link of a poll created (or claimed) on this device, so the host
+  // can copy it again. Read from this device only; never from the server.
+  const myAdminToken = isHost ? storedAdminToken(poll.id) : null
   const finalSlot = poll.final_slot_id ? slots.find((s) => s.id === poll.final_slot_id) ?? null : null
   // Everyone free at the confirmed time (calendar guests), and everyone who left
   // an address at all ("Copy email" — the same people "Email respondents"
@@ -585,6 +637,26 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         <section className="mt-5 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-4 sm:p-5">
           <CopyAsText poll={poll} url={pollUrl} displayTz={activeTz} />
         </section>
+      )}
+
+      {adminClaim === 'claiming' && (
+        <p role="status" className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">Checking your admin link…</p>
+      )}
+      {(adminClaim === 'failed' || adminClaim === 'unsupported') && (
+        <div role="status" className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm">
+          {adminClaim === 'failed'
+            ? "That admin link didn't work for this poll, so you're seeing it as a guest. Check you copied the whole link."
+            : "Admin links aren't available just yet, so you're seeing this poll as a guest. Please try the link again later."}
+        </div>
+      )}
+
+      {isHost && myAdminToken && (
+        <details className="mt-3 text-center">
+          <summary className="cursor-pointer text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2">
+            Your private admin link
+          </summary>
+          <AdminLinkBox url={adminLink(pollBase, poll.id, myAdminToken)} hasEmail={isOtpHost && !!otpUser?.email} />
+        </details>
       )}
 
       {isOtpHost && otpUser?.email && (

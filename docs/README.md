@@ -4,8 +4,10 @@
 
 Universal Date Polling is a free, open-source group scheduler — the simple
 "find a time that works for everyone" tool. The host creates a poll of
-candidate dates/times (verifying their email with a one-time code so polls
-can't be spammed anonymously), shares a link, and anyone can respond
+candidate dates/times (signing in, confirming an email address with a
+one-time code, or — once the server has `claim_poll` — keeping the poll's
+private admin link instead; see `src/lib/adminLink.ts`), shares a link, and
+anyone can respond
 Free / If-need-be per slot with no account; a live tally badges the best slot.
 
 Once a poll has responses, each slot in the results carries an **"Add to

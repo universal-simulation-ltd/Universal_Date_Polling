@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Sonuçlar her seçeneğin yanıtlarını toplar; böylece en çok kişiye uyan zamanlar öne çıkar.
 5. Düzenleyen kişi kazanan zamanı onaylar ve bağlantıyı açan herkes bunu görür.
 
-Yanıt vermek için kimsenin hesaba ihtiyacı yoktur. Yalnızca düzenleyen kişinin oturum açması veya e-posta adresini doğrulaması gerekir; bu nedenle anketler anonim olarak oluşturulamaz.
+Yanıt vermek için kimsenin hesaba ihtiyacı yoktur. Düzenleyen kişinin de gerekmez: oturum açabilir, bir e-posta adresini doğrulayabilir ya da yalnızca anketin özel yönetim bağlantısını saklayabilir.
 
 ## İki tür anket
 
@@ -66,7 +66,7 @@ Seyahatteyken anket oluşturursanız cihazınız bulunduğunuz yerin saat dilimi
 
 1. Ankete bir başlık veriniz ve saatli ya da tam gün türünü seçiniz.
 2. Seçeneklerinizi ekleyiniz. Bir takvim bağladıysanız meşgul olduğunuz saatler gölgeli görünür ve **Suggest times**, anketi boş zamanınızdan dört seçenekle doldurabilir: yalnızca hafta içi, anketin saat diliminde 10.00 ile 16.00 arası ve bir günde en fazla bir sabah ile bir öğleden sonra.
-3. E-posta adresinizi tek kullanımlık bir kodla doğrulayınız ya da Universal ID'nizle oturum açınız.
+3. Universal ID'nizle oturum açınız ya da e-posta adresinizi ekleyip tek kullanımlık bir kodla doğrulayınız. E-posta isteğe bağlıdır: boş bırakırsanız bunun yerine özel bir yönetim bağlantısı alırsınız (aşağıya bakınız).
 4. Bağlantıyı paylaşınız.
 
 ## Fikrinizi değiştirmek
@@ -87,9 +87,13 @@ Bu banttan şunları yapabilirsiniz:
 
 Her sonuçta ve onay bandında Google Takvim, Outlook ya da Apple Takvim gibi uygulamalar için bir takvim dosyası seçenekleri sunan bir **Add to calendar** düğmesi bulunur. Takvim etkinliği cihazınızda hazırlanır.
 
+## Özel yönetim bağlantınız
+
+Oturum açmadan bir anket oluşturursanız özel bir yönetim bağlantısı da alırsınız. Bu bağlantıyı açan herkes anketi yönetebilir: bir zamanı onaylayabilir, değiştirebilir veya anketi silebilir. Bu nedenle bağlantıyı kendinize saklayınız ve güvenli bir yerde tutunuz. Bir e-posta adresi vermediyseniz, anketi başka bir cihazdan yönetmenin tek yolu budur. Bu cihaz bağlantıyı hatırlar ve anket sayfasından yeniden kopyalayabilirsiniz. Sunucularımız bağlantının yalnızca tek yönlü bir parmak izini (hash) saklar, bağlantının kendisini asla saklamaz.
+
 ## Anketlerinizi yeniden bulmak
 
-Düzenleyen kişi olarak oturum açtığınızda, oluşturma sayfası etkin anketlerinizi listeler: kaç kişinin yanıt verdiği, varsa onaylanan zaman ve her bağlantının ne zaman sona ereceği. Bir bağlantıyı kopyalayabilir, bir anketi silebilir veya süresi dolan tüm anketlerinizi tek adımda silebilirsiniz.`,
+Anketleri oluşturduğunuz cihazda ya da düzenleyen kişi olarak oturum açtığınız her zaman, oluşturma sayfası etkin anketlerinizi listeler: kaç kişinin yanıt verdiği, varsa onaylanan zaman ve her bağlantının ne zaman sona ereceği. Bir bağlantıyı kopyalayabilir, bir anketi silebilir veya süresi dolan tüm anketlerinizi tek adımda silebilirsiniz.`,
   },
   {
     id: 'poll-options',
@@ -100,7 +104,7 @@ Düzenleyen kişi olarak oturum açtığınızda, oluşturma sayfası etkin anke
 
 ## Randevu sayfası ("Just the two of us")
 
-Bire bir görüşmeler içindir. Herkesin uygunluğunu toplamak yerine, bağlantıyı gönderdiğiniz kişi zamanlarınızdan birini seçer, adını ve e-posta adresini girer ve randevu anında alınır. Sizin onaylamanız gereken bir şey yoktur; ikiniz de e-postayla bir takvim daveti alırsınız. Buna izin veren bir takvim bağladıysanız davet kendi takviminizden de gönderilebilir. Bir randevuyu daha sonra iptal edebilirsiniz ve karşı taraf bilgilendirilir.
+Bire bir görüşmeler içindir. Herkesin uygunluğunu toplamak yerine, bağlantıyı gönderdiğiniz kişi zamanlarınızdan birini seçer, adını ve e-posta adresini girer ve randevu anında alınır. Sizin onaylamanız gereken bir şey yoktur; ikiniz de e-postayla bir takvim daveti alırsınız. Buna izin veren bir takvim bağladıysanız davet kendi takviminizden de gönderilebilir. Bir randevuyu daha sonra iptal edebilirsiniz ve karşı taraf bilgilendirilir. Randevu sayfası e-posta adresinizi gerektirir; çünkü randevularınız oraya gönderilir.
 
 ## Bağlantının geçerlilik süresi
 
@@ -108,7 +112,7 @@ Bir anketin bağlantısı 7, 30, 90 veya 180 gün çalışır. Bu bağlantılar 
 
 ## Yanıt bildirimleri
 
-Yeni bir kişi her yanıt verdiğinde e-posta almak için bu kutuyu işaretleyiniz. Daha önce verdiği yanıtı değiştiren biri yeni bir e-postaya yol açmaz. Randevu sayfasında bu seçenek sunulmaz; çünkü her randevu size zaten e-posta gönderir.
+Yeni bir kişi her yanıt verdiğinde e-posta almak için bu kutuyu işaretleyiniz. Daha önce verdiği yanıtı değiştiren biri yeni bir e-postaya yol açmaz. Randevu sayfasında bu seçenek sunulmaz; çünkü her randevu size zaten e-posta gönderir. Bildirimler için e-posta adresiniz gerekir.
 
 ## Takviminiz
 
@@ -140,10 +144,11 @@ Anket bağlantıları on rastgele karakterden oluşur ve bu da tahmin edilmeleri
 ## Yalnızca düzenleyen kişi görebilir
 
 - Katılımcıların bırakmayı seçtiği e-posta adreslerini. Bunlar onaylanan zamanı göndermek ve takvim davetlerini doldurmak için kullanılır ve diğer katılımcılara hiçbir zaman gösterilmez.
+- Düzenleyen kişi kendine sakladığı sürece anketin özel yönetim bağlantısı. Bu bağlantıya sahip olan herkes anketi yönetebilir.
 
 ## Başka kimse göremez
 
-- Düzenleyen kişinin e-posta adresini. Bu adres düzenleyene bildirimleri ve randevu e-postalarını göndermek için saklanır ve anket sayfasında görünmez.
+- Düzenleyen kişinin e-posta adresini (verdiyse). Bu adres düzenleyene bildirimleri ve randevu e-postalarını göndermek için saklanır ve anket sayfasında görünmez.
 
 ## Adınız anahtarınızdır
 
@@ -164,11 +169,12 @@ E-posta adresi vermeden yanıt verebilirsiniz. Bir adres bırakırsanız düzenl
 
 Bir anketin herkesin erişebileceği bir yerde durması gerekir; bu yüzden anketler ve yanıtlar sunucularımızda saklanır. Bunlara şunlar dahildir:
 
-- Anketin kendisi: başlığı, seçenekleri, saat dilimi, ayarları ve düzenleyen kişinin e-posta adresi.
+- Anketin kendisi: başlığı, seçenekleri, saat dilimi, ayarları ve verdiyse düzenleyen kişinin e-posta adresi.
 - Her yanıt: verilen ad, yapılan seçimler ve kaydedildiği zaman.
 - Katılımcıların bırakmayı seçtiği e-posta adresleri ile randevu sayfasında randevu alan kişinin adı ve e-posta adresi.
 - Düzenleyen kişinin yüklediği bir logo. Anket sayfasının logoyu gösterebilmesi için logolar, anket bağlantısına sahip herkesin yükleyebileceği bir yerde saklanır.
 - Düzenleyen kişi bir takvim bağladıysa o bağlantının erişim anahtarları. Bunlar yalnızca sunucuda tutulur, uygulamaya hiçbir zaman gönderilmez ve yalnızca düzenleyen kişinin istediği işler için kullanılır. Bağlantıyı kesmek bunları siler.
+- Özel yönetim bağlantısı olan bir ankette, bağlantı açıldığında doğrulamak için kullanılan tek yönlü bir parmak izi (hash). Bağlantının kendisi saklanmaz.
 
 Her şey şifreli bağlantılar üzerinden iletilir ve erişim kurallarıyla korunur. Uçtan uca şifreli değildir; yani sistemlerimiz teknik olarak bunları okuyabilir.
 
@@ -191,11 +197,15 @@ E-postalar bizim adımıza bir e-posta gönderim hizmeti aracılığıyla gönde
 
 ## Cihazınızda
 
-Bu cihaz; son yanıtınızdaki adı ve e-posta adresini, görüntüleme ayarlarınızı ve anket düzenliyorsanız oturumunuzu hatırlar. **Add to calendar** ile eklediğiniz takvim etkinlikleri cihazınızda hazırlanır. Google veya Outlook'u seçmek, etkinlik bilgileri doldurulmuş olarak o hizmeti açar.
+Bu cihaz; son yanıtınızdaki adı ve e-posta adresini, görüntüleme ayarlarınızı ve anket düzenliyorsanız oturumunuzu ve burada oluşturduğunuz ya da açtığınız anketlerin özel yönetim bağlantılarını hatırlar. **Add to calendar** ile eklediğiniz takvim etkinlikleri cihazınızda hazırlanır. Google veya Outlook'u seçmek, etkinlik bilgileri doldurulmuş olarak o hizmeti açar.
 
 ## Universal ID'niz
 
-Düzenleyenler, UNI·SIM uygulamalarının ortak kullandığı tek hesap olan Universal ID ile oturum açabilir ya da yalnızca bir e-posta adresini tek kullanımlık bir kodla doğrulayabilir. Bir ankete yanıt vermek hiçbir zaman hesap gerektirmez.`,
+Düzenleyenler, UNI·SIM uygulamalarının ortak kullandığı tek hesap olan Universal ID ile oturum açabilir, bir e-posta adresini tek kullanımlık bir kodla doğrulayabilir ya da yalnızca anketin özel yönetim bağlantısını saklayabilir. Bir ankete yanıt vermek hiçbir zaman hesap gerektirmez.
+
+## Kullanıcıları saymak
+
+Web sitesinde uygulama, UNI·SIM uygulamalarını kaç kişinin kullandığını sayabilmemiz için açık olduğunu belirli aralıklarla sunucularımıza bildirir. Bu tarayıcının kendisi için oluşturduğu rastgele bir sayıyı (adınızı veya e-posta adresinizi değil), cihaz türünü ve uygulamanın adını, oturum açtıysanız da hesabınızı gönderir. iPhone ve Android uygulamaları bunu göndermez. Tüm sürümlerde, bir şirkete bağlı bir Universal ID ile oturum açtıysanız uygulama her ziyarette bir kez açıldığını kaydeder; içinde ne yaptığınızı asla kaydetmez.`,
   },
 ]
 

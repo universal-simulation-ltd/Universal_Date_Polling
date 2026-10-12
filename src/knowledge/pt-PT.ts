@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Os resultados somam as respostas de cada opção, e os horários que servem a mais pessoas destacam-se.
 5. Quem organiza confirma o horário escolhido, e todos os que abrirem a ligação passam a vê-lo.
 
-Ninguém precisa de conta para responder. Só quem organiza tem de iniciar sessão ou confirmar o endereço de e-mail, pelo que não é possível criar sondagens de forma anónima.
+Ninguém precisa de conta para responder. Nem quem organiza: pode iniciar sessão, confirmar um endereço de e-mail ou simplesmente guardar a ligação de administração privada da sondagem.
 
 ## Dois tipos de sondagem
 
@@ -66,7 +66,7 @@ Se criar uma sondagem durante uma viagem, o seu dispositivo pode estar no fuso d
 
 1. Dê um título à sondagem e escolha entre horas ou dias inteiros.
 2. Adicione as opções. Se tiver ligado um calendário, as horas em que já está ocupado aparecem sombreadas, e **Suggest times** pode preencher a sondagem com quatro opções do seu tempo livre: só em dias úteis, entre as 10:00 e as 16:00 no fuso da sondagem, e no máximo uma de manhã e uma à tarde no mesmo dia.
-3. Confirme o seu endereço de e-mail com um código de utilização única, ou inicie sessão com o seu Universal ID.
+3. Inicie sessão com o seu Universal ID, ou indique o seu endereço de e-mail e confirme-o com um código de utilização única. O e-mail é opcional: sem ele, recebe em vez disso uma ligação de administração privada (ver abaixo).
 4. Partilhe a ligação.
 
 ## Mudar de ideias
@@ -87,9 +87,13 @@ A partir desse aviso pode:
 
 Cada resultado, e também o aviso de confirmação, tem um botão **Add to calendar** com Google Calendar, Outlook ou um ficheiro de calendário para aplicações como o Calendário da Apple. O evento é preparado no seu dispositivo.
 
+## A sua ligação de administração privada
+
+Se criar uma sondagem sem iniciar sessão, recebe também uma ligação de administração privada. Qualquer pessoa que a abra pode gerir a sondagem: confirmar um horário, alterá-lo ou eliminá-la. Por isso, guarde-a só para si, num local seguro. Se não indicou um endereço de e-mail, é a única forma de gerir a sondagem a partir de outro dispositivo. Este dispositivo lembra-se dela, e a página da sondagem permite copiá-la novamente. Os nossos servidores guardam apenas uma impressão digital de sentido único (um hash), nunca a própria ligação.
+
 ## Voltar a encontrar as suas sondagens
 
-Com sessão iniciada como organizador, a página de criação lista as suas sondagens ativas, com quantas pessoas responderam, o horário confirmado se existir e quando expira cada ligação. Pode copiar uma ligação, eliminar uma sondagem ou eliminar de uma só vez todas as sondagens expiradas.`,
+No dispositivo em que as criou, ou sempre que tiver sessão iniciada como organizador, a página de criação lista as suas sondagens ativas, com quantas pessoas responderam, o horário confirmado se existir e quando expira cada ligação. Pode copiar uma ligação, eliminar uma sondagem ou eliminar de uma só vez todas as sondagens expiradas.`,
   },
   {
     id: 'poll-options',
@@ -100,7 +104,7 @@ Com sessão iniciada como organizador, a página de criação lista as suas sond
 
 ## Página de marcação ("Just the two of us")
 
-Para um encontro a dois. Em vez de recolher a disponibilidade de todos, a pessoa a quem envia a ligação escolhe um dos seus horários, indica o nome e o endereço de e-mail, e o horário fica marcado de imediato. Não tem nada para confirmar, e ambos recebem um convite de calendário por e-mail. Se tiver ligado um calendário que o permita, o convite pode sair do seu próprio calendário. Pode cancelar uma marcação mais tarde, e a outra pessoa é avisada.
+Para um encontro a dois. Em vez de recolher a disponibilidade de todos, a pessoa a quem envia a ligação escolhe um dos seus horários, indica o nome e o endereço de e-mail, e o horário fica marcado de imediato. Não tem nada para confirmar, e ambos recebem um convite de calendário por e-mail. Se tiver ligado um calendário que o permita, o convite pode sair do seu próprio calendário. Pode cancelar uma marcação mais tarde, e a outra pessoa é avisada. Uma página de marcação precisa do seu endereço de e-mail, porque é para lá que as marcações são enviadas.
 
 ## Validade da ligação
 
@@ -108,7 +112,7 @@ A ligação de uma sondagem funciona durante 7, 30, 90 ou 180 dias. Propositadam
 
 ## Alertas de resposta
 
-Assinale esta opção para receber um e-mail sempre que uma nova pessoa responder. Quem altera uma resposta já dada não gera outro e-mail. Os alertas não estão disponíveis numa página de marcação, porque cada marcação já lhe envia um e-mail.
+Assinale esta opção para receber um e-mail sempre que uma nova pessoa responder. Quem altera uma resposta já dada não gera outro e-mail. Os alertas não estão disponíveis numa página de marcação, porque cada marcação já lhe envia um e-mail. Os alertas precisam do seu endereço de e-mail.
 
 ## O seu calendário
 
@@ -140,10 +144,11 @@ As ligações das sondagens têm dez caracteres aleatórios, o que as torna muit
 ## Só quem organiza pode ver
 
 - Os endereços de e-mail que os participantes escolheram deixar. Servem para enviar o horário confirmado e preencher os convites de calendário, e nunca são mostrados aos outros participantes.
+- A ligação de administração privada da sondagem, desde que quem organiza a guarde para si. Qualquer pessoa que a tenha pode gerir a sondagem.
 
 ## Mais ninguém vê
 
-- O endereço de e-mail de quem organiza. Fica guardado para lhe enviar os alertas e os e-mails de marcação, e não aparece na página da sondagem.
+- O endereço de e-mail de quem organiza, se o tiver indicado. Fica guardado para lhe enviar os alertas e os e-mails de marcação, e não aparece na página da sondagem.
 
 ## O seu nome é a sua chave
 
@@ -164,11 +169,12 @@ Pode responder sem indicar nenhum endereço de e-mail. Se deixar um, quem organi
 
 Uma sondagem tem de estar num sítio a que todos consigam aceder, por isso as sondagens e as respostas são guardadas nos nossos servidores. Isto inclui:
 
-- A própria sondagem: título, opções, fuso horário, definições e o endereço de e-mail de quem organiza.
+- A própria sondagem: título, opções, fuso horário, definições e, se indicado, o endereço de e-mail de quem organiza.
 - Cada resposta: o nome indicado, as escolhas feitas e quando foi guardada.
 - Os endereços de e-mail que os participantes escolheram deixar, e o nome e o endereço de e-mail de quem marca numa página de marcação.
 - Um logótipo carregado por quem organiza. Os logótipos ficam num local onde qualquer pessoa com a ligação da sondagem os pode carregar, porque a página precisa de os mostrar.
 - Se quem organiza ligou um calendário, as chaves de acesso dessa ligação. Ficam apenas no servidor, nunca são enviadas para a aplicação e só são usadas para fazer o que quem organiza pediu. Desligar o calendário apaga-as.
+- Numa sondagem com ligação de administração privada, uma impressão digital de sentido único (um hash) dessa ligação, usada para a verificar quando é aberta. A própria ligação não é guardada.
 
 Tudo circula por ligações encriptadas e está protegido por regras de acesso. Não tem encriptação ponto a ponto, por isso os nossos sistemas conseguem tecnicamente lê-lo.
 
@@ -191,11 +197,15 @@ Os e-mails são enviados em nosso nome através de um serviço de envio de e-mai
 
 ## No seu dispositivo
 
-Este dispositivo lembra o nome e o endereço de e-mail da sua última resposta, as suas definições de apresentação e, se organizar sondagens, a sua sessão. Os eventos que adiciona com **Add to calendar** são preparados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
+Este dispositivo lembra o nome e o endereço de e-mail da sua última resposta, as suas definições de apresentação e, se organizar sondagens, a sua sessão e as ligações de administração privadas das sondagens criadas ou abertas aqui. Os eventos que adiciona com **Add to calendar** são preparados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
 
 ## O seu Universal ID
 
-Quem organiza pode iniciar sessão com um Universal ID, a conta única partilhada pelas aplicações UNI·SIM, ou simplesmente confirmar um endereço de e-mail com um código de utilização única. Responder a uma sondagem nunca exige conta.`,
+Quem organiza pode iniciar sessão com um Universal ID, a conta única partilhada pelas aplicações UNI·SIM, confirmar um endereço de e-mail com um código de utilização única ou simplesmente guardar a ligação de administração privada da sondagem. Responder a uma sondagem nunca exige conta.
+
+## Contagem de utilizadores
+
+No site, a aplicação avisa os nossos servidores de tempos a tempos de que está aberta, para podermos contar quantas pessoas usam as aplicações UNI·SIM. Envia um número aleatório que este navegador cria por si próprio (nem o seu nome, nem o seu e-mail), o tipo de dispositivo e o nome da aplicação, além da sua conta se tiver sessão iniciada. As aplicações para iPhone e Android não enviam isto. Em todas as versões, se tiver sessão iniciada com um Universal ID associado a uma empresa, a aplicação regista uma vez por visita que foi aberta, nunca o que fez nela.`,
   },
 ]
 

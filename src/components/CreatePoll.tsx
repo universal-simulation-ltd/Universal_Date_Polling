@@ -3,7 +3,7 @@ import { Chip, SignInDialog, useFileDrop, useOrg, useOrgBranding, useSubscriptio
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
-import { createPoll, createPollGated, currentUser, sendHostCode, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollEditing, setPollLocation as apiSetLocation, shortId, signOut, updatePollDraft, uploadPollLogo, verifyHostCode } from '../lib/api'
+import { adminLinksSupported, createPoll, createPollGated, currentUser, sendHostCode, startGuestSession, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollEditing, setPollLocation as apiSetLocation, shortId, signOut, updatePollDraft, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { EDIT_HEARTBEAT_MS } from '../lib/editing'
 import { useOtpUser } from '../lib/otpSession'
 import { NEED_MORE_URL, atLimitCopy, isAtLimit, isNearLimit, nearLimitCopy } from '../lib/freeAllowance'
@@ -16,6 +16,7 @@ import {
 } from '../lib/hostCalendar'
 import { suggestFreeSlots, SUGGEST_COUNT } from '../lib/autoSlots'
 import type { TextListPoll } from '../lib/textExport'
+import AdminLinkBox from './AdminLinkBox'
 import CopyAsText from './CopyAsText'
 import MyPolls from './MyPolls'
 import SlotPicker, { useSlotViewDefault, type SlotView } from './SlotPicker'
@@ -23,7 +24,8 @@ import ProductLogo from './ProductLogo'
 import SettingsDialog from './SettingsDialog'
 import { CONTAINER_CREATE, centreScrollTop } from '../lib/layout'
 import { useThemeStore } from '../stores/themeStore'
-import { pollLink } from '../lib/appUrl'
+import { adminLink, pollLink } from '../lib/appUrl'
+import { hashAdminToken, newAdminToken, rememberAdminToken } from '../lib/adminLink'
 import { PURGE_GRACE_DAYS } from '../lib/myPolls'
 import {
   calendarPromptHidden, onAppPreferencesReset, onOpenAppSettings, setCalendarPromptHidden, type SettingsSection,
@@ -110,6 +112,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [createdId, setCreatedId] = useState<string | null>(null)
+  // The private admin link's token for the poll just created (guest hosts
+  // only), shown once on the "live" panel.
+  const [createdAdminToken, setCreatedAdminToken] = useState<string | null>(null)
 
   const colorRef = useRef<HTMLInputElement>(null)
   // The availability block — its heading is the hard stop when the calendar is
@@ -238,6 +243,20 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   // from the navbar (which clears this session too) puts the email step back
   // instead of leaving the old address on screen as "verified".
   const guestUser = useOtpUser()
+
+  // Whether the server takes private admin links yet (see lib/adminLink.ts).
+  // Until it does, a guest host confirms an email address exactly as before;
+  // once it does, the email is optional — only needed for response alerts, a
+  // booking page's emails, or finding the poll from another device.
+  const [adminOk, setAdminOk] = useState(false)
+  useEffect(() => {
+    if (!SUPABASE_CONFIGURED || suiteLoggedIn) return
+    let live = true
+    void adminLinksSupported().then((ok) => { if (live) setAdminOk(ok) })
+    return () => { live = false }
+  }, [suiteLoggedIn])
+  // A guest with no email at all: their poll is managed by its admin link.
+  const emailOptional = adminOk && !suiteLoggedIn && !verified
   useEffect(() => {
     if (!SUPABASE_CONFIGURED) return
     if (guestUser === undefined) return
@@ -639,7 +658,15 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   function validateDraft(): string | null {
     if (!title.trim()) return 'Give your poll a title.'
     if (slots.length === 0) return mode === 'days' ? 'Add at least one day.' : 'Add at least one date and time.'
-    if (!suiteLoggedIn && !EMAIL_RE.test(email)) return 'Enter a valid email address.'
+    if (!suiteLoggedIn && !verified) {
+      if (!emailOptional || email.trim()) {
+        if (!EMAIL_RE.test(email)) return 'Enter a valid email address.'
+      } else if (bookingMode) {
+        return 'A booking page emails you each booking, so it needs your email address.'
+      } else if (notifyOnResponse) {
+        return 'Add your email address to get response alerts, or turn the alerts off in This poll\'s options.'
+      }
+    }
     return null
   }
 
@@ -766,9 +793,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       // isn't overriding just carries their account logo URL — no upload.
       if (logoFile) logoUrl = await uploadPollLogo(client, hostUserId, logoFile)
       const pollDraft = draft(buildBranding(logoUrl))
+      // Every guest-hosted poll gets a private admin link, once the server
+      // takes them. Only the hash is sent; the token itself is shown to the
+      // host on the next screen and kept on this device.
+      const adminToken = adminOk && !suiteLoggedIn ? newAdminToken() : null
+      const adminHash = adminToken ? await hashAdminToken(adminToken) : null
       const poll = freeGated
         ? await createPollGated(client, pollDraft, hostEmail)
-        : await createPoll(client, pollDraft, hostUserId, hostEmail)
+        : await createPoll(client, pollDraft, hostUserId, hostEmail, adminHash)
+      if (adminToken) rememberAdminToken(poll.id, adminToken)
+      setCreatedAdminToken(adminToken)
       // The gated create RPC doesn't take a location, so set it as a follow-up
       // (the direct insert above already carries it). Non-fatal — the poll is
       // already created.
@@ -822,8 +856,23 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     }
     // Returning guest with a live session → create straight away.
     const u = await currentUser()
-    if (u && (verified || u.email === email)) {
-      await doCreate(supabase, u.id, u.email ?? email)
+    if (u && u.email && (verified || u.email === email)) {
+      await doCreate(supabase, u.id, u.email)
+      return
+    }
+    // No email given, and the server takes admin links: an anonymous session
+    // hosts the poll and the private admin link is the way back to it. A guest
+    // who already has one (an earlier poll, or an admin link opened here)
+    // keeps it, so all their polls stay listed together on this device.
+    if (emailOptional && !email.trim()) {
+      setPhase('creating')
+      try {
+        const uid = u && !u.email ? u.id : await startGuestSession()
+        await doCreate(supabase, uid, '')
+      } catch (e) {
+        setError(messageOf(e))
+        setPhase('edit')
+      }
       return
     }
     // Otherwise send a one-time code to the host's email.
@@ -857,6 +906,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         poll={{ title, timezone, mode, slots, location: location.trim() || null, booking_mode: bookingMode }}
         onEditTimes={createdClientRef.current ? startEditing : undefined}
         editError={editError}
+        adminUrl={createdAdminToken ? adminLink(pollBase, createdId, createdAdminToken) : null}
+        hasEmail={verified || !!email.trim()}
       />
     )
   }
@@ -893,7 +944,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       <MyPolls
         pollBase={pollBase}
         suiteClient={suiteLoggedIn ? suiteClient : null}
-        otpClient={verified ? supabase : null}
+        // Any guest session on this device, with an email or without one —
+        // an admin-link host's polls are listed here too.
+        otpClient={guestUser ? supabase : null}
         // Deleting a poll frees its place in the allowance straight away, so
         // the count and the "used all" banner below are re-read.
         onDeleted={refreshAllowance}
@@ -1280,6 +1333,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                       if (to && verified) {
                         return <span className="block text-xs text-slate-500 dark:text-slate-400">We'll email <span className="font-medium">{to}</span> (confirmed) each time a new person responds.</span>
                       }
+                      if (emailOptional) {
+                        return <span className="block text-xs text-slate-500 dark:text-slate-400">Add your email below (we'll send a code to confirm it) and we'll alert you there each time someone responds.</span>
+                      }
                       return <span className="block text-xs text-slate-500 dark:text-slate-400">You'll confirm your email below to create your poll — check this and we'll also alert you there each time someone responds.</span>
                     })()}
                   </span>
@@ -1436,7 +1492,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             </p>
           ) : (
             <label className="block">
-              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Your email</span>
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Your email{emailOptional && <span className="font-normal text-slate-500 dark:text-slate-400"> (optional)</span>}
+              </span>
               <input
                 type="email"
                 value={email}
@@ -1446,12 +1504,22 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 disabled={phase === 'code'}
                 className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none disabled:bg-slate-50 dark:disabled:bg-slate-800/60"
               />
-              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                We'll send a quick code to confirm it's you — that's how you'll manage this poll later
-                {notifyOnResponse
-                  ? <> and where we'll send your response alerts.</>
-                  : <>. Want an email each time a guest responds? Turn that on in your profile menu (top right) → Tune this app → This poll's options.</>}
-              </p>
+              {emailOptional ? (
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  {bookingMode
+                    ? <>Needed for a booking page: it's where we email you each booking. We'll send a quick code to confirm it's you.</>
+                    : notifyOnResponse
+                      ? <>Where we'll send your response alerts. We'll send a quick code to confirm it's you.</>
+                      : <>Only if you want response alerts or to find your polls from another device — we'll send a quick code to confirm it. Leave it blank and you'll get a private admin link to manage the poll instead.</>}
+                </p>
+              ) : (
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  We'll send a quick code to confirm it's you — that's how you'll manage this poll later
+                  {notifyOnResponse
+                    ? <> and where we'll send your response alerts.</>
+                    : <>. Want an email each time a guest responds? Turn that on in your profile menu (top right) → Tune this app → This poll's options.</>}
+                </p>
+              )}
             </label>
           )}
 
@@ -1737,8 +1805,14 @@ function CalendarProviderRow({
   )
 }
 
-function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError }: {
+function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError, adminUrl, hasEmail }: {
   pollBase: string; id: string; theme: Theme
+  /** The host's private admin link, or null when the poll has none (a
+   *  Universal ID host, or a server without admin links yet). */
+  adminUrl: string | null
+  /** Whether the host also confirmed an email address — changes what losing
+   *  the admin link would mean. */
+  hasEmail: boolean
   /** "← Change the times" — back to the form, for as long as nobody has
    *  answered. Absent when this screen has no host session to edit with. */
   onEditTimes?: () => void
@@ -1821,6 +1895,8 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError }: {
             </p>
           </div>
         )}
+
+        {adminUrl && <AdminLinkBox url={adminUrl} hasEmail={hasEmail} />}
 
         <div className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-5">
           <CopyAsText poll={poll} url={url} />

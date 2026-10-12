@@ -36,6 +36,12 @@ export function pollLink(pollBase: string, id: string): string {
   return `${appBase(pollBase)}p/${id}`
 }
 
+/** The host's private admin link to one poll (see adminLink.ts). The token
+ *  rides in the fragment, which browsers never send to a server. */
+export function adminLink(pollBase: string, id: string, token: string): string {
+  return `${pollLink(pollBase, id)}#admin=${token}`
+}
+
 /**
  * Where a link inside an email we send should land.
  *

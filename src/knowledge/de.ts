@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Die Ergebnisse zählen die Antworten für jede Option zusammen, sodass die Termine hervortreten, die den meisten passen.
 5. Wer einlädt, bestätigt den besten Termin, und alle, die den Link öffnen, sehen ihn.
 
-Zum Antworten braucht niemand ein Konto. Nur die einladende Person muss sich anmelden oder ihre E-Mail-Adresse bestätigen, daher lassen sich Umfragen nicht anonym erstellen.
+Zum Antworten braucht niemand ein Konto. Auch die einladende Person nicht: Sie kann sich anmelden, eine E-Mail-Adresse bestätigen oder einfach den privaten Verwaltungslink der Umfrage aufbewahren.
 
 ## Zwei Arten von Umfragen
 
@@ -66,7 +66,7 @@ Wenn Sie eine Umfrage auf Reisen erstellen, ist Ihr Gerät vielleicht auf die Zo
 
 1. Geben Sie der Umfrage einen Titel und wählen Sie zwischen Uhrzeiten und ganzen Tagen.
 2. Fügen Sie Ihre Optionen hinzu. Wenn Sie einen Kalender verbunden haben, sind belegte Zeiten schattiert, und **Suggest times** kann die Umfrage mit vier Optionen aus Ihrer freien Zeit füllen: nur werktags, zwischen 10:00 und 16:00 in der Zeitzone der Umfrage und höchstens eine am Vormittag und eine am Nachmittag pro Tag.
-3. Bestätigen Sie Ihre E-Mail-Adresse mit einem Einmalcode, oder melden Sie sich mit Ihrer Universal ID an.
+3. Melden Sie sich mit Ihrer Universal ID an, oder geben Sie Ihre E-Mail-Adresse ein und bestätigen Sie sie mit einem Einmalcode. Die E-Mail-Adresse ist freiwillig: Ohne sie erhalten Sie stattdessen einen privaten Verwaltungslink (siehe unten).
 4. Teilen Sie den Link.
 
 ## Es sich anders überlegen
@@ -87,9 +87,13 @@ Wenn die Antworten da sind, wählen Sie den besten Termin mit **Confirm this tim
 
 Jedes Ergebnis und auch das Bestätigungsbanner hat eine Schaltfläche **Add to calendar** für Google Kalender, Outlook oder eine Kalenderdatei für Apps wie den Apple-Kalender. Der Kalendereintrag wird auf Ihrem Gerät erstellt.
 
+## Ihr privater Verwaltungslink
+
+Wenn Sie eine Umfrage erstellen, ohne sich anzumelden, erhalten Sie zusätzlich einen privaten Verwaltungslink. Wer ihn öffnet, kann die Umfrage verwalten: einen Termin bestätigen, ihn ändern oder die Umfrage löschen. Behalten Sie ihn daher für sich und bewahren Sie ihn sicher auf. Wenn Sie keine E-Mail-Adresse angegeben haben, ist er der einzige Weg, die Umfrage von einem anderen Gerät aus zu verwalten. Dieses Gerät merkt sich den Link, und auf der Umfrageseite können Sie ihn erneut kopieren. Unsere Server speichern nur einen nicht umkehrbaren Fingerabdruck (einen Hash) davon, nie den Link selbst.
+
 ## Ihre Umfragen wiederfinden
 
-Wenn Sie als einladende Person angemeldet sind, listet die Erstellungsseite Ihre aktiven Umfragen auf, jeweils mit der Zahl der Antworten, dem bestätigten Termin, falls vorhanden, und dem Ablaufdatum des Links. Sie können einen Link kopieren, eine Umfrage löschen oder alle abgelaufenen Umfragen in einem Schritt löschen.`,
+Auf dem Gerät, auf dem Sie sie erstellt haben, oder immer wenn Sie als einladende Person angemeldet sind, listet die Erstellungsseite Ihre aktiven Umfragen auf, jeweils mit der Zahl der Antworten, dem bestätigten Termin, falls vorhanden, und dem Ablaufdatum des Links. Sie können einen Link kopieren, eine Umfrage löschen oder alle abgelaufenen Umfragen in einem Schritt löschen.`,
   },
   {
     id: 'poll-options',
@@ -100,7 +104,7 @@ Wenn Sie als einladende Person angemeldet sind, listet die Erstellungsseite Ihre
 
 ## Buchungsseite („Just the two of us“)
 
-Für ein Treffen zu zweit. Statt die Verfügbarkeit aller zu sammeln, wählt die Person, der Sie den Link schicken, einen Ihrer Termine, gibt Namen und E-Mail-Adresse ein, und der Termin ist sofort gebucht. Sie müssen nichts bestätigen, und Sie beide erhalten eine Kalendereinladung per E-Mail. Haben Sie einen Kalender verbunden, der das erlaubt, kann die Einladung auch aus Ihrem eigenen Kalender kommen. Sie können eine Buchung später stornieren, und die andere Person wird informiert.
+Für ein Treffen zu zweit. Statt die Verfügbarkeit aller zu sammeln, wählt die Person, der Sie den Link schicken, einen Ihrer Termine, gibt Namen und E-Mail-Adresse ein, und der Termin ist sofort gebucht. Sie müssen nichts bestätigen, und Sie beide erhalten eine Kalendereinladung per E-Mail. Haben Sie einen Kalender verbunden, der das erlaubt, kann die Einladung auch aus Ihrem eigenen Kalender kommen. Sie können eine Buchung später stornieren, und die andere Person wird informiert. Eine Buchungsseite braucht Ihre E-Mail-Adresse, denn dorthin werden Ihre Buchungen geschickt.
 
 ## Gültigkeit des Links
 
@@ -108,7 +112,7 @@ Der Link einer Umfrage funktioniert 7, 30, 90 oder 180 Tage lang. Eine Option �
 
 ## Benachrichtigungen bei Antworten
 
-Kreuzen Sie dies an, um jedes Mal eine E-Mail zu erhalten, wenn eine neue Person antwortet. Wer eine bereits gegebene Antwort ändert, löst keine weitere E-Mail aus. Auf einer Buchungsseite wird die Option nicht angeboten, weil jede Buchung Ihnen ohnehin eine E-Mail schickt.
+Kreuzen Sie dies an, um jedes Mal eine E-Mail zu erhalten, wenn eine neue Person antwortet. Wer eine bereits gegebene Antwort ändert, löst keine weitere E-Mail aus. Auf einer Buchungsseite wird die Option nicht angeboten, weil jede Buchung Ihnen ohnehin eine E-Mail schickt. Benachrichtigungen setzen Ihre E-Mail-Adresse voraus.
 
 ## Ihr Kalender
 
@@ -140,10 +144,11 @@ Umfragelinks bestehen aus zehn zufälligen Zeichen und sind daher sehr schwer zu
 ## Nur die einladende Person sieht
 
 - Die E-Mail-Adressen, die Teilnehmende freiwillig hinterlassen haben. Sie dienen dazu, den bestätigten Termin zu verschicken und Kalendereinladungen auszufüllen, und werden anderen Teilnehmenden nie angezeigt.
+- Den privaten Verwaltungslink der Umfrage, solange die einladende Person ihn für sich behält. Wer ihn hat, kann die Umfrage verwalten.
 
 ## Niemand sonst sieht
 
-- Die E-Mail-Adresse der einladenden Person. Sie wird für deren Benachrichtigungen und Buchungs-E-Mails gespeichert und erscheint nicht auf der Umfrageseite.
+- Die E-Mail-Adresse der einladenden Person, falls sie eine angegeben hat. Sie wird für deren Benachrichtigungen und Buchungs-E-Mails gespeichert und erscheint nicht auf der Umfrageseite.
 
 ## Ihr Name ist Ihr Schlüssel
 
@@ -164,11 +169,12 @@ Sie können antworten, ohne eine E-Mail-Adresse anzugeben. Hinterlassen Sie eine
 
 Eine Umfrage muss an einem Ort liegen, den alle erreichen können. Deshalb werden Umfragen und Antworten auf unseren Servern gespeichert. Dazu gehören:
 
-- Die Umfrage selbst: Titel, Optionen, Zeitzone, Einstellungen und die E-Mail-Adresse der einladenden Person.
+- Die Umfrage selbst: Titel, Optionen, Zeitzone, Einstellungen und, falls angegeben, die E-Mail-Adresse der einladenden Person.
 - Jede Antwort: der angegebene Name, die getroffene Auswahl und der Zeitpunkt der Speicherung.
 - E-Mail-Adressen, die Teilnehmende freiwillig hinterlassen haben, sowie Name und E-Mail-Adresse der Person, die auf einer Buchungsseite bucht.
 - Ein Logo, das die einladende Person hochgeladen hat. Logos liegen dort, wo alle mit dem Umfragelink sie laden können, weil die Seite sie anzeigen muss.
 - Wenn die einladende Person einen Kalender verbunden hat, die Zugangsschlüssel dieser Verbindung. Sie bleiben ausschließlich auf dem Server, werden nie an die App geschickt und nur für das verwendet, worum die einladende Person gebeten hat. Beim Trennen werden sie gelöscht.
+- Bei einer Umfrage mit privatem Verwaltungslink ein nicht umkehrbarer Fingerabdruck (ein Hash) davon, mit dem der Link beim Öffnen geprüft wird. Der Link selbst wird nicht gespeichert.
 
 Alles wird über verschlüsselte Verbindungen übertragen und durch Zugriffsregeln geschützt. Es ist nicht Ende-zu-Ende-verschlüsselt, unsere Systeme können es also technisch lesen.
 
@@ -191,11 +197,15 @@ Die E-Mails werden in unserem Auftrag über einen E-Mail-Versanddienst verschick
 
 ## Auf Ihrem Gerät
 
-Dieses Gerät merkt sich den Namen und die E-Mail-Adresse Ihrer letzten Antwort, Ihre Anzeigeeinstellungen und, wenn Sie Umfragen erstellen, Ihre Anmeldung. Kalendereinträge, die Sie mit **Add to calendar** hinzufügen, werden auf Ihrem Gerät erstellt. Wenn Sie Google oder Outlook wählen, öffnet sich dieser Dienst mit bereits ausgefüllten Termindaten.
+Dieses Gerät merkt sich den Namen und die E-Mail-Adresse Ihrer letzten Antwort, Ihre Anzeigeeinstellungen und, wenn Sie Umfragen erstellen, Ihre Anmeldung und die privaten Verwaltungslinks der hier erstellten oder geöffneten Umfragen. Kalendereinträge, die Sie mit **Add to calendar** hinzufügen, werden auf Ihrem Gerät erstellt. Wenn Sie Google oder Outlook wählen, öffnet sich dieser Dienst mit bereits ausgefüllten Termindaten.
 
 ## Ihre Universal ID
 
-Einladende Personen können sich mit einer Universal ID anmelden, dem einen Konto, das alle UNI·SIM-Apps gemeinsam nutzen, oder einfach eine E-Mail-Adresse mit einem Einmalcode bestätigen. Zum Beantworten einer Umfrage ist nie ein Konto nötig.`,
+Einladende Personen können sich mit einer Universal ID anmelden, dem einen Konto, das alle UNI·SIM-Apps gemeinsam nutzen, eine E-Mail-Adresse mit einem Einmalcode bestätigen oder einfach den privaten Verwaltungslink der Umfrage aufbewahren. Zum Beantworten einer Umfrage ist nie ein Konto nötig.
+
+## Nutzer zählen
+
+Auf der Website meldet die App unseren Servern in regelmäßigen Abständen, dass sie geöffnet ist, damit wir zählen können, wie viele Menschen UNI·SIM-Apps nutzen. Sie sendet eine Zufallszahl, die dieser Browser selbst erzeugt (weder Ihren Namen noch Ihre E-Mail-Adresse), die Art des Geräts und den Namen der App, dazu Ihr Konto, wenn Sie angemeldet sind. Die Apps für iPhone und Android senden das nicht. In allen Versionen gilt: Sind Sie mit einer Universal ID angemeldet, die zu einem Unternehmen gehört, vermerkt die App einmal pro Besuch, dass sie geöffnet wurde, nie, was Sie darin getan haben.`,
   },
 ]
 

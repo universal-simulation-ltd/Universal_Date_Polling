@@ -49,6 +49,60 @@ export async function verifyHostCode(email: string, token: string): Promise<stri
   return uid
 }
 
+/** Sign this app's client in as an anonymous guest, for a host who would
+ *  rather not give an email address. The poll is then theirs through the
+ *  private admin link (adminLink.ts), not through an account. */
+export async function startGuestSession(): Promise<string> {
+  const { data, error } = await supabase.auth.signInAnonymously()
+  if (error) throw error
+  const uid = data.user?.id
+  if (!uid) throw new Error('Could not start a session — please try again.')
+  return uid
+}
+
+// ---- Private admin links (see adminLink.ts) ---------------------------------
+
+/** 'yes' / 'no' when the server answered, 'unknown' when it could not be asked.
+ *  Exported for tests. Probes `claim_poll` with an empty token, which the
+ *  function answers `false` without touching anything. PostgREST's PGRST202
+ *  ("no such function") means the server has not got admin links yet. */
+export async function probeAdminLinks(client: SupabaseClient): Promise<'yes' | 'no' | 'unknown'> {
+  try {
+    const { error } = await client.rpc('claim_poll', { p_poll_id: '', p_admin_token: '' })
+    if (!error) return 'yes'
+    return error.code === 'PGRST202' || error.code === '42883' ? 'no' : 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
+let adminProbe: Promise<'yes' | 'no' | 'unknown'> | null = null
+
+/** Whether hosts can skip the email step and manage a poll by its private
+ *  admin link instead. False until the server has `claim_poll` and
+ *  `polls.admin_token_hash` — until then the app keeps asking every guest host
+ *  to confirm an email address, exactly as before. Asked once per page load
+ *  (a failed ask is tried again next time). */
+export async function adminLinksSupported(): Promise<boolean> {
+  // The token is hashed with WebCrypto (adminLink.ts), which every place the
+  // app runs has; without it, stay on the email path. (Inlined rather than
+  // imported: adminLink.ts imports this module.)
+  if (typeof globalThis.crypto?.subtle?.digest !== 'function') return false
+  if (!adminProbe) adminProbe = probeAdminLinks(supabase)
+  const answer = await adminProbe
+  if (answer === 'unknown') adminProbe = null
+  return answer === 'yes'
+}
+
+/** Swap an admin token for host rights: on success the session on `client`
+ *  becomes the poll's host, so every host-only call works as usual. False when
+ *  the token does not match this poll. */
+export async function claimPoll(client: SupabaseClient, pollId: string, token: string): Promise<boolean> {
+  const { data, error } = await client.rpc('claim_poll', { p_poll_id: pollId, p_admin_token: token })
+  if (error) throw error
+  return data === true
+}
+
 export async function currentUser(): Promise<{ id: string; email: string | null } | null> {
   const { data } = await supabase.auth.getUser()
   return data.user ? { id: data.user.id, email: data.user.email ?? null } : null
@@ -68,6 +122,9 @@ export async function createPoll(
   p: NewPoll,
   hostUserId: string,
   hostEmail: string,
+  /** SHA-256 of the poll's admin token (adminLink.ts), or null for none. Only
+   *  passed once `adminLinksSupported()` says the column exists. */
+  adminTokenHash: string | null = null,
 ): Promise<Poll> {
   const row = {
     id: p.id,
@@ -88,6 +145,7 @@ export async function createPoll(
     // names the column, so this build still works against a database that
     // hasn't taken 0120 yet — it just can't make booking pages.
     ...(p.booking_mode ? { booking_mode: true } : {}),
+    ...(adminTokenHash ? { admin_token_hash: adminTokenHash } : {}),
   }
   const { data, error } = await client.from('polls').insert(row).select().single()
   if (error) throw error
@@ -128,9 +186,12 @@ const LOGO_EXT: Record<string, string> = {
  *  we say so ourselves rather than surfacing a raw storage error. */
 const POLL_LOGO_BUCKET_LIMIT = 2 * 1024 * 1024
 
-/** Upload a guest host's logo to the public `poll-logos` bucket under their own
- *  uid (RLS scopes writes to auth.uid()), returning the public URL to snapshot
- *  onto the poll. `client` must be signed in as `hostUserId`.
+/** How long a poll's logo link works: 400 days, longer than any poll lives. */
+const POLL_LOGO_LINK_SECONDS = 400 * 86_400
+
+/** Upload a guest host's logo to the `poll-logos` bucket under their own uid
+ *  (RLS scopes writes to auth.uid()), returning a long-lived signed URL to
+ *  snapshot onto the poll. `client` must be signed in as `hostUserId`.
  *
  *  The file is shrunk in the browser first (same `@unisim/sdk` helper the hub's
  *  org branding uses) — the logo renders 36px tall at up to 200px wide, so
@@ -156,6 +217,13 @@ export async function uploadPollLogo(
     .from('poll-logos')
     .upload(path, upload, { contentType: upload.type, upsert: false })
   if (error) throw error
+  // A signed link rather than the bucket's public one, so the logo keeps
+  // showing once the bucket stops being public (signing is allowed by the
+  // owner-read policy the bucket already has). It outlives any poll: 180 days
+  // of validity plus 30 before deletion. If signing fails for any reason, the
+  // public link still works today.
+  const signed = await client.storage.from('poll-logos').createSignedUrl(path, POLL_LOGO_LINK_SECONDS)
+  if (!signed.error && signed.data?.signedUrl) return signed.data.signedUrl
   return client.storage.from('poll-logos').getPublicUrl(path).data.publicUrl
 }
 

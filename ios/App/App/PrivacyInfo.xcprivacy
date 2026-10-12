@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+  Apple's privacy manifest, required for App Store submission.
+
+  A date poll has to live somewhere everyone with the link can reach it, so
+  what people put into a poll goes to our servers (the suite's Supabase
+  project). What is sent, and when:
+
+  - Creating a poll: its title, the proposed dates and times, time zone,
+    location, colour and settings. Stored against the host's account id: a
+    Universal ID, an account confirmed by an emailed code, or (once the server
+    supports private admin links) an anonymous session id made for the host.
+  - The host's email address, only if they give one: for response alerts and
+    booking emails, confirmed with a one-time code. Optional once admin links
+    are live; until then a guest host confirms one to create a poll.
+  - A logo the host uploads for the poll page (an image, shrunk on the phone
+    first).
+  - Answering a poll: the name typed and the free / if need be / not free
+    choices. Optionally an email address, so the host can send the confirmed
+    time. On a booking page, the guest's name and email address.
+  - Connecting a Google or Microsoft calendar (host only, optional): the
+    server keeps the connection and reads busy times (and, for Microsoft, event
+    titles) to shade the host's calendar view; it can add a confirmed time to
+    that calendar when asked.
+  - Signing in with a Universal ID (optional): the email and the account id.
+  - While signed in with a company, one "the app was opened" event per launch
+    (the SDK's <UsageTracker />). Nothing about the poll. Declared as product
+    interaction, for analytics.
+
+  No suite user count from the phone app: the SDK's presence heartbeat (a
+  random install id every 45 s) is switched off in the iOS/Android shell
+  (src/main.tsx `presence: false` when Capacitor is native). So no Device ID
+  is collected. The website still sends it; it is not covered by this
+  manifest.
+
+  All of it goes to our own servers (email is delivered by a sending service
+  on our behalf). Nothing is used for tracking, and there are no third-party
+  analytics or advertising SDKs. "Add to calendar" builds the event on the
+  phone.
+
+  Required-reason APIs: the @capacitor/filesystem pod is linked into the app
+  and its `stat` reads file creation and modification dates, only on files in
+  the app's own container; it ships no manifest of its own. Capacitor's core
+  frameworks carry their own manifests, and @capacitor/share and the SDK's
+  UnisimSdk pod (Keychain only) use none of the listed APIs.
+
+  Keep this in step with store-assets/data-safety.json and the App Store
+  Connect privacy answers.
+-->
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!-- @capacitor/filesystem's stat: files in the app container. C617.1. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array>
+		<dict>
+			<!-- A respondent's name; a booking guest's name. -->
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeName</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- Host email (alerts, booking emails, sign-in code), a respondent's
+			     optional email, a booking guest's email, the Universal ID email. -->
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeEmailAddress</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- The host's account id (Universal ID, email-code account, or an
+			     anonymous host session), which owns the poll. -->
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeUserID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- A logo image the host uploads for the poll page. -->
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePhotosorVideos</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- The poll (title, times, location, settings), everyone's answers,
+			     and a connected calendar's busy times. -->
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- One "session.opened" event per launch, only while signed in
+			     with a company (<UsageTracker />). -->
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

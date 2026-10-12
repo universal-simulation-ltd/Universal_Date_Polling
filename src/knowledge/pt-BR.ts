@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Os resultados somam as respostas de cada opção, e os horários que servem para mais gente se destacam.
 5. Quem organiza confirma o horário escolhido, e todos que abrirem o link passam a vê-lo.
 
-Ninguém precisa de conta para responder. Só quem organiza precisa entrar ou confirmar o e-mail, então não dá para criar enquetes de forma anônima.
+Ninguém precisa de conta para responder. Nem quem organiza: dá para entrar, confirmar um e-mail ou simplesmente guardar o link de administração privado da enquete.
 
 ## Dois tipos de enquete
 
@@ -66,7 +66,7 @@ Se você criar uma enquete durante uma viagem, seu dispositivo pode estar no fus
 
 1. Dê um título à enquete e escolha entre horários ou dias inteiros.
 2. Adicione as opções. Se você conectou uma agenda, os horários em que já está ocupado aparecem sombreados, e **Suggest times** pode preencher a enquete com quatro opções do seu tempo livre: só em dias úteis, entre 10:00 e 16:00 no fuso da enquete, e no máximo uma de manhã e uma à tarde no mesmo dia.
-3. Confirme seu e-mail com um código de uso único, ou entre com seu Universal ID.
+3. Entre com seu Universal ID, ou informe seu e-mail e confirme-o com um código de uso único. O e-mail é opcional: sem ele, você recebe um link de administração privado (veja abaixo).
 4. Compartilhe o link.
 
 ## Mudar de ideia
@@ -87,9 +87,13 @@ A partir desse aviso você pode:
 
 Cada resultado, e também o aviso de confirmação, tem um botão **Add to calendar** com Google Agenda, Outlook ou um arquivo de agenda para apps como o Calendário da Apple. O evento é montado no seu dispositivo.
 
+## Seu link de administração privado
+
+Se você criar uma enquete sem entrar, também recebe um link de administração privado. Qualquer pessoa que o abrir pode gerenciar a enquete: confirmar um horário, alterá-lo ou excluí-la. Por isso, guarde-o só para você, em um lugar seguro. Se você não informou um e-mail, ele é a única forma de gerenciar a enquete de outro dispositivo. Este dispositivo se lembra dele, e a página da enquete permite copiá-lo de novo. Nossos servidores guardam só uma impressão digital de mão única (um hash), nunca o link em si.
+
 ## Encontrar suas enquetes de novo
 
-Quando você está conectado como organizador, a página de criação lista suas enquetes ativas, com quantas pessoas responderam, o horário confirmado se houver e quando cada link expira. Você pode copiar um link, excluir uma enquete ou excluir de uma vez todas as enquetes expiradas.`,
+No dispositivo em que você as criou, ou sempre que estiver conectado como organizador, a página de criação lista suas enquetes ativas, com quantas pessoas responderam, o horário confirmado se houver e quando cada link expira. Você pode copiar um link, excluir uma enquete ou excluir de uma vez todas as enquetes expiradas.`,
   },
   {
     id: 'poll-options',
@@ -100,7 +104,7 @@ Quando você está conectado como organizador, a página de criação lista suas
 
 ## Página de agendamento ("Just the two of us")
 
-Para um encontro a dois. Em vez de reunir a disponibilidade de todos, a pessoa para quem você envia o link escolhe um dos seus horários, informa nome e e-mail, e o horário é reservado na hora. Você não precisa confirmar nada, e os dois recebem um convite de agenda por e-mail. Se você conectou uma agenda que permita isso, o convite pode sair da sua própria agenda. Você pode cancelar um agendamento depois, e a outra pessoa é avisada.
+Para um encontro a dois. Em vez de reunir a disponibilidade de todos, a pessoa para quem você envia o link escolhe um dos seus horários, informa nome e e-mail, e o horário é reservado na hora. Você não precisa confirmar nada, e os dois recebem um convite de agenda por e-mail. Se você conectou uma agenda que permita isso, o convite pode sair da sua própria agenda. Você pode cancelar um agendamento depois, e a outra pessoa é avisada. Uma página de agendamento precisa do seu e-mail, porque é para lá que os agendamentos são enviados.
 
 ## Validade do link
 
@@ -108,7 +112,7 @@ O link de uma enquete funciona por 7, 30, 90 ou 180 dias. De propósito, não ex
 
 ## Alertas de resposta
 
-Marque esta opção para receber um e-mail sempre que uma pessoa nova responder. Quem altera uma resposta já dada não gera outro e-mail. Os alertas não aparecem em uma página de agendamento, porque cada agendamento já envia um e-mail para você.
+Marque esta opção para receber um e-mail sempre que uma pessoa nova responder. Quem altera uma resposta já dada não gera outro e-mail. Os alertas não aparecem em uma página de agendamento, porque cada agendamento já envia um e-mail para você. Os alertas precisam do seu e-mail.
 
 ## Sua agenda
 
@@ -140,10 +144,11 @@ Os links das enquetes têm dez caracteres aleatórios, o que os torna muito dif�
 ## Só quem organiza pode ver
 
 - Os e-mails que os participantes escolheram deixar. Eles servem para enviar o horário confirmado e preencher os convites de agenda, e nunca são mostrados aos outros participantes.
+- O link de administração privado da enquete, desde que quem organiza o guarde para si. Qualquer pessoa que o tenha pode gerenciar a enquete.
 
 ## Ninguém mais vê
 
-- O e-mail de quem organiza. Ele fica guardado para enviar os alertas e os e-mails de agendamento, e não aparece na página da enquete.
+- O e-mail de quem organiza, se tiver sido informado. Ele fica guardado para enviar os alertas e os e-mails de agendamento, e não aparece na página da enquete.
 
 ## Seu nome é sua chave
 
@@ -164,11 +169,12 @@ Você pode responder sem informar nenhum e-mail. Se deixar um, quem organiza pod
 
 Uma enquete precisa ficar em algum lugar que todos consigam acessar, então enquetes e respostas ficam guardadas em nossos servidores. Isso inclui:
 
-- A enquete em si: título, opções, fuso horário, configurações e o e-mail de quem organiza.
+- A enquete em si: título, opções, fuso horário, configurações e, se informado, o e-mail de quem organiza.
 - Cada resposta: o nome informado, as escolhas feitas e quando foi salva.
 - Os e-mails que os participantes escolheram deixar, e o nome e o e-mail de quem agenda em uma página de agendamento.
 - Um logotipo enviado por quem organiza. Os logotipos ficam em um lugar onde qualquer pessoa com o link da enquete pode carregá-los, porque a página precisa exibi-los.
 - Se quem organiza conectou uma agenda, as chaves de acesso dessa conexão. Elas ficam só no servidor, nunca são enviadas ao app e só são usadas para fazer o que quem organiza pediu. Desconectar apaga essas chaves.
+- Para uma enquete com link de administração privado, uma impressão digital de mão única (um hash) desse link, usada para conferi-lo quando é aberto. O link em si não é guardado.
 
 Tudo trafega por conexões criptografadas e é protegido por regras de acesso. Não há criptografia de ponta a ponta, então nossos sistemas conseguem tecnicamente ler esses dados.
 
@@ -191,11 +197,15 @@ Os e-mails são enviados em nosso nome por um serviço de envio de e-mails.
 
 ## No seu dispositivo
 
-Este dispositivo lembra o nome e o e-mail da sua última resposta, suas configurações de exibição e, se você organiza enquetes, seu login. Os eventos que você adiciona com **Add to calendar** são montados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
+Este dispositivo lembra o nome e o e-mail da sua última resposta, suas configurações de exibição e, se você organiza enquetes, seu login e os links de administração privados das enquetes criadas ou abertas aqui. Os eventos que você adiciona com **Add to calendar** são montados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
 
 ## Seu Universal ID
 
-Quem organiza pode entrar com um Universal ID, a conta única compartilhada pelos apps da UNI·SIM, ou simplesmente confirmar um e-mail com um código de uso único. Responder a uma enquete nunca exige conta.`,
+Quem organiza pode entrar com um Universal ID, a conta única compartilhada pelos apps da UNI·SIM, confirmar um e-mail com um código de uso único ou simplesmente guardar o link de administração privado da enquete. Responder a uma enquete nunca exige conta.
+
+## Contagem de usuários
+
+No site, o app avisa nossos servidores de tempos em tempos que está aberto, para podermos contar quantas pessoas usam os apps da UNI·SIM. Ele envia um número aleatório que este navegador cria por conta própria (nem seu nome, nem seu e-mail), o tipo de dispositivo e o nome do app, além da sua conta se você estiver conectado. Os apps para iPhone e Android não enviam isso. Em todas as versões, se você estiver conectado com um Universal ID vinculado a uma empresa, o app registra uma vez por visita que foi aberto, nunca o que você fez nele.`,
   },
 ]
 

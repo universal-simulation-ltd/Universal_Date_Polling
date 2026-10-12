@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Les résultats additionnent les réponses pour chaque option : les créneaux qui conviennent au plus grand nombre ressortent.
 5. L’organisateur confirme le créneau retenu, et toute personne qui ouvre le lien le voit.
 
-Personne n’a besoin de compte pour répondre. Seul l’organisateur doit se connecter ou confirmer son adresse e-mail, si bien qu’un sondage ne peut pas être créé de façon anonyme.
+Personne n’a besoin de compte pour répondre. L’organisateur non plus : il peut se connecter, confirmer une adresse e-mail, ou simplement garder le lien d’administration privé du sondage.
 
 ## Deux types de sondage
 
@@ -66,7 +66,7 @@ Si vous créez un sondage en voyage, votre appareil est peut-être réglé sur l
 
 1. Donnez un titre au sondage et choisissez entre horaires et journées entières.
 2. Ajoutez vos options. Si vous avez connecté un agenda, les moments où vous êtes déjà occupé sont grisés, et **Suggest times** peut remplir le sondage avec quatre options prises dans votre temps libre : en semaine uniquement, entre 10:00 et 16:00 dans le fuseau du sondage, et au plus un créneau le matin et un l’après-midi par jour.
-3. Confirmez votre adresse e-mail avec un code à usage unique, ou connectez-vous avec votre Universal ID.
+3. Connectez-vous avec votre Universal ID, ou ajoutez votre adresse e-mail et confirmez-la avec un code à usage unique. L’e-mail est facultatif : sans lui, vous recevez à la place un lien d’administration privé (voir plus bas).
 4. Partagez le lien.
 
 ## Changer d’avis
@@ -87,9 +87,13 @@ Depuis la bannière, vous pouvez :
 
 Chaque résultat, ainsi que la bannière de confirmation, propose un bouton **Add to calendar** : Google Agenda, Outlook, ou un fichier d’agenda pour des applications comme Calendrier d’Apple. L’événement est préparé sur votre appareil.
 
+## Votre lien d’administration privé
+
+Si vous créez un sondage sans vous connecter, vous recevez aussi un lien d’administration privé. Toute personne qui l’ouvre peut gérer le sondage : confirmer un créneau, le modifier ou le supprimer. Gardez-le donc pour vous, et conservez-le en lieu sûr. Si vous n’avez pas donné d’adresse e-mail, c’est le seul moyen de gérer le sondage depuis un autre appareil. Cet appareil s’en souvient, et la page du sondage vous permet de le copier à nouveau. Nos serveurs n’en gardent qu’une empreinte à sens unique (un hachage), jamais le lien lui-même.
+
 ## Retrouver vos sondages
 
-Lorsque vous êtes connecté en tant qu’organisateur, la page de création liste vos sondages actifs, avec le nombre de réponses, le créneau confirmé s’il y en a un, et la date d’expiration de chaque lien. Vous pouvez copier un lien, supprimer un sondage, ou supprimer d’un coup tous vos sondages expirés.`,
+Sur l’appareil où vous les avez créés, ou chaque fois que vous êtes connecté en tant qu’organisateur, la page de création liste vos sondages actifs, avec le nombre de réponses, le créneau confirmé s’il y en a un, et la date d’expiration de chaque lien. Vous pouvez copier un lien, supprimer un sondage, ou supprimer d’un coup tous vos sondages expirés.`,
   },
   {
     id: 'poll-options',
@@ -100,7 +104,7 @@ Lorsque vous êtes connecté en tant qu’organisateur, la page de création lis
 
 ## Page de réservation (« Just the two of us »)
 
-Pour un rendez-vous en tête-à-tête. Au lieu de recueillir les disponibilités de chacun, la personne à qui vous envoyez le lien choisit l’un de vos créneaux, saisit son nom et son adresse e-mail, et le rendez-vous est réservé immédiatement. Vous n’avez rien à confirmer, et vous recevez tous les deux une invitation d’agenda par e-mail. Si vous avez connecté un agenda qui le permet, l’invitation peut venir de votre propre agenda. Vous pouvez annuler une réservation plus tard, et la personne en est informée.
+Pour un rendez-vous en tête-à-tête. Au lieu de recueillir les disponibilités de chacun, la personne à qui vous envoyez le lien choisit l’un de vos créneaux, saisit son nom et son adresse e-mail, et le rendez-vous est réservé immédiatement. Vous n’avez rien à confirmer, et vous recevez tous les deux une invitation d’agenda par e-mail. Si vous avez connecté un agenda qui le permet, l’invitation peut venir de votre propre agenda. Vous pouvez annuler une réservation plus tard, et la personne en est informée. Une page de réservation nécessite votre adresse e-mail, car c’est là que vos réservations sont envoyées.
 
 ## Validité du lien
 
@@ -108,7 +112,7 @@ Le lien d’un sondage fonctionne pendant 7, 30, 90 ou 180 jours. Il n’existe 
 
 ## Alertes de réponse
 
-Cochez cette option pour recevoir un e-mail chaque fois qu’une nouvelle personne répond. Une personne qui modifie une réponse déjà donnée ne déclenche pas de nouvel e-mail. Les alertes ne sont pas proposées pour une page de réservation, qui vous envoie de toute façon un e-mail à chaque réservation.
+Cochez cette option pour recevoir un e-mail chaque fois qu’une nouvelle personne répond. Une personne qui modifie une réponse déjà donnée ne déclenche pas de nouvel e-mail. Les alertes ne sont pas proposées pour une page de réservation, qui vous envoie de toute façon un e-mail à chaque réservation. Les alertes nécessitent votre adresse e-mail.
 
 ## Votre agenda
 
@@ -140,10 +144,11 @@ Les liens de sondage sont composés de dix caractères aléatoires, ce qui les r
 ## Seul l’organisateur peut voir
 
 - Les adresses e-mail que les participants ont choisi de laisser. Elles servent à envoyer le créneau confirmé et à remplir les invitations d’agenda, et ne sont jamais montrées aux autres participants.
+- Le lien d’administration privé du sondage, tant que l’organisateur le garde pour lui. Toute personne qui l’a peut gérer le sondage.
 
 ## Personne d’autre ne voit
 
-- L’adresse e-mail de l’organisateur. Elle sert à lui envoyer ses alertes et les e-mails de réservation, et n’apparaît pas sur la page du sondage.
+- L’adresse e-mail de l’organisateur, s’il en a donné une. Elle sert à lui envoyer ses alertes et les e-mails de réservation, et n’apparaît pas sur la page du sondage.
 
 ## Votre nom sert de clé
 
@@ -164,11 +169,12 @@ Vous pouvez répondre sans donner d’adresse e-mail. Si vous en laissez une, l�
 
 Un sondage doit être accessible à tous : les sondages et les réponses sont donc conservés sur nos serveurs. Cela comprend :
 
-- Le sondage lui-même : titre, options, fuseau horaire, réglages et adresse e-mail de l’organisateur.
+- Le sondage lui-même : titre, options, fuseau horaire, réglages et, s’il l’a donnée, adresse e-mail de l’organisateur.
 - Chaque réponse : le nom indiqué, les choix faits et la date d’enregistrement.
 - Les adresses e-mail que les participants ont choisi de laisser, ainsi que le nom et l’adresse e-mail de la personne qui réserve sur une page de réservation.
 - Un logo envoyé par l’organisateur. Les logos sont stockés à un endroit où toute personne ayant le lien du sondage peut les charger, car la page doit pouvoir les afficher.
 - Si l’organisateur a connecté un agenda, les clés d’accès de cette connexion. Elles restent uniquement sur le serveur, ne sont jamais envoyées à l’application, et ne servent qu’à faire ce que l’organisateur a demandé. La déconnexion les supprime.
+- Pour un sondage doté d’un lien d’administration privé, une empreinte à sens unique (un hachage) de ce lien, qui sert à le vérifier quand il est ouvert. Le lien lui-même n’est pas conservé.
 
 Tout circule par des connexions chiffrées et est protégé par des règles d’accès. Ce n’est pas chiffré de bout en bout : nos systèmes peuvent techniquement lire ces données.
 
@@ -191,11 +197,15 @@ Les e-mails sont envoyés en notre nom par un service d’envoi d’e-mails.
 
 ## Sur votre appareil
 
-Cet appareil retient le nom et l’adresse e-mail de votre dernière réponse, vos réglages d’affichage et, si vous organisez, votre connexion. Les événements ajoutés avec **Add to calendar** sont préparés sur votre appareil. Choisir Google ou Outlook ouvre ce service avec les détails de l’événement déjà remplis.
+Cet appareil retient le nom et l’adresse e-mail de votre dernière réponse, vos réglages d’affichage et, si vous organisez, votre connexion et les liens d’administration privés des sondages créés ou ouverts ici. Les événements ajoutés avec **Add to calendar** sont préparés sur votre appareil. Choisir Google ou Outlook ouvre ce service avec les détails de l’événement déjà remplis.
 
 ## Votre Universal ID
 
-Les organisateurs peuvent se connecter avec un Universal ID, le compte unique partagé par les applications UNI·SIM, ou simplement confirmer une adresse e-mail avec un code à usage unique. Répondre à un sondage ne demande jamais de compte.`,
+Les organisateurs peuvent se connecter avec un Universal ID, le compte unique partagé par les applications UNI·SIM, confirmer une adresse e-mail avec un code à usage unique, ou simplement garder le lien d’administration privé du sondage. Répondre à un sondage ne demande jamais de compte.
+
+## Compter les utilisateurs
+
+Sur le site web, l’application signale régulièrement à nos serveurs qu’elle est ouverte, pour que nous puissions compter combien de personnes utilisent les applications UNI·SIM. Elle envoie un nombre aléatoire que ce navigateur crée lui-même (ni votre nom, ni votre e-mail), le type d’appareil et le nom de l’application, ainsi que votre compte si vous êtes connecté. Les applications iPhone et Android n’envoient pas cela. Sur toutes les versions, si vous êtes connecté avec un Universal ID rattaché à une entreprise, l’application enregistre une fois par visite qu’elle a été ouverte, jamais ce que vous y avez fait.`,
   },
 ]
 

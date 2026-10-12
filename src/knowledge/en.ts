@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. The results add up the answers for every option, so the times that suit the most people stand out.
 5. The host confirms the winning time, and everyone who opens the link sees it.
 
-Nobody needs an account to answer. Only the host has to sign in or confirm their email address, so polls cannot be created anonymously.
+Nobody needs an account to answer. The host doesn't need one either: they can sign in, confirm an email address, or simply keep the poll's private admin link.
 
 ## Two kinds of poll
 
@@ -66,7 +66,7 @@ If you create a poll while travelling, your device may be set to the zone you ar
 
 1. Give the poll a title and choose times or whole days.
 2. Add your options. If you have connected a calendar, times you are already busy are shaded, and **Suggest times** can fill the poll with four options from your free time: weekdays only, between 10:00 and 16:00 in the poll's time zone, and at most one morning and one afternoon on any day.
-3. Confirm your email address with a one-time code, or sign in with your Universal ID.
+3. Sign in with your Universal ID, or add your email address and confirm it with a one-time code. The email is optional: leave it out and you get a private admin link instead (see below).
 4. Share the link.
 
 ## Changing your mind
@@ -87,9 +87,13 @@ From the banner you can:
 
 Every result, and the confirmed banner, has an **Add to calendar** button with Google Calendar, Outlook, or a calendar file for apps such as Apple Calendar. The calendar entry is put together on your device.
 
+## Your private admin link
+
+If you create a poll without signing in, you also get a private admin link. Anyone who opens it can manage the poll: confirm a time, change it or delete it. So keep it to yourself, and save it somewhere safe. If you didn't give an email address, it is the only way to manage the poll from another device. This device remembers it, and the poll page lets you copy it again. Our servers keep only a one-way fingerprint (a hash) of it, never the link itself.
+
 ## Finding your polls again
 
-When you are signed in as the host, the create page lists your active polls, with how many people have answered, the confirmed time if there is one, and when each link expires. You can copy a link, delete a poll, or delete all your expired polls in one go.`,
+On the device you created them on, or whenever you are signed in as the host, the create page lists your active polls, with how many people have answered, the confirmed time if there is one, and when each link expires. You can copy a link, delete a poll, or delete all your expired polls in one go.`,
   },
   {
     id: 'poll-options',
@@ -100,7 +104,7 @@ When you are signed in as the host, the create page lists your active polls, wit
 
 ## Booking page ("Just the two of us")
 
-For a one-to-one meeting. Instead of collecting everyone's availability, the person you send the link to picks one of your times, enters their name and email address, and the time is booked on the spot. There is nothing for you to confirm, and you both receive a calendar invitation by email. If you have connected a calendar that allows it, the invitation can come from your own calendar instead. You can cancel a booking later, and the guest is told.
+For a one-to-one meeting. Instead of collecting everyone's availability, the person you send the link to picks one of your times, enters their name and email address, and the time is booked on the spot. There is nothing for you to confirm, and you both receive a calendar invitation by email. If you have connected a calendar that allows it, the invitation can come from your own calendar instead. You can cancel a booking later, and the guest is told. A booking page needs your email address, because that is where your bookings are sent.
 
 ## Link validity
 
@@ -108,7 +112,7 @@ A poll's link works for 7, 30, 90 or 180 days. There is deliberately no "never e
 
 ## Response alerts
 
-Tick this to be emailed each time a new person answers your poll. People who change an answer they have already given do not trigger another email. Alerts are not offered on a booking page, because a booking always emails you anyway.
+Tick this to be emailed each time a new person answers your poll. People who change an answer they have already given do not trigger another email. Alerts are not offered on a booking page, because a booking always emails you anyway. Alerts need your email address.
 
 ## Your calendar
 
@@ -140,10 +144,11 @@ Poll links are made of ten random characters, which makes them very hard to gues
 ## Only the host can see
 
 - Email addresses that respondents chose to leave. They are used to send the confirmed time and to fill in calendar invitations, and they are never shown to other respondents.
+- The poll's private admin link, as long as the host keeps it to themselves. Anyone who has it can manage the poll.
 
 ## Nobody else sees
 
-- The host's own email address. It is kept for sending the host's alerts and booking emails, and is not shown on the poll page.
+- The host's own email address, if they gave one. It is kept for sending the host's alerts and booking emails, and is not shown on the poll page.
 
 ## Your name is your key
 
@@ -164,11 +169,12 @@ You can answer without giving an email address. If you leave one, the host can e
 
 A poll has to live somewhere everyone can reach it, so polls and answers are stored on our servers. That includes:
 
-- The poll itself: its title, options, time zone, settings, and the host's email address.
+- The poll itself: its title, options, time zone, settings, and the host's email address if they gave one.
 - Each answer: the name given, the choices made, and when it was saved.
 - Email addresses respondents chose to leave, and a booking guest's name and email address.
 - A logo the host uploaded. Logos are stored where anyone with the poll link can load them, because the poll page needs to show them.
 - If the host connected a calendar, the access keys for that connection. These are kept on the server only, are never sent to the app, and are used only to do what the host asked. Disconnecting deletes them.
+- For a poll with a private admin link, a one-way fingerprint (a hash) of it, used to check the link when it is opened. The link itself is not stored.
 
 Everything travels over encrypted connections and is protected by access rules. It is not end-to-end encrypted, so our systems can technically read it.
 
@@ -191,11 +197,15 @@ Emails are sent through an email delivery service on our behalf.
 
 ## On your device
 
-This device remembers the name and email address you last answered with, your display settings, and, if you host, your sign-in. Calendar entries you add with **Add to calendar** are put together on your device. Choosing Google or Outlook opens that service with the event details filled in.
+This device remembers the name and email address you last answered with, your display settings, and, if you host, your sign-in and the private admin links of polls you created or opened here. Calendar entries you add with **Add to calendar** are put together on your device. Choosing Google or Outlook opens that service with the event details filled in.
 
 ## Your Universal ID
 
-Hosts can sign in with a Universal ID, the single account shared across UNI·SIM apps, or simply confirm an email address with a one-time code. Answering a poll never needs an account.`,
+Hosts can sign in with a Universal ID, the single account shared across UNI·SIM apps, confirm an email address with a one-time code, or simply keep the poll's private admin link. Answering a poll never needs an account.
+
+## Counting users
+
+On the website, the app tells our servers every so often that it is open, so we can count how many people use UNI·SIM apps. It sends a random number this browser makes for itself (not your name or email), the kind of device and the app's name, and your account if you are signed in. The iPhone and Android apps do not send this. In every version, if you are signed in with a Universal ID that belongs to a company, the app records once per visit that it was opened, never what you did in it.`,
   },
 ]
 

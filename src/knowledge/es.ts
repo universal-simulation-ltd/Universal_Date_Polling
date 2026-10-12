@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. Los resultados suman las respuestas de cada opción, de modo que destacan las que mejor encajan con más personas.
 5. El organizador confirma la opción ganadora y todo el que abra el enlace la ve.
 
-Nadie necesita una cuenta para responder. Solo el organizador tiene que iniciar sesión o confirmar su correo electrónico, así que no se pueden crear encuestas de forma anónima.
+Nadie necesita una cuenta para responder. El organizador tampoco: puede iniciar sesión, confirmar un correo electrónico o simplemente guardar el enlace de administración privado de la encuesta.
 
 ## Dos tipos de encuesta
 
@@ -66,7 +66,7 @@ Si crea una encuesta mientras viaja, su dispositivo puede estar en la zona del l
 
 1. Ponga un título a la encuesta y elija entre horas o días completos.
 2. Añada sus opciones. Si ha conectado un calendario, las horas en las que ya está ocupado aparecen sombreadas, y **Suggest times** puede rellenar la encuesta con cuatro opciones de su tiempo libre: solo días laborables, entre las 10:00 y las 16:00 en la zona horaria de la encuesta, y como mucho una por la mañana y otra por la tarde en un mismo día.
-3. Confirme su correo electrónico con un código de un solo uso, o inicie sesión con su Universal ID.
+3. Inicie sesión con su Universal ID, o añada su correo electrónico y confírmelo con un código de un solo uso. El correo es opcional: si no lo indica, recibirá en su lugar un enlace de administración privado (vea más abajo).
 4. Comparta el enlace.
 
 ## Cambiar de opinión
@@ -87,9 +87,13 @@ Desde ese aviso puede:
 
 Cada resultado, y también el aviso de confirmación, tiene un botón **Add to calendar** con Google Calendar, Outlook o un archivo de calendario para aplicaciones como Calendario de Apple. El evento se prepara en su dispositivo.
 
+## Su enlace de administración privado
+
+Si crea una encuesta sin iniciar sesión, también recibe un enlace de administración privado. Cualquiera que lo abra puede gestionar la encuesta: confirmar una hora, cambiarla o eliminarla. Por eso, no lo comparta y guárdelo en un lugar seguro. Si no indicó un correo electrónico, es la única forma de gestionar la encuesta desde otro dispositivo. Este dispositivo lo recuerda, y la página de la encuesta le permite volver a copiarlo. Nuestros servidores solo guardan una huella de un solo sentido (un hash), nunca el enlace en sí.
+
 ## Volver a encontrar sus encuestas
 
-Cuando ha iniciado sesión como organizador, la página de creación muestra sus encuestas activas, con cuántas personas han respondido, la hora confirmada si la hay y cuándo caduca cada enlace. Puede copiar un enlace, eliminar una encuesta o eliminar de una vez todas sus encuestas caducadas.`,
+En el dispositivo donde las creó, o siempre que haya iniciado sesión como organizador, la página de creación muestra sus encuestas activas, con cuántas personas han respondido, la hora confirmada si la hay y cuándo caduca cada enlace. Puede copiar un enlace, eliminar una encuesta o eliminar de una vez todas sus encuestas caducadas.`,
   },
   {
     id: 'poll-options',
@@ -100,7 +104,7 @@ Cuando ha iniciado sesión como organizador, la página de creación muestra sus
 
 ## Página de reserva («Just the two of us»)
 
-Para una reunión a solas con una persona. En lugar de recoger la disponibilidad de todos, la persona a quien envía el enlace elige una de sus horas, introduce su nombre y su correo, y la cita queda reservada al momento. Usted no tiene que confirmar nada, y ambos reciben una invitación de calendario por correo. Si ha conectado un calendario que lo permita, la invitación puede salir de su propio calendario. Puede cancelar una reserva más tarde, y se avisa a la otra persona.
+Para una reunión a solas con una persona. En lugar de recoger la disponibilidad de todos, la persona a quien envía el enlace elige una de sus horas, introduce su nombre y su correo, y la cita queda reservada al momento. Usted no tiene que confirmar nada, y ambos reciben una invitación de calendario por correo. Si ha conectado un calendario que lo permita, la invitación puede salir de su propio calendario. Puede cancelar una reserva más tarde, y se avisa a la otra persona. Una página de reserva necesita su correo electrónico, porque es adonde se envían sus reservas.
 
 ## Validez del enlace
 
@@ -108,7 +112,7 @@ El enlace de una encuesta funciona durante 7, 30, 90 o 180 días. No existe a pr
 
 ## Avisos de respuesta
 
-Marque esta opción para recibir un correo cada vez que responda una persona nueva. Quien cambie una respuesta que ya había dado no genera otro correo. Los avisos no se ofrecen en una página de reserva, porque una reserva siempre le envía un correo de todos modos.
+Marque esta opción para recibir un correo cada vez que responda una persona nueva. Quien cambie una respuesta que ya había dado no genera otro correo. Los avisos no se ofrecen en una página de reserva, porque una reserva siempre le envía un correo de todos modos. Los avisos necesitan su correo electrónico.
 
 ## Su calendario
 
@@ -140,10 +144,11 @@ Los enlaces de las encuestas tienen diez caracteres aleatorios, lo que los hace 
 ## Solo el organizador puede ver
 
 - Las direcciones de correo que los participantes decidieron dejar. Se usan para enviar la hora confirmada y rellenar las invitaciones de calendario, y nunca se muestran a los demás participantes.
+- El enlace de administración privado de la encuesta, mientras el organizador no lo comparta. Cualquiera que lo tenga puede gestionar la encuesta.
 
 ## Nadie más ve
 
-- La dirección de correo del organizador. Se guarda para enviarle sus avisos y los correos de reserva, y no aparece en la página de la encuesta.
+- La dirección de correo del organizador, si la indicó. Se guarda para enviarle sus avisos y los correos de reserva, y no aparece en la página de la encuesta.
 
 ## Su nombre es su clave
 
@@ -164,11 +169,12 @@ Puede responder sin dar ninguna dirección de correo. Si deja una, el organizado
 
 Una encuesta tiene que estar en algún sitio al que todos puedan acceder, así que las encuestas y las respuestas se guardan en nuestros servidores. Esto incluye:
 
-- La encuesta en sí: título, opciones, zona horaria, ajustes y el correo del organizador.
+- La encuesta en sí: título, opciones, zona horaria, ajustes y, si lo indicó, el correo del organizador.
 - Cada respuesta: el nombre indicado, lo que se eligió y cuándo se guardó.
 - Las direcciones de correo que los participantes decidieron dejar, y el nombre y el correo de quien reserva en una página de reserva.
 - Un logotipo que haya subido el organizador. Los logotipos se guardan donde cualquiera con el enlace de la encuesta puede cargarlos, porque la página necesita mostrarlos.
 - Si el organizador conectó un calendario, las claves de acceso de esa conexión. Se guardan solo en el servidor, nunca se envían a la aplicación y solo se usan para hacer lo que el organizador pidió. Al desconectar se eliminan.
+- En una encuesta con enlace de administración privado, una huella de un solo sentido (un hash) de ese enlace, que sirve para comprobarlo cuando se abre. El enlace en sí no se guarda.
 
 Todo viaja por conexiones cifradas y está protegido por reglas de acceso. No está cifrado de extremo a extremo, así que nuestros sistemas pueden leerlo técnicamente.
 
@@ -191,11 +197,15 @@ Los correos se envían a través de un servicio de envío de correo en nuestro n
 
 ## En su dispositivo
 
-Este dispositivo recuerda el nombre y el correo de su última respuesta, sus ajustes de visualización y, si organiza encuestas, su sesión. Los eventos que añade con **Add to calendar** se preparan en su dispositivo. Elegir Google u Outlook abre ese servicio con los datos del evento ya rellenados.
+Este dispositivo recuerda el nombre y el correo de su última respuesta, sus ajustes de visualización y, si organiza encuestas, su sesión y los enlaces de administración privados de las encuestas que creó o abrió aquí. Los eventos que añade con **Add to calendar** se preparan en su dispositivo. Elegir Google u Outlook abre ese servicio con los datos del evento ya rellenados.
 
 ## Su Universal ID
 
-Los organizadores pueden iniciar sesión con un Universal ID, la cuenta única que comparten las aplicaciones de UNI·SIM, o simplemente confirmar un correo con un código de un solo uso. Responder a una encuesta nunca requiere una cuenta.`,
+Los organizadores pueden iniciar sesión con un Universal ID, la cuenta única que comparten las aplicaciones de UNI·SIM, confirmar un correo con un código de un solo uso o simplemente guardar el enlace de administración privado de la encuesta. Responder a una encuesta nunca requiere una cuenta.
+
+## Contar usuarios
+
+En el sitio web, la aplicación avisa a nuestros servidores cada cierto tiempo de que está abierta, para que podamos contar cuántas personas usan las aplicaciones de UNI·SIM. Envía un número aleatorio que este navegador crea por sí mismo (ni su nombre ni su correo), el tipo de dispositivo y el nombre de la aplicación, además de su cuenta si ha iniciado sesión. Las aplicaciones para iPhone y Android no envían esto. En todas las versiones, si ha iniciado sesión con un Universal ID vinculado a una empresa, la aplicación registra una vez por visita que se abrió, nunca lo que hizo en ella.`,
   },
 ]
 

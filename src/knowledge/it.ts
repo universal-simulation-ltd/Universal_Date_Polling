@@ -16,7 +16,7 @@ const articles: Article[] = [
 4. I risultati sommano le risposte di ogni opzione, così gli orari che vanno bene a più persone risaltano.
 5. Chi organizza conferma l’orario scelto, e chiunque apra il link lo vede.
 
-Nessuno ha bisogno di un account per rispondere. Solo chi organizza deve accedere o confermare il proprio indirizzo email, quindi non si possono creare sondaggi in modo anonimo.
+Nessuno ha bisogno di un account per rispondere. Nemmeno chi organizza: può accedere, confermare un indirizzo email o semplicemente conservare il link di amministrazione privato del sondaggio.
 
 ## Due tipi di sondaggio
 
@@ -66,7 +66,7 @@ Se crei un sondaggio mentre sei in viaggio, il tuo dispositivo potrebbe essere i
 
 1. Dai un titolo al sondaggio e scegli tra orari e giornate intere.
 2. Aggiungi le opzioni. Se hai collegato un calendario, gli orari in cui sei già occupato sono ombreggiati, e **Suggest times** può riempire il sondaggio con quattro opzioni prese dal tuo tempo libero: solo nei giorni feriali, tra le 10:00 e le 16:00 nel fuso del sondaggio, e al massimo una al mattino e una al pomeriggio nello stesso giorno.
-3. Conferma il tuo indirizzo email con un codice monouso, oppure accedi con il tuo Universal ID.
+3. Accedi con il tuo Universal ID, oppure aggiungi il tuo indirizzo email e confermalo con un codice monouso. L’email è facoltativa: se la lasci vuota ricevi invece un link di amministrazione privato (vedi sotto).
 4. Condividi il link.
 
 ## Cambiare idea
@@ -87,9 +87,13 @@ Dal banner puoi:
 
 Ogni risultato, e anche il banner di conferma, ha un pulsante **Add to calendar** con Google Calendar, Outlook o un file di calendario per app come Calendario di Apple. L’evento viene preparato sul tuo dispositivo.
 
+## Il tuo link di amministrazione privato
+
+Se crei un sondaggio senza accedere, ricevi anche un link di amministrazione privato. Chiunque lo apra può gestire il sondaggio: confermare un orario, modificarlo o eliminarlo. Quindi tienilo per te e conservalo in un posto sicuro. Se non hai indicato un indirizzo email, è l’unico modo per gestire il sondaggio da un altro dispositivo. Questo dispositivo lo ricorda, e dalla pagina del sondaggio puoi copiarlo di nuovo. I nostri server ne conservano solo un’impronta a senso unico (un hash), mai il link stesso.
+
 ## Ritrovare i tuoi sondaggi
 
-Quando hai effettuato l’accesso come organizzatore, la pagina di creazione elenca i tuoi sondaggi attivi, con quante persone hanno risposto, l’orario confermato se c’è e quando scade ogni link. Puoi copiare un link, eliminare un sondaggio o eliminare in un colpo solo tutti i sondaggi scaduti.`,
+Sul dispositivo in cui li hai creati, o ogni volta che hai effettuato l’accesso come organizzatore, la pagina di creazione elenca i tuoi sondaggi attivi, con quante persone hanno risposto, l’orario confermato se c’è e quando scade ogni link. Puoi copiare un link, eliminare un sondaggio o eliminare in un colpo solo tutti i sondaggi scaduti.`,
   },
   {
     id: 'poll-options',
@@ -100,7 +104,7 @@ Quando hai effettuato l’accesso come organizzatore, la pagina di creazione ele
 
 ## Pagina di prenotazione («Just the two of us»)
 
-Per un incontro a due. Invece di raccogliere le disponibilità di tutti, la persona a cui mandi il link sceglie uno dei tuoi orari, inserisce nome e indirizzo email, e l’appuntamento viene prenotato subito. Non devi confermare nulla, e ricevete entrambi un invito di calendario via email. Se hai collegato un calendario che lo consente, l’invito può partire dal tuo calendario. Puoi annullare una prenotazione in seguito, e l’altra persona viene avvisata.
+Per un incontro a due. Invece di raccogliere le disponibilità di tutti, la persona a cui mandi il link sceglie uno dei tuoi orari, inserisce nome e indirizzo email, e l’appuntamento viene prenotato subito. Non devi confermare nulla, e ricevete entrambi un invito di calendario via email. Se hai collegato un calendario che lo consente, l’invito può partire dal tuo calendario. Puoi annullare una prenotazione in seguito, e l’altra persona viene avvisata. Una pagina di prenotazione richiede il tuo indirizzo email, perché è lì che vengono inviate le prenotazioni.
 
 ## Validità del link
 
@@ -108,7 +112,7 @@ Il link di un sondaggio funziona per 7, 30, 90 o 180 giorni. Di proposito non c�
 
 ## Avvisi di risposta
 
-Spunta questa opzione per ricevere un’email ogni volta che una nuova persona risponde. Chi modifica una risposta già data non fa partire un’altra email. Gli avvisi non sono disponibili per una pagina di prenotazione, perché ogni prenotazione ti manda comunque un’email.
+Spunta questa opzione per ricevere un’email ogni volta che una nuova persona risponde. Chi modifica una risposta già data non fa partire un’altra email. Gli avvisi non sono disponibili per una pagina di prenotazione, perché ogni prenotazione ti manda comunque un’email. Gli avvisi richiedono il tuo indirizzo email.
 
 ## Il tuo calendario
 
@@ -140,10 +144,11 @@ I link dei sondaggi sono composti da dieci caratteri casuali, il che li rende mo
 ## Solo chi organizza può vedere
 
 - Gli indirizzi email che i partecipanti hanno scelto di lasciare. Servono per inviare l’orario confermato e per compilare gli inviti di calendario, e non vengono mai mostrati agli altri partecipanti.
+- Il link di amministrazione privato del sondaggio, finché chi organizza lo tiene per sé. Chiunque lo abbia può gestire il sondaggio.
 
 ## Nessun altro vede
 
-- L’indirizzo email di chi organizza. Viene conservato per inviargli gli avvisi e le email di prenotazione, e non compare sulla pagina del sondaggio.
+- L’indirizzo email di chi organizza, se l’ha indicato. Viene conservato per inviargli gli avvisi e le email di prenotazione, e non compare sulla pagina del sondaggio.
 
 ## Il tuo nome è la tua chiave
 
@@ -164,11 +169,12 @@ Puoi rispondere senza indicare un indirizzo email. Se ne lasci uno, chi organizz
 
 Un sondaggio deve stare in un posto raggiungibile da tutti, quindi sondaggi e risposte sono conservati sui nostri server. Questo comprende:
 
-- Il sondaggio stesso: titolo, opzioni, fuso orario, impostazioni e indirizzo email di chi organizza.
+- Il sondaggio stesso: titolo, opzioni, fuso orario, impostazioni e, se indicato, l’indirizzo email di chi organizza.
 - Ogni risposta: il nome indicato, le scelte fatte e quando è stata salvata.
 - Gli indirizzi email che i partecipanti hanno scelto di lasciare, e il nome e l’indirizzo email di chi prenota su una pagina di prenotazione.
 - Un logo caricato da chi organizza. I loghi sono conservati dove chiunque abbia il link del sondaggio può caricarli, perché la pagina deve poterli mostrare.
 - Se chi organizza ha collegato un calendario, le chiavi di accesso di quella connessione. Restano solo sul server, non vengono mai inviate all’app e servono solo a fare ciò che chi organizza ha chiesto. Scollegando il calendario vengono eliminate.
+- Per un sondaggio con link di amministrazione privato, un’impronta a senso unico (un hash) del link, usata per verificarlo quando viene aperto. Il link stesso non viene conservato.
 
 Tutto viaggia su connessioni crittografate ed è protetto da regole di accesso. Non è crittografato end-to-end, quindi i nostri sistemi possono tecnicamente leggerlo.
 
@@ -191,11 +197,15 @@ Le email vengono inviate per nostro conto tramite un servizio di invio email.
 
 ## Sul tuo dispositivo
 
-Questo dispositivo ricorda il nome e l’indirizzo email della tua ultima risposta, le impostazioni di visualizzazione e, se organizzi, il tuo accesso. Gli eventi che aggiungi con **Add to calendar** vengono preparati sul tuo dispositivo. Scegliendo Google o Outlook si apre quel servizio con i dettagli dell’evento già compilati.
+Questo dispositivo ricorda il nome e l’indirizzo email della tua ultima risposta, le impostazioni di visualizzazione e, se organizzi, il tuo accesso e i link di amministrazione privati dei sondaggi creati o aperti qui. Gli eventi che aggiungi con **Add to calendar** vengono preparati sul tuo dispositivo. Scegliendo Google o Outlook si apre quel servizio con i dettagli dell’evento già compilati.
 
 ## Il tuo Universal ID
 
-Chi organizza può accedere con un Universal ID, l’unico account condiviso tra le app UNI·SIM, oppure semplicemente confermare un indirizzo email con un codice monouso. Rispondere a un sondaggio non richiede mai un account.`,
+Chi organizza può accedere con un Universal ID, l’unico account condiviso tra le app UNI·SIM, confermare un indirizzo email con un codice monouso oppure semplicemente conservare il link di amministrazione privato del sondaggio. Rispondere a un sondaggio non richiede mai un account.
+
+## Contare gli utenti
+
+Sul sito web, l’app comunica di tanto in tanto ai nostri server che è aperta, così possiamo contare quante persone usano le app UNI·SIM. Invia un numero casuale che questo browser crea da sé (non il tuo nome né la tua email), il tipo di dispositivo e il nome dell’app, più il tuo account se hai effettuato l’accesso. Le app per iPhone e Android non lo inviano. In tutte le versioni, se hai effettuato l’accesso con un Universal ID collegato a un’azienda, l’app registra una volta per visita che è stata aperta, mai cosa ci hai fatto.`,
   },
 ]
 

@@ -12,8 +12,12 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
 ## How it works
 
 - **Create** a poll — title, candidate dates/times, a timezone (defaults to
-  yours). Creating a poll requires verifying your email with a one-time code, so
-  polls can't be spammed anonymously.
+  yours). The host signs in with a Universal ID, confirms an email address with
+  a one-time code, or — once the server supports it — skips both and gets a
+  **private admin link** (`/p/<id>#admin=<token>`) to manage the poll from any
+  device. The token lives in the URL fragment, so it never reaches a server
+  log; the database keeps only its SHA-256 hash (`src/lib/adminLink.ts`).
+  Email is then only needed for response alerts and booking pages.
 - **Share** the generated link. Anyone with it can respond — no account needed.
 - **Respond** — tick each slot you're *free* or *if-need-be*. Times are shown in
   the poll's timezone, with your own local time alongside if they differ.
@@ -71,6 +75,12 @@ A collapsible "More options" panel on the create screen covers:
   delete it sooner). The app shows the countdown on the expired banner and in
   "Your polls".
 - **Timezone** — defaults to the host's, override to any IANA zone.
+
+- **Privacy** — the website counts users with the SDK's presence beat (a
+  random install id); the iPhone and Android apps don't send it
+  (`presence: false` in `src/main.tsx`). The phone builds' store answers are in
+  `ios/App/App/PrivacyInfo.xcprivacy` and `store-assets/data-safety.json`;
+  keep them in step with the code and the in-app knowledge base.
 
 > Host calendar integration (check the host's own availability while building a
 > poll) is a planned follow-up — see the suite docs.
