@@ -203,9 +203,9 @@ Cet appareil retient le nom et l’adresse e-mail de votre dernière réponse, v
 
 Les organisateurs peuvent se connecter avec un Universal ID, le compte unique partagé par les applications UNI·SIM, confirmer une adresse e-mail avec un code à usage unique, ou simplement garder le lien d’administration privé du sondage. Répondre à un sondage ne demande jamais de compte.
 
-## Compter les utilisateurs
+## Compter les ouvertures
 
-Sur le site web, l’application signale régulièrement à nos serveurs qu’elle est ouverte, pour que nous puissions compter combien de personnes utilisent les applications UNI·SIM. Elle envoie un nombre aléatoire que ce navigateur crée lui-même (ni votre nom, ni votre e-mail), le type d’appareil et le nom de l’application, ainsi que votre compte si vous êtes connecté. Les applications iPhone et Android n’envoient pas cela. Sur toutes les versions, si vous êtes connecté avec un Universal ID rattaché à une entreprise, l’application enregistre une fois par visite qu’elle a été ouverte, jamais ce que vous y avez fait.`,
+Sur le site web, la première fois que vous ouvrez l’application chaque jour, elle ajoute un au décompte anonyme des ouvertures du jour, envoyé après votre premier clic ou votre première frappe au clavier. Ce décompte ne contient que le nom de l’application et le type de plateforme (« web » sur le site) : aucun identifiant, aucun compte et rien sur ce que vous faites. Une marque « déjà compté aujourd’hui » reste sur votre appareil et n’est jamais envoyée. Les applications iPhone, Android et pour ordinateur ne l’envoient pas. Sur toutes les versions, si vous êtes connecté avec un Universal ID rattaché à une entreprise, l’application enregistre une fois par visite qu’elle a été ouverte, jamais ce que vous y avez fait.`,
   },
 ]
 

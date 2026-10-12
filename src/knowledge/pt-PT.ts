@@ -203,9 +203,9 @@ Este dispositivo lembra o nome e o endereço de e-mail da sua última resposta, 
 
 Quem organiza pode iniciar sessão com um Universal ID, a conta única partilhada pelas aplicações UNI·SIM, confirmar um endereço de e-mail com um código de utilização única ou simplesmente guardar a ligação de administração privada da sondagem. Responder a uma sondagem nunca exige conta.
 
-## Contagem de utilizadores
+## Contagem de aberturas
 
-No site, a aplicação avisa os nossos servidores de tempos a tempos de que está aberta, para podermos contar quantas pessoas usam as aplicações UNI·SIM. Envia um número aleatório que este navegador cria por si próprio (nem o seu nome, nem o seu e-mail), o tipo de dispositivo e o nome da aplicação, além da sua conta se tiver sessão iniciada. As aplicações para iPhone e Android não enviam isto. Em todas as versões, se tiver sessão iniciada com um Universal ID associado a uma empresa, a aplicação regista uma vez por visita que foi aberta, nunca o que fez nela.`,
+No site, na primeira vez que abre a aplicação em cada dia, soma um à contagem anónima de aberturas do dia, enviada depois do seu primeiro clique ou da primeira tecla premida. Essa contagem contém apenas o nome da aplicação e o tipo de plataforma («web» no site): nenhum identificador, nenhuma conta e nada sobre o que faz. Uma marca de «já contado hoje» fica no seu dispositivo e nunca é enviada. As aplicações para iPhone, Android e computador não a enviam. Em todas as versões, se tiver sessão iniciada com um Universal ID associado a uma empresa, a aplicação regista uma vez por visita que foi aberta, nunca o que fez nela.`,
   },
 ]
 

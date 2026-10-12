@@ -203,9 +203,9 @@ Dieses Gerät merkt sich den Namen und die E-Mail-Adresse Ihrer letzten Antwort,
 
 Einladende Personen können sich mit einer Universal ID anmelden, dem einen Konto, das alle UNI·SIM-Apps gemeinsam nutzen, eine E-Mail-Adresse mit einem Einmalcode bestätigen oder einfach den privaten Verwaltungslink der Umfrage aufbewahren. Zum Beantworten einer Umfrage ist nie ein Konto nötig.
 
-## Nutzer zählen
+## Öffnungen zählen
 
-Auf der Website meldet die App unseren Servern in regelmäßigen Abständen, dass sie geöffnet ist, damit wir zählen können, wie viele Menschen UNI·SIM-Apps nutzen. Sie sendet eine Zufallszahl, die dieser Browser selbst erzeugt (weder Ihren Namen noch Ihre E-Mail-Adresse), die Art des Geräts und den Namen der App, dazu Ihr Konto, wenn Sie angemeldet sind. Die Apps für iPhone und Android senden das nicht. In allen Versionen gilt: Sind Sie mit einer Universal ID angemeldet, die zu einem Unternehmen gehört, vermerkt die App einmal pro Besuch, dass sie geöffnet wurde, nie, was Sie darin getan haben.`,
+Auf der Website zählt die App beim ersten Öffnen jedes Tages eins zur anonymen Tageszählung der Öffnungen hinzu, gesendet nach Ihrem ersten Klick oder Tastendruck. Diese Zählung enthält nur den Namen der App und die Art der Plattform („web“ auf der Website): keine Kennung, kein Konto und nichts darüber, was Sie tun. Eine Markierung „heute schon gezählt“ bleibt auf Ihrem Gerät und wird nie gesendet. Die Apps für iPhone, Android und Desktop senden sie nicht. In allen Versionen gilt: Sind Sie mit einer Universal ID angemeldet, die zu einem Unternehmen gehört, vermerkt die App einmal pro Besuch, dass sie geöffnet wurde, nie, was Sie darin getan haben.`,
   },
 ]
 

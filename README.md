@@ -76,9 +76,11 @@ A collapsible "More options" panel on the create screen covers:
   "Your polls".
 - **Timezone** — defaults to the host's, override to any IANA zone.
 
-- **Privacy** — the website counts users with the SDK's presence beat (a
-  random install id); the iPhone and Android apps don't send it
-  (`presence: false` in `src/main.tsx`). The phone builds' store answers are in
+- **Privacy** — the website sends the SDK's anonymous daily open count (once
+  a day, the app's name and the kind of platform, no identifier; the old
+  presence beat and its install id were retired in SDK 0.187.0); the iPhone,
+  Android and desktop apps don't send it (`openCount` in `src/main.tsx`). The
+  phone builds' store answers are in
   `ios/App/App/PrivacyInfo.xcprivacy` and `store-assets/data-safety.json`;
   keep them in step with the code and the in-app knowledge base.
 

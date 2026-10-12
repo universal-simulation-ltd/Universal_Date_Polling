@@ -203,9 +203,9 @@ Bu cihaz; son yanıtınızdaki adı ve e-posta adresini, görüntüleme ayarlar�
 
 Düzenleyenler, UNI·SIM uygulamalarının ortak kullandığı tek hesap olan Universal ID ile oturum açabilir, bir e-posta adresini tek kullanımlık bir kodla doğrulayabilir ya da yalnızca anketin özel yönetim bağlantısını saklayabilir. Bir ankete yanıt vermek hiçbir zaman hesap gerektirmez.
 
-## Kullanıcıları saymak
+## Açılışları saymak
 
-Web sitesinde uygulama, UNI·SIM uygulamalarını kaç kişinin kullandığını sayabilmemiz için açık olduğunu belirli aralıklarla sunucularımıza bildirir. Bu tarayıcının kendisi için oluşturduğu rastgele bir sayıyı (adınızı veya e-posta adresinizi değil), cihaz türünü ve uygulamanın adını, oturum açtıysanız da hesabınızı gönderir. iPhone ve Android uygulamaları bunu göndermez. Tüm sürümlerde, bir şirkete bağlı bir Universal ID ile oturum açtıysanız uygulama her ziyarette bir kez açıldığını kaydeder; içinde ne yaptığınızı asla kaydetmez.`,
+Web sitesinde, uygulamayı her gün ilk açışınızda, ilk tıklamanızdan veya tuşa basmanızdan sonra anonim günlük açılış sayısına bir ekler. Bu sayım yalnızca uygulamanın adını ve platform türünü (sitede "web") içerir: hiçbir tanımlayıcı, hesap ya da ne yaptığınıza dair bir şey yoktur. "Bugün sayıldı" işareti cihazınızda kalır ve asla gönderilmez. iPhone, Android ve masaüstü uygulamaları bunu göndermez. Tüm sürümlerde, bir şirkete bağlı bir Universal ID ile oturum açtıysanız uygulama her ziyarette bir kez açıldığını kaydeder; içinde ne yaptığınızı asla kaydetmez.`,
   },
 ]
 

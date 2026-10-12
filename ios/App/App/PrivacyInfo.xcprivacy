@@ -29,11 +29,12 @@
     (the SDK's <UsageTracker />). Nothing about the poll. Declared as product
     interaction, for analytics.
 
-  No suite user count from the phone app: the SDK's presence heartbeat (a
-  random install id every 45 s) is switched off in the iOS/Android shell
-  (src/main.tsx `presence: false` when Capacitor is native). So no Device ID
-  is collected. The website still sends it; it is not covered by this
-  manifest.
+  No usage count from the phone app: the suite user count (a random install
+  id every 45 s) was retired in @unisim/sdk 0.187.0, and its replacement, the
+  anonymous daily open count (product + kind of platform, no identifier), is
+  off in the iOS/Android shell (src/main.tsx `openCount` is false when
+  Capacitor is native). So no Device ID is collected. The website sends the
+  open count; it is not covered by this manifest.
 
   All of it goes to our own servers (email is delivered by a sending service
   on our behalf). Nothing is used for tracking, and there are no third-party

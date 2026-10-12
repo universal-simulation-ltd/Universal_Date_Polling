@@ -203,9 +203,9 @@ Este dispositivo lembra o nome e o e-mail da sua última resposta, suas configur
 
 Quem organiza pode entrar com um Universal ID, a conta única compartilhada pelos apps da UNI·SIM, confirmar um e-mail com um código de uso único ou simplesmente guardar o link de administração privado da enquete. Responder a uma enquete nunca exige conta.
 
-## Contagem de usuários
+## Contagem de aberturas
 
-No site, o app avisa nossos servidores de tempos em tempos que está aberto, para podermos contar quantas pessoas usam os apps da UNI·SIM. Ele envia um número aleatório que este navegador cria por conta própria (nem seu nome, nem seu e-mail), o tipo de dispositivo e o nome do app, além da sua conta se você estiver conectado. Os apps para iPhone e Android não enviam isso. Em todas as versões, se você estiver conectado com um Universal ID vinculado a uma empresa, o app registra uma vez por visita que foi aberto, nunca o que você fez nele.`,
+No site, na primeira vez que você abre o app a cada dia, ele soma um à contagem anônima de aberturas do dia, enviada depois do seu primeiro clique ou tecla pressionada. Essa contagem contém só o nome do app e o tipo de plataforma ("web" no site): nenhum identificador, nenhuma conta e nada sobre o que você faz. Uma marca de "já contado hoje" fica no seu dispositivo e nunca é enviada. Os apps para iPhone, Android e computador não a enviam. Em todas as versões, se você estiver conectado com um Universal ID vinculado a uma empresa, o app registra uma vez por visita que foi aberto, nunca o que você fez nele.`,
   },
 ]
 

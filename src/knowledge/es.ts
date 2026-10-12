@@ -203,9 +203,9 @@ Este dispositivo recuerda el nombre y el correo de su última respuesta, sus aju
 
 Los organizadores pueden iniciar sesión con un Universal ID, la cuenta única que comparten las aplicaciones de UNI·SIM, confirmar un correo con un código de un solo uso o simplemente guardar el enlace de administración privado de la encuesta. Responder a una encuesta nunca requiere una cuenta.
 
-## Contar usuarios
+## Contar aperturas
 
-En el sitio web, la aplicación avisa a nuestros servidores cada cierto tiempo de que está abierta, para que podamos contar cuántas personas usan las aplicaciones de UNI·SIM. Envía un número aleatorio que este navegador crea por sí mismo (ni su nombre ni su correo), el tipo de dispositivo y el nombre de la aplicación, además de su cuenta si ha iniciado sesión. Las aplicaciones para iPhone y Android no envían esto. En todas las versiones, si ha iniciado sesión con un Universal ID vinculado a una empresa, la aplicación registra una vez por visita que se abrió, nunca lo que hizo en ella.`,
+En el sitio web, la primera vez que abre la aplicación cada día, suma uno al recuento anónimo de aperturas del día, que se envía tras su primer clic o pulsación de tecla. Ese recuento solo contiene el nombre de la aplicación y el tipo de plataforma («web» en el sitio): ningún identificador, ninguna cuenta y nada sobre lo que hace. Una marca de «ya contado hoy» se queda en su dispositivo y nunca se envía. Las aplicaciones para iPhone, Android y escritorio no lo envían. En todas las versiones, si ha iniciado sesión con un Universal ID vinculado a una empresa, la aplicación registra una vez por visita que se abrió, nunca lo que hizo en ella.`,
   },
 ]
 

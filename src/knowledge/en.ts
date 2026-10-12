@@ -203,9 +203,9 @@ This device remembers the name and email address you last answered with, your di
 
 Hosts can sign in with a Universal ID, the single account shared across UNI·SIM apps, confirm an email address with a one-time code, or simply keep the poll's private admin link. Answering a poll never needs an account.
 
-## Counting users
+## Counting opens
 
-On the website, the app tells our servers every so often that it is open, so we can count how many people use UNI·SIM apps. It sends a random number this browser makes for itself (not your name or email), the kind of device and the app's name, and your account if you are signed in. The iPhone and Android apps do not send this. In every version, if you are signed in with a Universal ID that belongs to a company, the app records once per visit that it was opened, never what you did in it.`,
+On the website, the first time you open the app each day, it adds one to an anonymous count of daily opens, sent after your first click or key press. That count holds only the app's name and the kind of platform (on the website, "web"): no identifier, no account and nothing about what you do. A "counted today" mark stays on your device and is never sent. The iPhone, Android and desktop apps do not send it. In every version, if you are signed in with a Universal ID that belongs to a company, the app records once per visit that it was opened, never what you did in it.`,
   },
 ]
 
