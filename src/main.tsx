@@ -37,11 +37,11 @@ const universalConfig = {
   product: 'polling' as unknown as ProductCode,
   // Suite SSO cookie only exists in production under the shared parent domain.
   ...(import.meta.env.PROD ? { cookieDomain: '.unisim.co.uk' } : {}),
-  // The suite user count (the SDK's presence beat: a random install id every
-  // 45 s) runs on the website only. The iPhone and Android apps don't send it —
-  // the stores already count installs. `desktop` is the mode the phone builds
+  // The SDK's anonymous daily open count (0.187.0: once a day, product + kind
+  // of device, no identifier) runs on the website only. The iPhone and Android
+  // apps don't send it — the stores already count installs. `desktop` is the mode the phone builds
   // are made in (package.json build:mobile), so either check is enough.
-  presence: !(Capacitor.isNativePlatform() || import.meta.env.MODE === 'desktop'),
+  openCount: !(Capacitor.isNativePlatform() || import.meta.env.MODE === 'desktop'),
 }
 
 /** Signing out from the navbar signs the guest host out of this app too.
