@@ -10,6 +10,8 @@
 //   3. Opening /p/<id>#admin=<token> takes the token out of the address bar,
 //      claims the poll, and shows the host view.
 //   4. A token that doesn't match leaves the visitor a guest and says so.
+//   5. The host can remove anybody's answer (platform 0284's delete_response),
+//      on their own session and with no edit token.
 //
 //   node e2e/adminlink.e2e.mjs
 
@@ -35,7 +37,7 @@ const json = (route, status, body) => route.fulfill({ status, contentType: 'appl
 
 /** The backend, at the network boundary. `adminLinks` decides whether the
  *  server has claim_poll yet. Anonymous sign-in answers with a session. */
-async function stubBackend(page, { adminLinks, holder = { current: poll() }, claims = [] }) {
+async function stubBackend(page, { adminLinks, holder = { current: poll() }, claims = [], responses = [] }) {
   await page.route('**/rest/v1/**', (route) => json(route, 200, []))
   await page.route('**/functions/v1/**', (route) => json(route, 200, { ok: true }))
   await page.route('**/auth/v1/**', (route) => json(route, 401, { message: 'no session' }))
@@ -48,7 +50,7 @@ async function stubBackend(page, { adminLinks, holder = { current: poll() }, cla
     })
   })
   await page.route('**/rest/v1/rpc/get_poll', (route) => json(route, 200, holder.current))
-  await page.route('**/rest/v1/rpc/get_poll_responses', (route) => json(route, 200, []))
+  await page.route('**/rest/v1/rpc/get_poll_responses', (route) => json(route, 200, responses))
   await page.route('**/rest/v1/rpc/claim_poll', (route) => {
     if (!adminLinks) return json(route, 404, { code: 'PGRST202', message: 'Could not find the function public.claim_poll', details: null, hint: null })
     const args = JSON.parse(route.request().postData() ?? '{}')
@@ -147,6 +149,33 @@ try {
     const body = await text(page)
     check('a wrong token is reported', body.includes("That admin link didn't work"), body.slice(0, 600))
     check('and grants nothing', !body.includes('Your private admin link'))
+    await page.close()
+  }
+
+  // 5. The host removes an answer ------------------------------------------------
+  {
+    const page = await browser.newPage()
+    const holder = { current: poll() }
+    const responses = [
+      { id: 'r1', poll_id: 'adm1234567', name: 'Sam', availability: { 'slot-a': 'yes' }, created_at: '2026-06-02T09:00:00Z', claimed: true },
+    ]
+    const deletes = []
+    await stubBackend(page, { adminLinks: true, holder, responses })
+    await page.route('**/rest/v1/rpc/delete_response', (route) => {
+      deletes.push({ body: JSON.parse(route.request().postData() ?? '{}'), auth: route.request().headers().authorization ?? '' })
+      return json(route, 200, true)
+    })
+    await page.goto(`${base}/p/adm1234567#admin=${TOKEN}`, { waitUntil: 'networkidle' })
+    await page.getByText('Your private admin link').waitFor({ timeout: 8000 }).catch(() => {})
+    await page.getByText('Remove an answer').click()
+    page.once('dialog', (d) => d.accept())
+    await page.getByRole('button', { name: 'Remove Sam’s answers' }).click()
+    await page.waitForTimeout(800)
+    const d = deletes[0]
+    check('the host can remove an answer', deletes.length === 1 && d.body.p_name === 'Sam' && d.body.p_edit_token === null, JSON.stringify(deletes))
+    let sub = null
+    try { sub = JSON.parse(Buffer.from((d?.auth ?? '').replace(/^Bearer /, '').split('.')[1], 'base64url').toString()).sub } catch { /* not a JWT */ }
+    check('on the host\u2019s own session', sub === ANON_ID, d?.auth.slice(0, 40))
     await page.close()
   }
 } finally {

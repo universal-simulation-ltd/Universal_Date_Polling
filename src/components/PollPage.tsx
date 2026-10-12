@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Chip, useUser, useUniversal, ValueChip } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { bookSlot, BookingError, cancelBooking, claimPoll, currentUser, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, saveResponseEmail, setFinalSlot, signOut, startGuestSession, submitResponse } from '../lib/api'
+import { bookSlot, BookingError, cancelBooking, claimPoll, currentUser, deleteResponse, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, responseNameForToken, saveResponseEmail, setFinalSlot, signOut, startGuestSession, submitResponse } from '../lib/api'
+import { editTokenFromHash, forgetResponseToken, hashWithoutEditToken, nameStatus, rememberResponseToken, responseTokens } from '../lib/responseToken'
 import { adminTokenFromHash, hashWithoutAdminToken, rememberAdminToken, storedAdminToken } from '../lib/adminLink'
 import { useOtpUser } from '../lib/otpSession'
 import { supabase } from '../lib/supabase'
@@ -11,7 +12,7 @@ import {
   formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, sameCalendarDay, slotDayKey, slotInstant, tzAbbrev,
 } from '../lib/time'
 import { CONTAINER_POLL } from '../lib/layout'
-import { adminLink, pollLink } from '../lib/appUrl'
+import { adminLink, editLink, pollLink } from '../lib/appUrl'
 import {
   addConfirmedTimeToCalendar, calendarStatus, removeConfirmedTimeFromCalendar, startCalendarConnect,
   type CalendarProvider, type CalendarStatus,
@@ -22,6 +23,7 @@ import { PURGE_GRACE_DAYS } from '../lib/myPolls'
 import { errorMessage } from '../lib/errors'
 import AddToCalendar from './AddToCalendar'
 import AdminLinkBox from './AdminLinkBox'
+import EditLinkBox from './EditLinkBox'
 import CopyAsText from './CopyAsText'
 import CopyEmail from './CopyEmail'
 import TimezonePicker from './TimezonePicker'
@@ -30,11 +32,12 @@ type Load = 'loading' | 'ready' | 'notfound' | 'error'
 
 const NAME_KEY = 'unipoll:name'
 /** Per poll: the name THIS browser last saved an answer under. Answers are
- *  keyed by (poll, name) on the server, so typing a name somebody else already
- *  used replaces their answers — this is how the page tells "editing my own
- *  answer" from "about to overwrite Sam's". */
+ *  keyed by (poll, name) on the server. Since migration 0284 an answer is
+ *  protected by its edit token (responseToken.ts); this marker still matters
+ *  for answers given BEFORE tokens, which anyone can update by name — it is how
+ *  the page tells "my own old answer" (saving claims it) from "about to
+ *  overwrite Sam's". */
 const answeredKey = (pollId: string) => `unipoll:answered:${pollId}`
-const fold = (s: string) => s.trim().toLowerCase()
 
 function readAnswered(pollId: string): string | null {
   try {
@@ -93,6 +96,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // See answeredKey. Re-read when the poll arrives (the id is a prop, but the
   // key only matters once there is a poll to answer).
   const [answeredAs, setAnsweredAs] = useState<string | null>(() => readAnswered(id))
+  // This device's edit tokens for this poll, by exact name (responseToken.ts).
+  const [tokens, setTokens] = useState<Record<string, string>>(() => responseTokens(id))
+  const [removing, setRemoving] = useState(false)
   const [confirming, setConfirming] = useState(false)
   // 1:1 booking pages (poll.booking_mode): the guest's own pick, and which slot
   // they chose while the page waits for the reload to catch up.
@@ -181,6 +187,32 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adminToken, poll?.id, otpUser, suiteUser?.id])
 
+  // ---- A respondent's own edit link (lib/responseToken.ts) ------------------
+  // Opened as /p/<id>#edit=<token>: same handling as the admin link — read
+  // once, out of the address bar at once, then ask which answer it is for.
+  const [editToken] = useState(() => editTokenFromHash(window.location.hash))
+  const [editLinkState, setEditLinkState] = useState<'idle' | 'ok' | 'failed'>('idle')
+  useEffect(() => {
+    if (!editToken) return
+    const { pathname, search, hash } = window.location
+    window.history.replaceState(window.history.state, '', pathname + search + hashWithoutEditToken(hash))
+  }, [editToken])
+  useEffect(() => {
+    if (!editToken || !poll) return
+    let live = true
+    responseNameForToken(poll.id, editToken)
+      .then((who) => {
+        if (!live) return
+        if (!who) { setEditLinkState('failed'); return }
+        rememberResponseToken(poll.id, who, editToken)
+        setTokens(responseTokens(poll.id))
+        setName(who)
+        setEditLinkState('ok')
+      })
+      .catch(() => { if (live) setEditLinkState('failed') })
+    return () => { live = false }
+  }, [editToken, poll?.id])
+
   useEffect(() => {
     let live = true
     async function load() {
@@ -260,20 +292,27 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // Pre-fill the form if this browser has already responded under a known name.
   useEffect(() => {
     if (!poll || !name) return
-    const existing = responses.find((r) => r.name.toLowerCase() === name.trim().toLowerCase())
-    if (existing) setMine(existing.availability)
-  }, [poll, responses, name])
+    // Exact match: the server's key is the exact name, so "sam" is not Sam.
+    // Not somebody else's claimed answer (0284): it can't be changed from here,
+    // so loading it into the form would only look as if it could.
+    const existing = responses.find((r) => r.name === name.trim())
+    if (existing && !(existing.claimed && !tokens[existing.name])) setMine(existing.availability)
+  }, [poll, responses, name, tokens])
 
   const expired = !!poll?.expires_at && new Date(poll.expires_at).getTime() < Date.now()
 
-  // Somebody has already answered under the name in the box, and it was not
-  // this browser. Saving would replace their answers (server key: poll + name).
-  // Usually it IS the same person on another device, so this warns rather than
-  // blocks — but it says so before the click, not after.
-  const nameClash =
-    !!name.trim() &&
-    responses.some((r) => fold(r.name) === fold(name)) &&
-    (answeredAs === null || fold(answeredAs) !== fold(name))
+  // Whose is the name in the box? (responseToken.ts → nameStatus.)
+  //  - claimed: someone else's answer, protected by its edit token — saving
+  //    would be refused, so the page says so and blocks the button;
+  //  - unclaimed: an answer from before tokens that this browser didn't give —
+  //    saving would replace it, so it warns before the click (usually it IS
+  //    the same person on another device);
+  //  - similar: the same name in other capitals — a separate answer, but one
+  //    nobody reading the results could tell apart.
+  const status = nameStatus(name, responses, tokens, answeredAs)
+  const nameClash = status === 'unclaimed'
+  const myToken = tokens[name.trim()] ?? null
+  const myRow = responses.find((r) => r.name === name.trim()) ?? null
 
   function cycle(slotId: string, value: Availability) {
     setMine((m) => ({ ...m, [slotId]: m[slotId] === value ? undefined : value }))
@@ -294,10 +333,14 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     for (const [k, v] of Object.entries(mine)) if (v && current.has(k)) availability[k] = v
     // A brand-new responder (not this browser editing an existing entry) — used
     // to notify the host once per new person, not on every re-save.
-    const isNewResponder = !responses.some((r) => r.name.trim().toLowerCase() === name.trim().toLowerCase())
+    const isNewResponder = !responses.some((r) => r.name === name.trim())
     setSaving(true)
     try {
-      await submitResponse(poll.id, name, availability)
+      const token = await submitResponse(poll.id, name, availability, myToken)
+      if (token) {
+        rememberResponseToken(poll.id, name, token)
+        setTokens(responseTokens(poll.id))
+      }
       localStorage.setItem(NAME_KEY, name.trim())
       try {
         localStorage.setItem(answeredKey(poll.id), name.trim())
@@ -310,7 +353,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       // this runs after the availability save. Its failure shouldn't read as
       // "your response wasn't saved" — it was — so it gets its own message.
       try {
-        await saveResponseEmail(poll.id, name, email)
+        await saveResponseEmail(poll.id, name, email, token ?? myToken)
         localStorage.setItem(EMAIL_KEY, email.trim())
       } catch (e) {
         // Say WHY. This was a bare `catch {}`, and it swallowed the reason for
@@ -326,6 +369,42 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       setError(errorMessage(e, 'Could not save your response.'))
     } finally {
       setSaving(false)
+    }
+  }
+
+  /** Take this person's answers off the poll — theirs by the edit token this
+   *  device holds — or, for the host, anybody's (`who`). */
+  async function removeAnswer(who: string, asHost: boolean) {
+    if (!poll) return
+    const client = asHost ? hostClientFor(poll) : supabase
+    if (!client) return
+    const question = asHost
+      ? `Remove ${who}’s answers from this poll? This can’t be undone.`
+      : 'Remove your answers from this poll? This can’t be undone.'
+    if (!window.confirm(question)) return
+    setError(null)
+    setRemoving(true)
+    try {
+      const ok = await deleteResponse(client, poll.id, who, asHost ? null : (tokens[who] ?? null))
+      if (!ok) {
+        setError(asHost ? 'That answer could not be removed — reload and try again.' : 'Only the person who gave these answers can remove them.')
+        return
+      }
+      forgetResponseToken(poll.id, who)
+      setTokens(responseTokens(poll.id))
+      if (who === name.trim()) {
+        setMine({})
+        setSavedAt(null)
+        if (answeredAs === who) {
+          try { localStorage.removeItem(answeredKey(poll.id)) } catch { /* ignore */ }
+          setAnsweredAs(null)
+        }
+      }
+      setResponses(await getResponses(poll.id))
+    } catch (e) {
+      setError(errorMessage(e, 'Could not remove those answers.'))
+    } finally {
+      setRemoving(false)
     }
   }
 
@@ -737,10 +816,33 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
               />
             </label>
           </div>
+          {editLinkState === 'ok' && (
+            <p role="status" className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/30">
+              Your edit link worked: these are your answers. Change them and save.
+            </p>
+          )}
+          {editLinkState === 'failed' && (
+            <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30">
+              That edit link doesn’t match an answer on this poll. It may have been removed. You can still answer below.
+            </p>
+          )}
+          {status === 'claimed' && (
+            <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30">
+              “{name.trim()}” has already answered this poll, and only they can change those answers. If that’s
+              you, open the edit link you were given, or use the device you answered on. If not, add an initial
+              or your surname.
+            </p>
+          )}
           {nameClash && (
             <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30">
               “{name.trim()}” has already answered this poll. Saving will replace those answers — fine if
               they’re yours. If not, add an initial or your surname so you don’t overwrite someone else.
+            </p>
+          )}
+          {status === 'similar' && (
+            <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30">
+              Someone has already answered as “{responses.find((r) => r.name.trim().toLowerCase() === name.trim().toLowerCase())?.name}”.
+              Add an initial or your surname so people can tell you apart.
             </p>
           )}
           <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
@@ -798,17 +900,30 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           </div>
 
           {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
-          <div className="mt-5 flex items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={save}
-              disabled={saving}
-              className="h-11 px-5 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
+              disabled={saving || removing || status === 'claimed'}
+              className="h-11 px-5 rounded-xl whitespace-nowrap bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
             >
               {saving ? 'Saving…' : nameClash ? `Replace ${name.trim()}’s answers` : 'Save my availability'}
             </button>
             {savedAt && <span className="text-sm text-green-600 dark:text-green-400">Saved — thanks!</span>}
+            {myToken && myRow && (
+              <button
+                type="button"
+                onClick={() => removeAnswer(myRow.name, false)}
+                disabled={saving || removing}
+                className="ml-auto text-sm font-medium text-slate-500 dark:text-slate-400 underline-offset-2 hover:underline hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-60"
+              >
+                {removing ? 'Removing…' : 'Remove my answers'}
+              </button>
+            )}
           </div>
+          {/* The answer is theirs by the token this device holds; the link is
+              how they get back to it from anywhere else. */}
+          {myToken && myRow && <EditLinkBox url={editLink(pollBase, poll.id, myToken)} />}
           {/* What happens next — otherwise "Saved" is where a guest's
               understanding of the poll stops. Not for the host, who is the
               one doing the confirming, nor once a time is already set. */}
@@ -830,6 +945,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         isHost={isHost} confirming={confirming} finalSlotId={poll.final_slot_id}
         onConfirm={confirmSlot}
         foldable={!!finalSlot} open={showResults} onOpenChange={setShowResults}
+        onRemove={isHost ? (who) => removeAnswer(who, true) : undefined} removing={removing}
       />
       )}
     </div>
@@ -1000,12 +1116,15 @@ function BookingNotifyBanner({ which, guest }: { which: 'host' | 'invitee' | 'bo
   )
 }
 
-function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, confirming, finalSlotId, onConfirm, foldable, open, onOpenChange }: {
+function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, confirming, finalSlotId, onConfirm, foldable, open, onOpenChange, onRemove, removing }: {
   poll: Poll; slots: Slot[]; responses: PollResponse[]; viewerTz: string; activeTz: string; pollUrl: string
   isHost: boolean; confirming: boolean; finalSlotId: string | null
   onConfirm: (slotId: string | null) => void
   /** A time is confirmed, so the results fold down to one line unless `open`. */
   foldable: boolean; open: boolean; onOpenChange: (open: boolean) => void
+  /** Host only: take somebody's answers off the poll (junk, a duplicate, or a
+   *  respondent who lost their edit link and wants to answer again). */
+  onRemove?: (name: string) => void; removing?: boolean
 }) {
   const tally = useMemo(() => {
     return slots.map((s) => {
@@ -1118,6 +1237,31 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
             </div>
           ))}
         </div>
+      )}
+      {onRemove && total > 0 && (
+        <details className="mt-4 px-1 text-sm">
+          <summary className="cursor-pointer select-none text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+            Remove an answer
+          </summary>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            For junk, a duplicate, or someone who lost their edit link and wants to answer again.
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {responses.map((r) => (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  onClick={() => onRemove(r.name)}
+                  disabled={removing}
+                  aria-label={`Remove ${r.name}’s answers`}
+                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700 hover:text-rose-700 dark:hover:text-rose-400 hover:ring-rose-300 dark:hover:ring-rose-800 transition disabled:opacity-60"
+                >
+                  {r.name} <span aria-hidden="true">✕</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
     </section>
   )

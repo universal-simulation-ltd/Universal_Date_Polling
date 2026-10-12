@@ -155,11 +155,13 @@ As ligações das sondagens têm dez caracteres aleatórios, o que as torna muit
 
 - O endereço de e-mail de quem organiza, se o tiver indicado. Fica guardado para lhe enviar os alertas e os e-mails de marcação, e não aparece na página da sondagem.
 
-## O seu nome é a sua chave
+## A sua resposta só pode ser alterada por si
 
-As respostas são guardadas com o nome que escreve. Se responder de novo com exatamente o mesmo nome, a resposta anterior é atualizada em vez de duplicada. Isto também significa que outra pessoa com exatamente o mesmo nome substituiria a sua, por isso use algo que o identifique, como o nome completo.
+Da primeira vez que guarda uma resposta, a sondagem entrega a este dispositivo uma chave privada para ela. Só um dispositivo com essa chave pode alterar ou remover as suas respostas, por isso outra pessoa que escreva o mesmo nome não as consegue substituir. Por baixo da resposta guardada, **Your edit link** contém essa chave: abra a ligação noutro dispositivo para alterar aí as suas respostas, e guarde-a só para si, porque qualquer pessoa que a tenha pode alterá-las ou removê-las. **Remove my answers** retira as suas respostas da sondagem. Se perder a ligação, fale com quem organiza: pode remover a sua resposta para que possa responder de novo.
 
-Para lhe poupar trabalho, este dispositivo lembra o nome e o endereço de e-mail usados na sua última resposta. Esses dados ficam neste dispositivo.
+Cada nome só pode ser usado uma vez por sondagem; se alguém já respondeu com o seu, acrescente uma inicial ou o apelido. As respostas guardadas antes de existirem as ligações de edição ainda podem ser atualizadas escrevendo exatamente o mesmo nome, até que a gravação seguinte as associe a esse dispositivo.
+
+Para lhe poupar trabalho, este dispositivo lembra o nome e o endereço de e-mail usados na sua última resposta, e as chaves das respostas dadas aqui. Esses dados ficam neste dispositivo.
 
 ## Deixar um e-mail é opcional
 
@@ -175,7 +177,7 @@ Pode responder sem indicar nenhum endereço de e-mail. Se deixar um, quem organi
 Uma sondagem tem de estar num sítio a que todos consigam aceder, por isso as sondagens e as respostas são guardadas nos nossos servidores. Isto inclui:
 
 - A própria sondagem: título, opções, fuso horário, definições e, se indicado, o endereço de e-mail de quem organiza.
-- Cada resposta: o nome indicado, as escolhas feitas e quando foi guardada.
+- Cada resposta: o nome indicado, as escolhas feitas, quando foi guardada e uma impressão digital unidirecional (um hash) da sua ligação de edição. A ligação em si não é guardada.
 - Os endereços de e-mail que os participantes escolheram deixar, e o nome e o endereço de e-mail de quem marca numa página de marcação.
 - Um logótipo carregado por quem organiza. A página da sondagem precisa de o mostrar, por isso a sondagem leva uma ligação de longa duração para o logótipo, que qualquer pessoa com a ligação da sondagem pode carregar.
 - Se quem organiza ligou um calendário, as chaves de acesso dessa ligação. Ficam apenas no servidor, nunca são enviadas para a aplicação e só são usadas para fazer o que quem organiza pediu. Desligar o calendário apaga-as.
@@ -203,7 +205,7 @@ Os e-mails são enviados em nosso nome através de um serviço de envio de e-mai
 
 ## No seu dispositivo
 
-Este dispositivo lembra o nome e o endereço de e-mail da sua última resposta, as suas definições de apresentação e, se organizar sondagens, a sua sessão e as ligações de administração privadas das sondagens criadas ou abertas aqui. Os eventos que adiciona com **Add to calendar** são preparados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
+Este dispositivo lembra o nome e o endereço de e-mail da sua última resposta, as ligações de edição das respostas dadas aqui, as suas definições de apresentação e, se organizar sondagens, a sua sessão e as ligações de administração privadas das sondagens criadas ou abertas aqui. Os eventos que adiciona com **Add to calendar** são preparados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
 
 ## O seu Universal ID
 

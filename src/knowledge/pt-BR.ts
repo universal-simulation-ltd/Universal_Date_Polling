@@ -155,11 +155,13 @@ Os links das enquetes têm dez caracteres aleatórios, o que os torna muito dif�
 
 - O e-mail de quem organiza, se tiver sido informado. Ele fica guardado para enviar os alertas e os e-mails de agendamento, e não aparece na página da enquete.
 
-## Seu nome é sua chave
+## Só você pode mudar sua resposta
 
-As respostas são salvas com o nome que você digita. Se você responder de novo com exatamente o mesmo nome, a resposta anterior é atualizada em vez de duplicada. Isso também significa que outra pessoa usando exatamente o mesmo nome substituiria a sua, então use algo que identifique você, como seu nome completo.
+Na primeira vez que você salva uma resposta, a enquete entrega a este dispositivo uma chave privada para ela. Só um dispositivo com essa chave pode mudar ou remover suas respostas, então outra pessoa que digite o mesmo nome não consegue substituí-las. Abaixo da resposta salva, **Your edit link** leva essa chave: abra-o em outro dispositivo para mudar suas respostas por lá, e guarde-o só para você, porque qualquer pessoa com ele pode mudá-las ou removê-las. **Remove my answers** tira suas respostas da enquete. Se perder o link, fale com quem organiza: essa pessoa pode remover sua resposta para você responder de novo.
 
-Para poupar digitação, este dispositivo lembra o nome e o e-mail usados na sua última resposta. Esses dados ficam neste dispositivo.
+Cada nome só pode ser usado uma vez por enquete; se alguém já respondeu com o seu, acrescente uma inicial ou seu sobrenome. Respostas salvas antes de existirem os links de edição ainda podem ser atualizadas digitando exatamente o mesmo nome, até que o próximo salvamento as vincule àquele dispositivo.
+
+Para poupar digitação, este dispositivo lembra o nome e o e-mail usados na sua última resposta, e as chaves das respostas dadas aqui. Esses dados ficam neste dispositivo.
 
 ## Deixar um e-mail é opcional
 
@@ -175,7 +177,7 @@ Você pode responder sem informar nenhum e-mail. Se deixar um, quem organiza pod
 Uma enquete precisa ficar em algum lugar que todos consigam acessar, então enquetes e respostas ficam guardadas em nossos servidores. Isso inclui:
 
 - A enquete em si: título, opções, fuso horário, configurações e, se informado, o e-mail de quem organiza.
-- Cada resposta: o nome informado, as escolhas feitas e quando foi salva.
+- Cada resposta: o nome informado, as escolhas feitas, quando foi salva e uma impressão digital de mão única (um hash) do seu link de edição. O link em si não é guardado.
 - Os e-mails que os participantes escolheram deixar, e o nome e o e-mail de quem agenda em uma página de agendamento.
 - Um logotipo enviado por quem organiza. A página da enquete precisa exibi-lo, então a enquete leva um link de longa duração para o logotipo, que qualquer pessoa com o link da enquete pode carregar.
 - Se quem organiza conectou uma agenda, as chaves de acesso dessa conexão. Elas ficam só no servidor, nunca são enviadas ao app e só são usadas para fazer o que quem organiza pediu. Desconectar apaga essas chaves.
@@ -203,7 +205,7 @@ Os e-mails são enviados em nosso nome por um serviço de envio de e-mails.
 
 ## No seu dispositivo
 
-Este dispositivo lembra o nome e o e-mail da sua última resposta, suas configurações de exibição e, se você organiza enquetes, seu login e os links de administração privados das enquetes criadas ou abertas aqui. Os eventos que você adiciona com **Add to calendar** são montados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
+Este dispositivo lembra o nome e o e-mail da sua última resposta, os links de edição das respostas dadas aqui, suas configurações de exibição e, se você organiza enquetes, seu login e os links de administração privados das enquetes criadas ou abertas aqui. Os eventos que você adiciona com **Add to calendar** são montados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
 
 ## Seu Universal ID
 

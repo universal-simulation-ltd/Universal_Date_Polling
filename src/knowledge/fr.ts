@@ -155,11 +155,13 @@ Les liens de sondage sont composés de dix caractères aléatoires, ce qui les r
 
 - L’adresse e-mail de l’organisateur, s’il en a donné une. Elle sert à lui envoyer ses alertes et les e-mails de réservation, et n’apparaît pas sur la page du sondage.
 
-## Votre nom sert de clé
+## Vous seul pouvez modifier votre réponse
 
-Les réponses sont enregistrées sous le nom que vous tapez. Si vous répondez à nouveau avec exactement le même nom, votre réponse précédente est mise à jour au lieu d’être ajoutée une seconde fois. Cela signifie aussi qu’une autre personne utilisant exactement le même nom remplacerait votre réponse : choisissez un nom distinctif, par exemple votre nom complet.
+La première fois que vous enregistrez une réponse, le sondage remet à cet appareil une clé privée pour celle-ci. Seul un appareil qui détient cette clé peut modifier ou supprimer vos réponses : une autre personne qui tape le même nom ne peut donc pas les remplacer. Sous votre réponse enregistrée, **Your edit link** contient cette clé : ouvrez-le sur un autre appareil pour y modifier vos réponses, et gardez-le pour vous, car toute personne qui le possède peut les modifier ou les supprimer. **Remove my answers** retire vos réponses du sondage. Si vous perdez le lien, adressez-vous à l’organisateur : il peut supprimer votre réponse pour que vous puissiez répondre à nouveau.
 
-Pour vous éviter de retaper, cet appareil retient le nom et l’adresse e-mail utilisés lors de votre dernière réponse. Ces informations restent sur cet appareil.
+Chaque nom ne peut servir qu’une fois par sondage : si quelqu’un a déjà répondu sous le vôtre, ajoutez une initiale ou votre nom de famille. Les réponses enregistrées avant l’arrivée des liens de modification peuvent encore être mises à jour en tapant exactement le même nom, jusqu’à ce que le prochain enregistrement les lie à cet appareil.
+
+Pour vous éviter de retaper, cet appareil retient le nom et l’adresse e-mail utilisés lors de votre dernière réponse, ainsi que les clés des réponses données ici. Ces informations restent sur cet appareil.
 
 ## Laisser une adresse e-mail est facultatif
 
@@ -175,7 +177,7 @@ Vous pouvez répondre sans donner d’adresse e-mail. Si vous en laissez une, l�
 Un sondage doit être accessible à tous : les sondages et les réponses sont donc conservés sur nos serveurs. Cela comprend :
 
 - Le sondage lui-même : titre, options, fuseau horaire, réglages et, s’il l’a donnée, adresse e-mail de l’organisateur.
-- Chaque réponse : le nom indiqué, les choix faits et la date d’enregistrement.
+- Chaque réponse : le nom indiqué, les choix faits, la date d’enregistrement et une empreinte à sens unique (un hachage) de son lien de modification. Le lien lui-même n’est pas conservé.
 - Les adresses e-mail que les participants ont choisi de laisser, ainsi que le nom et l’adresse e-mail de la personne qui réserve sur une page de réservation.
 - Un logo envoyé par l’organisateur. La page du sondage doit l’afficher : le sondage contient donc un lien de longue durée vers le logo, que toute personne ayant le lien du sondage peut charger.
 - Si l’organisateur a connecté un agenda, les clés d’accès de cette connexion. Elles restent uniquement sur le serveur, ne sont jamais envoyées à l’application, et ne servent qu’à faire ce que l’organisateur a demandé. La déconnexion les supprime.
@@ -203,7 +205,7 @@ Les e-mails sont envoyés en notre nom par un service d’envoi d’e-mails.
 
 ## Sur votre appareil
 
-Cet appareil retient le nom et l’adresse e-mail de votre dernière réponse, vos réglages d’affichage et, si vous organisez, votre connexion et les liens d’administration privés des sondages créés ou ouverts ici. Les événements ajoutés avec **Add to calendar** sont préparés sur votre appareil. Choisir Google ou Outlook ouvre ce service avec les détails de l’événement déjà remplis.
+Cet appareil retient le nom et l’adresse e-mail de votre dernière réponse, les liens de modification des réponses données ici, vos réglages d’affichage et, si vous organisez, votre connexion et les liens d’administration privés des sondages créés ou ouverts ici. Les événements ajoutés avec **Add to calendar** sont préparés sur votre appareil. Choisir Google ou Outlook ouvre ce service avec les détails de l’événement déjà remplis.
 
 ## Votre Universal ID
 

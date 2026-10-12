@@ -102,6 +102,11 @@ export interface PollResponse {
   availability: Record<string, Availability>
   created_at: string
   updated_at: string
+  /** Since migration 0284: the answer has an edit token, so only whoever holds
+   *  it (or the host, to remove it) can change it. False for answers given
+   *  before tokens, which stay updatable by name until a save claims them.
+   *  Absent from a server without 0284. */
+  claimed?: boolean
 }
 
 /** Client-side draft used to create a poll (server fills the rest). */

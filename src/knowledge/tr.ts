@@ -155,11 +155,13 @@ Anket bağlantıları on rastgele karakterden oluşur ve bu da tahmin edilmeleri
 
 - Düzenleyen kişinin e-posta adresini (verdiyse). Bu adres düzenleyene bildirimleri ve randevu e-postalarını göndermek için saklanır ve anket sayfasında görünmez.
 
-## Adınız anahtarınızdır
+## Yanıtınızı yalnızca siz değiştirebilirsiniz
 
-Yanıtlar yazdığınız adla kaydedilir. Tamamen aynı adla yeniden yanıt verirseniz önceki yanıtınız ikinci kez eklenmek yerine güncellenir. Bu, tamamen aynı adı kullanan başka birinin yanıtınızın üzerine yazabileceği anlamına da gelir; bu yüzden tam adınız gibi ayırt edici bir ad kullanınız.
+Bir yanıtı ilk kez kaydettiğinizde anket, bu cihaza o yanıt için özel bir anahtar verir. Yanıtlarınızı yalnızca bu anahtara sahip bir cihaz değiştirebilir veya kaldırabilir; bu yüzden aynı adı yazan başka biri yanıtlarınızın üzerine yazamaz. Kaydedilen yanıtınızın altındaki **Your edit link** bu anahtarı taşır: yanıtlarınızı başka bir cihazda değiştirmek için bağlantıyı orada açınız ve kimseyle paylaşmayınız, çünkü bağlantıya sahip olan herkes yanıtlarınızı değiştirebilir veya kaldırabilir. **Remove my answers** yanıtlarınızı anketten kaldırır. Bağlantıyı kaybederseniz düzenleyene başvurunuz: yeniden yanıt verebilmeniz için yanıtınızı kaldırabilir.
 
-Yeniden yazmanıza gerek kalmasın diye bu cihaz, son yanıtınızda kullandığınız adı ve e-posta adresini hatırlar. Bu bilgiler bu cihazda kalır.
+Her ad bir ankette yalnızca bir kez kullanılabilir; adınızla daha önce yanıt verilmişse bir baş harf veya soyadınızı ekleyiniz. Düzenleme bağlantılarından önce kaydedilen yanıtlar, bir sonraki kayıt onları o cihaza bağlayana kadar tamamen aynı ad yazılarak güncellenebilir.
+
+Yeniden yazmanıza gerek kalmasın diye bu cihaz, son yanıtınızda kullandığınız adı ve e-posta adresini ve burada verdiğiniz yanıtların anahtarlarını hatırlar. Bu bilgiler bu cihazda kalır.
 
 ## E-posta bırakmak isteğe bağlıdır
 
@@ -175,7 +177,7 @@ E-posta adresi vermeden yanıt verebilirsiniz. Bir adres bırakırsanız düzenl
 Bir anketin herkesin erişebileceği bir yerde durması gerekir; bu yüzden anketler ve yanıtlar sunucularımızda saklanır. Bunlara şunlar dahildir:
 
 - Anketin kendisi: başlığı, seçenekleri, saat dilimi, ayarları ve verdiyse düzenleyen kişinin e-posta adresi.
-- Her yanıt: verilen ad, yapılan seçimler ve kaydedildiği zaman.
+- Her yanıt: verilen ad, yapılan seçimler, kaydedildiği zaman ve düzenleme bağlantısının tek yönlü bir parmak izi (karma). Bağlantının kendisi saklanmaz.
 - Katılımcıların bırakmayı seçtiği e-posta adresleri ile randevu sayfasında randevu alan kişinin adı ve e-posta adresi.
 - Düzenleyen kişinin yüklediği bir logo. Anket sayfasının logoyu göstermesi gerektiğinden anket, logoya giden uzun süreli bir bağlantı içerir; anket bağlantısına sahip herkes logoyu yükleyebilir.
 - Düzenleyen kişi bir takvim bağladıysa o bağlantının erişim anahtarları. Bunlar yalnızca sunucuda tutulur, uygulamaya hiçbir zaman gönderilmez ve yalnızca düzenleyen kişinin istediği işler için kullanılır. Bağlantıyı kesmek bunları siler.
@@ -203,7 +205,7 @@ E-postalar bizim adımıza bir e-posta gönderim hizmeti aracılığıyla gönde
 
 ## Cihazınızda
 
-Bu cihaz; son yanıtınızdaki adı ve e-posta adresini, görüntüleme ayarlarınızı ve anket düzenliyorsanız oturumunuzu ve burada oluşturduğunuz ya da açtığınız anketlerin özel yönetim bağlantılarını hatırlar. **Add to calendar** ile eklediğiniz takvim etkinlikleri cihazınızda hazırlanır. Google veya Outlook'u seçmek, etkinlik bilgileri doldurulmuş olarak o hizmeti açar.
+Bu cihaz; son yanıtınızdaki adı ve e-posta adresini, burada verdiğiniz yanıtların düzenleme bağlantılarını, görüntüleme ayarlarınızı ve anket düzenliyorsanız oturumunuzu ve burada oluşturduğunuz ya da açtığınız anketlerin özel yönetim bağlantılarını hatırlar. **Add to calendar** ile eklediğiniz takvim etkinlikleri cihazınızda hazırlanır. Google veya Outlook'u seçmek, etkinlik bilgileri doldurulmuş olarak o hizmeti açar.
 
 ## Universal ID'niz
 

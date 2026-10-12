@@ -42,6 +42,12 @@ export function adminLink(pollBase: string, id: string, token: string): string {
   return `${pollLink(pollBase, id)}#admin=${token}`
 }
 
+/** A respondent's own edit link (see responseToken.ts): opens the poll with
+ *  their answer ready to change, on any device. Fragment, like the admin link. */
+export function editLink(pollBase: string, id: string, token: string): string {
+  return `${pollLink(pollBase, id)}#edit=${token}`
+}
+
 /**
  * Where a link inside an email we send should land.
  *

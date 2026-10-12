@@ -155,11 +155,13 @@ Los enlaces de las encuestas tienen diez caracteres aleatorios, lo que los hace 
 
 - La dirección de correo del organizador, si la indicó. Se guarda para enviarle sus avisos y los correos de reserva, y no aparece en la página de la encuesta.
 
-## Su nombre es su clave
+## Solo usted puede cambiar su respuesta
 
-Las respuestas se guardan con el nombre que escribe. Si vuelve a responder con exactamente el mismo nombre, su respuesta anterior se actualiza en lugar de duplicarse. Eso también significa que otra persona que use exactamente el mismo nombre sobrescribiría la suya, así que use algo distintivo, como su nombre completo.
+La primera vez que guarda una respuesta, la encuesta entrega a este dispositivo una clave privada para ella. Solo un dispositivo que tenga esa clave puede cambiar o eliminar sus respuestas, así que otra persona que escriba el mismo nombre no puede sobrescribirlas. Bajo su respuesta guardada, **Your edit link** lleva esa clave: ábralo en otro dispositivo para cambiar allí sus respuestas, y no lo comparta, porque cualquiera que lo tenga puede cambiarlas o eliminarlas. **Remove my answers** quita sus respuestas de la encuesta. Si pierde el enlace, hable con el organizador: puede eliminar su respuesta para que pueda responder de nuevo.
 
-Para ahorrarle escribir, este dispositivo recuerda el nombre y el correo que usó la última vez que respondió. Esos datos se quedan en este dispositivo.
+Cada nombre solo puede usarse una vez por encuesta, así que si alguien ya respondió con el suyo, añada una inicial o su apellido. Las respuestas guardadas antes de que existieran los enlaces de edición aún pueden actualizarse escribiendo exactamente el mismo nombre, hasta que el siguiente guardado las vincule a ese dispositivo.
+
+Para ahorrarle escribir, este dispositivo recuerda el nombre y el correo que usó la última vez que respondió, y las claves de las respuestas que dio aquí. Esos datos se quedan en este dispositivo.
 
 ## Dejar un correo es opcional
 
@@ -175,7 +177,7 @@ Puede responder sin dar ninguna dirección de correo. Si deja una, el organizado
 Una encuesta tiene que estar en algún sitio al que todos puedan acceder, así que las encuestas y las respuestas se guardan en nuestros servidores. Esto incluye:
 
 - La encuesta en sí: título, opciones, zona horaria, ajustes y, si lo indicó, el correo del organizador.
-- Cada respuesta: el nombre indicado, lo que se eligió y cuándo se guardó.
+- Cada respuesta: el nombre indicado, lo que se eligió, cuándo se guardó y una huella unidireccional (un hash) de su enlace de edición. El enlace en sí no se guarda.
 - Las direcciones de correo que los participantes decidieron dejar, y el nombre y el correo de quien reserva en una página de reserva.
 - Un logotipo que haya subido el organizador. La página de la encuesta tiene que mostrarlo, así que la encuesta lleva un enlace de larga duración al logotipo que cualquiera con el enlace de la encuesta puede cargar.
 - Si el organizador conectó un calendario, las claves de acceso de esa conexión. Se guardan solo en el servidor, nunca se envían a la aplicación y solo se usan para hacer lo que el organizador pidió. Al desconectar se eliminan.
@@ -203,7 +205,7 @@ Los correos se envían a través de un servicio de envío de correo en nuestro n
 
 ## En su dispositivo
 
-Este dispositivo recuerda el nombre y el correo de su última respuesta, sus ajustes de visualización y, si organiza encuestas, su sesión y los enlaces de administración privados de las encuestas que creó o abrió aquí. Los eventos que añade con **Add to calendar** se preparan en su dispositivo. Elegir Google u Outlook abre ese servicio con los datos del evento ya rellenados.
+Este dispositivo recuerda el nombre y el correo de su última respuesta, los enlaces de edición de las respuestas que dio aquí, sus ajustes de visualización y, si organiza encuestas, su sesión y los enlaces de administración privados de las encuestas que creó o abrió aquí. Los eventos que añade con **Add to calendar** se preparan en su dispositivo. Elegir Google u Outlook abre ese servicio con los datos del evento ya rellenados.
 
 ## Su Universal ID
 

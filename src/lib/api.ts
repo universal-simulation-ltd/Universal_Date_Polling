@@ -294,7 +294,7 @@ export async function notifyPollHost(pollId: string, respondentName: string): Pr
  *  function's service role sees it. Keyed (poll_id, name) like the response
  *  itself, and RLS requires the matching response row to exist — so this must
  *  run AFTER submitResponse. */
-export async function saveResponseEmail(pollId: string, name: string, email: string): Promise<void> {
+export async function saveResponseEmail(pollId: string, name: string, email: string, editToken: string | null = null): Promise<void> {
   // Written through the `upsert_response_email` RPC (migration 0119), NOT by
   // touching the table — and that is not a style choice. Withholding
   // table-level SELECT is what keeps addresses unreadable, but PostgREST's
@@ -306,10 +306,15 @@ export async function saveResponseEmail(pollId: string, name: string, email: str
   // still why this must run AFTER submitResponse.
   // Blank email = not opted in; the function clears any earlier opt-in, so
   // both directions are one call and cannot drift apart.
+  // Since 0284 an answer with an edit token only takes an email WITH that
+  // token — otherwise anyone could redirect somebody's confirmation by name.
+  // The key is only sent when there is a token, so a server without 0284
+  // still resolves the three-argument call.
   const { error } = await supabase.rpc('upsert_response_email', {
     p_poll_id: pollId,
     p_name: name.trim(),
     p_email: email.trim(),
+    ...(editToken ? { p_edit_token: editToken } : {}),
   })
   if (error) throw error
 }
@@ -553,16 +558,68 @@ export async function getResponses(pollId: string): Promise<PollResponse[]> {
  *  `poll_response_emails`; it is written up at length there.
  *
  *  The function re-enforces the live-poll check that 0025's insert policy used
- *  to make, because RLS does not run inside a SECURITY DEFINER function. */
+ *  to make, because RLS does not run inside a SECURITY DEFINER function.
+ *
+ *  Returns the answer's edit token when the server issued or accepted one
+ *  (migration 0284; see responseToken.ts), else null. */
 export async function submitResponse(
   pollId: string,
   name: string,
   availability: Record<string, Availability>,
-): Promise<void> {
-  const { error } = await supabase.rpc('submit_response', {
+  editToken: string | null = null,
+): Promise<string | null> {
+  // 0284: ask for an edit token (a new answer gets one, an old unclaimed one is
+  // claimed) and send the one this device holds. The server refuses to change
+  // an answer that has a token without it — that refusal is a readable
+  // sentence (hint `response_claimed`), so it is thrown as it comes.
+  const { data, error } = await supabase.rpc('submit_response', {
     p_poll_id: pollId,
     p_name: name.trim(),
     p_availability: availability,
+    p_edit_token: editToken,
+    p_issue_token: true,
+  })
+  if (error) {
+    // A server without 0284 has only the three-argument function. Answer the
+    // way this app always did rather than not at all.
+    if (error.code === 'PGRST202' || error.code === '42883') {
+      const legacy = await supabase.rpc('submit_response', {
+        p_poll_id: pollId,
+        p_name: name.trim(),
+        p_availability: availability,
+      })
+      if (legacy.error) throw legacy.error
+      return null
+    }
+    throw error
+  }
+  const token = (data as { edit_token?: unknown } | null)?.edit_token
+  return typeof token === 'string' && token ? token : null
+}
+
+/** The name an edit link's token answers for on this poll, or null when it
+ *  matches nothing (a mistyped link, or an answer since removed). */
+export async function responseNameForToken(pollId: string, token: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('response_name_for_token', { p_poll_id: pollId, p_edit_token: token })
+  if (error) throw error
+  return typeof data === 'string' && data ? data : null
+}
+
+/** Remove one answer (and the email left with it). Allowed for whoever holds
+ *  its edit token, or for the poll's host — pass the host's client and no
+ *  token for that. Returns false, not an error, when the caller is neither or
+ *  the answer is already gone (migration 0284). */
+export async function deleteResponse(
+  client: SupabaseClient,
+  pollId: string,
+  name: string,
+  editToken: string | null = null,
+): Promise<boolean> {
+  const { data, error } = await client.rpc('delete_response', {
+    p_poll_id: pollId,
+    p_name: name,
+    p_edit_token: editToken,
   })
   if (error) throw error
+  return data === true
 }

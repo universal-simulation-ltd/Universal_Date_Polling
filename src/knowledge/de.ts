@@ -155,11 +155,13 @@ Umfragelinks bestehen aus zehn zufälligen Zeichen und sind daher sehr schwer zu
 
 - Die E-Mail-Adresse der einladenden Person, falls sie eine angegeben hat. Sie wird für deren Benachrichtigungen und Buchungs-E-Mails gespeichert und erscheint nicht auf der Umfrageseite.
 
-## Ihr Name ist Ihr Schlüssel
+## Nur Sie können Ihre Antwort ändern
 
-Antworten werden unter dem Namen gespeichert, den Sie eingeben. Antworten Sie erneut mit genau demselben Namen, wird Ihre frühere Antwort aktualisiert statt doppelt angelegt. Das bedeutet auch: Wer genau denselben Namen verwendet, würde Ihre Antwort überschreiben. Wählen Sie daher etwas Eindeutiges, etwa Ihren vollständigen Namen.
+Wenn Sie eine Antwort zum ersten Mal speichern, erhält dieses Gerät einen privaten Schlüssel dafür. Nur ein Gerät mit diesem Schlüssel kann Ihre Antworten ändern oder entfernen; wer denselben Namen eintippt, kann sie also nicht überschreiben. Unter Ihrer gespeicherten Antwort enthält **Your edit link** diesen Schlüssel: Öffnen Sie den Link auf einem anderen Gerät, um Ihre Antworten dort zu ändern, und behalten Sie ihn für sich, denn wer ihn hat, kann Ihre Antworten ändern oder entfernen. **Remove my answers** nimmt Ihre Antworten aus der Umfrage. Wenn Sie den Link verlieren, wenden Sie sich an die einladende Person: Sie kann Ihre Antwort entfernen, damit Sie neu antworten können.
 
-Damit Sie nicht alles neu eintippen müssen, merkt sich dieses Gerät den Namen und die E-Mail-Adresse Ihrer letzten Antwort. Diese Angaben bleiben auf diesem Gerät.
+Jeder Name kann pro Umfrage nur einmal verwendet werden. Hat schon jemand unter Ihrem Namen geantwortet, ergänzen Sie einen Anfangsbuchstaben oder Ihren Nachnamen. Antworten, die vor den Bearbeitungslinks gespeichert wurden, lassen sich weiterhin mit genau demselben Namen aktualisieren, bis das nächste Speichern sie an dieses Gerät bindet.
+
+Damit Sie nicht alles neu eintippen müssen, merkt sich dieses Gerät den Namen und die E-Mail-Adresse Ihrer letzten Antwort sowie die Schlüssel der hier gegebenen Antworten. Diese Angaben bleiben auf diesem Gerät.
 
 ## Eine E-Mail-Adresse ist freiwillig
 
@@ -175,7 +177,7 @@ Sie können antworten, ohne eine E-Mail-Adresse anzugeben. Hinterlassen Sie eine
 Eine Umfrage muss an einem Ort liegen, den alle erreichen können. Deshalb werden Umfragen und Antworten auf unseren Servern gespeichert. Dazu gehören:
 
 - Die Umfrage selbst: Titel, Optionen, Zeitzone, Einstellungen und, falls angegeben, die E-Mail-Adresse der einladenden Person.
-- Jede Antwort: der angegebene Name, die getroffene Auswahl und der Zeitpunkt der Speicherung.
+- Jede Antwort: der angegebene Name, die getroffene Auswahl, der Zeitpunkt der Speicherung und ein Einweg-Fingerabdruck (ein Hash) ihres Bearbeitungslinks. Der Link selbst wird nicht gespeichert.
 - E-Mail-Adressen, die Teilnehmende freiwillig hinterlassen haben, sowie Name und E-Mail-Adresse der Person, die auf einer Buchungsseite bucht.
 - Ein Logo, das die einladende Person hochgeladen hat. Die Umfrageseite muss es anzeigen, deshalb enthält die Umfrage einen lange gültigen Link zum Logo, den alle mit dem Umfragelink laden können.
 - Wenn die einladende Person einen Kalender verbunden hat, die Zugangsschlüssel dieser Verbindung. Sie bleiben ausschließlich auf dem Server, werden nie an die App geschickt und nur für das verwendet, worum die einladende Person gebeten hat. Beim Trennen werden sie gelöscht.
@@ -203,7 +205,7 @@ Die E-Mails werden in unserem Auftrag über einen E-Mail-Versanddienst verschick
 
 ## Auf Ihrem Gerät
 
-Dieses Gerät merkt sich den Namen und die E-Mail-Adresse Ihrer letzten Antwort, Ihre Anzeigeeinstellungen und, wenn Sie Umfragen erstellen, Ihre Anmeldung und die privaten Verwaltungslinks der hier erstellten oder geöffneten Umfragen. Kalendereinträge, die Sie mit **Add to calendar** hinzufügen, werden auf Ihrem Gerät erstellt. Wenn Sie Google oder Outlook wählen, öffnet sich dieser Dienst mit bereits ausgefüllten Termindaten.
+Dieses Gerät merkt sich den Namen und die E-Mail-Adresse Ihrer letzten Antwort, die Bearbeitungslinks der hier gegebenen Antworten, Ihre Anzeigeeinstellungen und, wenn Sie Umfragen erstellen, Ihre Anmeldung und die privaten Verwaltungslinks der hier erstellten oder geöffneten Umfragen. Kalendereinträge, die Sie mit **Add to calendar** hinzufügen, werden auf Ihrem Gerät erstellt. Wenn Sie Google oder Outlook wählen, öffnet sich dieser Dienst mit bereits ausgefüllten Termindaten.
 
 ## Ihre Universal ID
 

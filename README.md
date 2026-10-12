@@ -24,6 +24,13 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
   Optionally leave an email to be notified when the host confirms a time — only
   the poll's host can read it back (for their calendar guests and "Copy
   email"), and it's never shown to other respondents.
+  Each answer gets an **edit token** (platform migration 0284): the server
+  hands it back once and keeps only its SHA-256, the page keeps it on the
+  device and offers it as **Your edit link** (`/p/<id>#edit=<token>`), and
+  changing, removing or re-addressing that answer needs it — so typing someone
+  else's name can't overwrite their answers (`src/lib/responseToken.ts`).
+  Answers from before tokens stay updatable by name until a save claims them.
+  The host can remove any answer.
 - **Decide** — the results view tallies every slot, shades it by how many people
   are free, and badges the winner(s).
 - **Change the times** — straight after creating a poll, **"← Change the

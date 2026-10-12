@@ -155,11 +155,13 @@ I link dei sondaggi sono composti da dieci caratteri casuali, il che li rende mo
 
 - L’indirizzo email di chi organizza, se l’ha indicato. Viene conservato per inviargli gli avvisi e le email di prenotazione, e non compare sulla pagina del sondaggio.
 
-## Il tuo nome è la tua chiave
+## Solo tu puoi modificare la tua risposta
 
-Le risposte vengono salvate con il nome che scrivi. Se rispondi di nuovo con esattamente lo stesso nome, la risposta precedente viene aggiornata invece di essere aggiunta una seconda volta. Significa anche che un’altra persona con esattamente lo stesso nome sovrascriverebbe la tua, quindi usa qualcosa di riconoscibile, come nome e cognome.
+La prima volta che salvi una risposta, il sondaggio dà a questo dispositivo una chiave privata per quella risposta. Solo un dispositivo che ha quella chiave può modificare o eliminare le tue risposte, quindi chi scrive lo stesso nome non può sovrascriverle. Sotto la risposta salvata, **Your edit link** contiene la chiave: aprilo su un altro dispositivo per modificare lì le tue risposte, e tienilo per te, perché chiunque lo abbia può modificarle o eliminarle. **Remove my answers** toglie le tue risposte dal sondaggio. Se perdi il link, chiedi a chi organizza: può eliminare la tua risposta così potrai rispondere di nuovo.
 
-Per risparmiarti di riscriverli, questo dispositivo ricorda il nome e l’indirizzo email usati l’ultima volta che hai risposto. Restano su questo dispositivo.
+Ogni nome si può usare una sola volta per sondaggio: se qualcuno ha già risposto con il tuo, aggiungi un’iniziale o il cognome. Le risposte salvate prima che esistessero i link di modifica si possono ancora aggiornare scrivendo esattamente lo stesso nome, finché il salvataggio successivo non le lega a quel dispositivo.
+
+Per risparmiarti di riscriverli, questo dispositivo ricorda il nome e l’indirizzo email usati l’ultima volta che hai risposto, e le chiavi delle risposte date qui. Restano su questo dispositivo.
 
 ## Lasciare un’email è facoltativo
 
@@ -175,7 +177,7 @@ Puoi rispondere senza indicare un indirizzo email. Se ne lasci uno, chi organizz
 Un sondaggio deve stare in un posto raggiungibile da tutti, quindi sondaggi e risposte sono conservati sui nostri server. Questo comprende:
 
 - Il sondaggio stesso: titolo, opzioni, fuso orario, impostazioni e, se indicato, l’indirizzo email di chi organizza.
-- Ogni risposta: il nome indicato, le scelte fatte e quando è stata salvata.
+- Ogni risposta: il nome indicato, le scelte fatte, quando è stata salvata e un’impronta a senso unico (un hash) del suo link di modifica. Il link in sé non viene conservato.
 - Gli indirizzi email che i partecipanti hanno scelto di lasciare, e il nome e l’indirizzo email di chi prenota su una pagina di prenotazione.
 - Un logo caricato da chi organizza. La pagina del sondaggio deve mostrarlo, quindi il sondaggio contiene un link di lunga durata al logo, che chiunque abbia il link del sondaggio può caricare.
 - Se chi organizza ha collegato un calendario, le chiavi di accesso di quella connessione. Restano solo sul server, non vengono mai inviate all’app e servono solo a fare ciò che chi organizza ha chiesto. Scollegando il calendario vengono eliminate.
@@ -203,7 +205,7 @@ Le email vengono inviate per nostro conto tramite un servizio di invio email.
 
 ## Sul tuo dispositivo
 
-Questo dispositivo ricorda il nome e l’indirizzo email della tua ultima risposta, le impostazioni di visualizzazione e, se organizzi, il tuo accesso e i link di amministrazione privati dei sondaggi creati o aperti qui. Gli eventi che aggiungi con **Add to calendar** vengono preparati sul tuo dispositivo. Scegliendo Google o Outlook si apre quel servizio con i dettagli dell’evento già compilati.
+Questo dispositivo ricorda il nome e l’indirizzo email della tua ultima risposta, i link di modifica delle risposte date qui, le impostazioni di visualizzazione e, se organizzi, il tuo accesso e i link di amministrazione privati dei sondaggi creati o aperti qui. Gli eventi che aggiungi con **Add to calendar** vengono preparati sul tuo dispositivo. Scegliendo Google o Outlook si apre quel servizio con i dettagli dell’evento già compilati.
 
 ## Il tuo Universal ID
 

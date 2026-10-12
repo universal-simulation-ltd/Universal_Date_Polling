@@ -155,11 +155,13 @@ Poll links are made of ten random characters, which makes them very hard to gues
 
 - The host's own email address, if they gave one. It is kept for sending the host's alerts and booking emails, and is not shown on the poll page.
 
-## Your name is your key
+## Only you can change your answer
 
-Answers are stored against the name you type. If you answer again with exactly the same name, your earlier answer is updated rather than added twice. That also means someone else using exactly the same name would overwrite yours, so use something distinctive, such as your full name.
+When you first save an answer, the poll gives this device a private key to it. Only a device holding that key can change or remove your answers, so someone else typing the same name cannot overwrite them. Under your saved answer, **Your edit link** carries the key: open it on another device to change your answers there, and keep it to yourself, because anyone who has it can change or remove them. **Remove my answers** takes them off the poll. If you lose the link, ask the host: they can remove your answer so you can answer again.
 
-To save typing, this device remembers the name and email address you last used to answer a poll. That stays on this device.
+Each name can only be used once on a poll, so if someone has already answered under yours, add an initial or your surname. Answers saved before edit links existed can still be updated by typing exactly the same name, until the next save locks them to that device.
+
+To save typing, this device remembers the name and email address you last used to answer a poll, and the keys to answers you gave here. That stays on this device.
 
 ## Leaving an email address is optional
 
@@ -175,7 +177,7 @@ You can answer without giving an email address. If you leave one, the host can e
 A poll has to live somewhere everyone can reach it, so polls and answers are stored on our servers. That includes:
 
 - The poll itself: its title, options, time zone, settings, and the host's email address if they gave one.
-- Each answer: the name given, the choices made, and when it was saved.
+- Each answer: the name given, the choices made, when it was saved, and a one-way fingerprint (a hash) of its edit link. The link itself is not stored.
 - Email addresses respondents chose to leave, and a booking guest's name and email address.
 - A logo the host uploaded. The poll page has to show it, so the poll carries a long-lived link to the logo that anyone with the poll link can load.
 - If the host connected a calendar, the access keys for that connection. These are kept on the server only, are never sent to the app, and are used only to do what the host asked. Disconnecting deletes them.
@@ -203,7 +205,7 @@ Emails are sent through an email delivery service on our behalf.
 
 ## On your device
 
-This device remembers the name and email address you last answered with, your display settings, and, if you host, your sign-in and the private admin links of polls you created or opened here. Calendar entries you add with **Add to calendar** are put together on your device. Choosing Google or Outlook opens that service with the event details filled in.
+This device remembers the name and email address you last answered with, the edit links of answers you gave here, your display settings, and, if you host, your sign-in and the private admin links of polls you created or opened here. Calendar entries you add with **Add to calendar** are put together on your device. Choosing Google or Outlook opens that service with the event details filled in.
 
 ## Your Universal ID
 
