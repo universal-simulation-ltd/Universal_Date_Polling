@@ -17,10 +17,9 @@ export default function AdminLinkBox({ url, hasEmail }: { url: string; hasEmail:
     <div className="mt-6 rounded-xl bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-200 dark:ring-amber-900 p-4 text-left">
       <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Your private admin link</p>
       <p className="mt-1 text-xs text-amber-900 dark:text-amber-200">
-        Keep this one to yourself — anyone who has it can manage the poll: confirm a time, change it or delete it.{' '}
         {hasEmail
-          ? 'Save it somewhere safe to manage the poll from any device.'
-          : "Save it somewhere safe: it's the only way to manage the poll from another device, or here if this browser's data is cleared."}
+          ? "Keep this one to yourself. It opens the poll's admin page on any device where you've confirmed the same email address, so you can confirm a time, change the poll or delete it there."
+          : "Keep this one to yourself — anyone who has it can manage the poll: confirm a time, change it or delete it. Save it somewhere safe: it's the only way to manage the poll from another device, or here if this browser's data is cleared."}
       </p>
       <div className="mt-3 flex items-stretch gap-2">
         <input
