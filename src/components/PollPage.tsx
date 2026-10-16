@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Chip, useUser, useUniversal, ValueChip } from '@unisim/sdk'
+import { Chip, useRevealOnOpen, useUser, useUniversal, ValueChip } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
 import { bookSlot, BookingError, cancelBooking, claimPoll, currentUser, deleteResponse, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, responseNameForToken, saveResponseEmail, setFinalSlot, signOut, startGuestSession, submitResponse } from '../lib/api'
 import { editTokenFromHash, forgetResponseToken, hashWithoutEditToken, nameStatus, rememberResponseToken, responseTokens } from '../lib/responseToken'
@@ -117,6 +117,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // confirmed banner is what the page is about. Either can be reopened, and
   // confirming a time folds them both back.
   const [showRespond, setShowRespond] = useState(false)
+  // Unfolding it (Show ▾ swaps the one-line fold for the whole section)
+  // scrolls the section fully on screen.
+  const respondRevealRef = useRevealOnOpen<HTMLElement>()
   const [showResults, setShowResults] = useState(false)
   // The timezone the viewer has chosen to see times in. Empty = the poll's own
   // timezone (the default). A viewer can switch to their own zone or any other,
@@ -780,7 +783,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         />
       )}
       {!expired && !isBooking && !editing && (!finalSlot || showRespond) && (
-        <section className="mt-7 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-6 pop-in">
+        <section ref={respondRevealRef} className="mt-7 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-6 pop-in">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
               {dayMode ? 'Are you free on these days?' : 'Are you free at these times?'}
@@ -1126,6 +1129,8 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
    *  respondent who lost their edit link and wants to answer again). */
   onRemove?: (name: string) => void; removing?: boolean
 }) {
+  // Show ▾ swaps the fold for the whole results section: scroll it on screen.
+  const revealRef = useRevealOnOpen<HTMLElement>()
   const tally = useMemo(() => {
     return slots.map((s) => {
       const yes = responses.filter((r) => r.availability[s.id] === 'yes').map((r) => r.name)
@@ -1151,7 +1156,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
   }
 
   return (
-    <section className="mt-7">
+    <section ref={revealRef} className="mt-7">
       <div className="flex items-center justify-between gap-3 px-1">
         <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{foldable ? 'Results' : 'Results so far'}</h2>
         {foldable && <FoldButton onClick={() => onOpenChange(false)} />}

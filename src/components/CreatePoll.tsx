@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Chip, SignInDialog, useFileDrop, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
+import { Chip, SignInDialog, useFileDrop, useRevealOnOpen, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
@@ -108,6 +108,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null)
   const [showBranding, setShowBranding] = useState(false)
   const brandingId = useId()
+  // "Customise for this poll" swaps the read-only card for the full editor,
+  // which is taller: scroll it fully on screen.
+  const brandEditorRevealRef = useRevealOnOpen()
   const [phase, setPhase] = useState<Phase>('edit')
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -1636,7 +1639,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           )}
 
           {showBranding && !(suiteLoggedIn && !brandOverride) && (
-          <div id={brandingId} className="mt-4 grid gap-5 sm:grid-cols-2">
+          <div id={brandingId} ref={brandEditorRevealRef} className="mt-4 grid gap-5 sm:grid-cols-2">
             {/* Booking-page colour */}
             <div className="sm:col-span-2">
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Booking-page colour</span>
