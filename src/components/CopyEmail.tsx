@@ -56,6 +56,7 @@ function CopyEmailDialog({ poll, slot, url, displayTz, recipients, recipientsLoa
 
   return (
     <SettingsDialog
+      phone="sheet"
       title="Copy the confirmation email"
       description="Send it from your own email, and change anything you like first."
       onClose={onClose}

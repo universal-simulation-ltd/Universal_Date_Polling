@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { AdvancedMenuItem, DefaultViewSelect, UniversalAppsNavBar, UpdateNotice, useCloseAppMenu } from '@unisim/sdk'
 // Generated — `npm run credits` after any dependency change. Never edit it by
 // hand: it is read off the installed tree, so a hand-kept list drifts from the
@@ -14,6 +14,12 @@ import { SLOT_VIEW_DEFAULT_ID, SLOT_VIEW_DEFAULTS, SLOT_VIEW_LABELS, type SlotVi
 import { useThemeStore } from './stores/themeStore'
 import { useSystemBarsStyle } from './lib/systemBars'
 import { KNOWLEDGE_BASE } from './knowledge'
+import { phoneApp } from './native/shell'
+import { ConfirmHost } from './native/parts'
+
+// The phone app's own top bar and Tune pages, in place of the SDK navbar and
+// its dropdown and dialogs. Never downloaded by the website.
+const PhoneBar = lazy(() => import('./native/PhoneChrome').then((m) => ({ default: m.PhoneBar })))
 
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_Date_Polling'
 const BASE = import.meta.env.BASE_URL // '/' in dev, '/polling/' in production
@@ -50,6 +56,23 @@ export default function App() {
   const theme = useThemeStore((s) => s.effective)
   // The native status bar (its strip on Android, and the glyphs) follows it.
   useSystemBarsStyle(theme)
+
+  if (phoneApp()) {
+    // The phone app: its own bar (a Tune button, a back link on a poll), no
+    // footer — the credit and the source link are on Tune ▸ About — and
+    // window.confirm's place taken by a bottom sheet.
+    return (
+      <div className="flex min-h-screen flex-col bg-slate-100 dark:bg-slate-950">
+        <Suspense fallback={<div className="h-[calc(env(safe-area-inset-top)+3rem)]" />}>
+          <PhoneBar view={loc.view} pollBase={BASE} />
+        </Suspense>
+        <main className="flex-1 pb-[env(safe-area-inset-bottom)]">
+          {loc.view === 'poll' ? <PollPage id={loc.id} pollBase={BASE} /> : <CreatePoll pollBase={BASE} />}
+        </main>
+        <ConfirmHost />
+      </div>
+    )
+  }
 
   return (
     // ⚠️ pt-[env(safe-area-inset-top)] is for the native (Capacitor) build, not

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { filterTimezones, listTimezones, tzAbbrev } from '../lib/time'
+import { phoneApp } from '../native/shell'
+import { PhonePage } from '../native/parts'
 
 /** A compact searchable timezone dropdown. Shows the currently selected zone
  *  (with its short abbreviation) as a button; opening it reveals a search box
@@ -28,8 +30,12 @@ export default function TimezonePicker({
   const zones = useMemo(() => listTimezones(), [])
   const matches = useMemo(() => filterTimezones(query, zones).slice(0, 200), [query, zones])
 
+  // In the phone app the list is a page of its own, with the search box at the
+  // top — focused only by a pull down (BRANDING.md), never on arrival.
+  const phone = phoneApp()
+
   useEffect(() => {
-    if (!open) return
+    if (!open || phone) return
     // Focus the search box as soon as the panel opens.
     inputRef.current?.focus()
     const onDocPointer = (e: MouseEvent) => {
@@ -42,7 +48,7 @@ export default function TimezonePicker({
       document.removeEventListener('mousedown', onDocPointer)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [open, phone])
 
   function pick(tz: string) {
     onChange(tz)
@@ -71,7 +77,43 @@ export default function TimezonePicker({
         </svg>
       </button>
 
-      {open && (
+      {open && phone && (
+        <PhonePage title={label} back="Back" onBack={() => { setOpen(false); setQuery('') }}>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search time zones…"
+            aria-label="Search time zones"
+            className="h-11 w-full rounded-xl bg-white dark:bg-slate-900 px-3.5 text-[16px] text-slate-900 dark:text-slate-100 ring-1 ring-slate-200 dark:ring-slate-800 outline-none focus:ring-[var(--accent,#cf4b00)]"
+          />
+          <ul role="listbox" aria-label={label} className="mt-4 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200/80 dark:ring-slate-800">
+            {matches.length === 0 ? (
+              <li className="px-4 py-3 text-[15px] text-slate-400">No matching time zones.</li>
+            ) : (
+              matches.map((z) => {
+                const selected = z === value
+                return (
+                  <li key={z} className="border-b border-slate-100 dark:border-slate-800 last:border-b-0">
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      onClick={() => pick(z)}
+                      className={`flex min-h-[48px] w-full items-center justify-between gap-2 px-4 text-left text-[16px] active:bg-slate-50 dark:active:bg-slate-800 ${selected ? 'font-semibold text-[var(--accent-text)]' : 'text-slate-800 dark:text-slate-200'}`}
+                    >
+                      <span className="min-w-0 truncate">{z}</span>
+                      <span className="shrink-0 text-[13px] text-slate-400">{selected ? '✓ ' : ''}{tzAbbrev(z, at)}</span>
+                    </button>
+                  </li>
+                )
+              })
+            )}
+          </ul>
+        </PhonePage>
+      )}
+
+      {open && !phone && (
         <div className="absolute left-0 z-40 mt-1.5 w-72 max-w-[85vw] rounded-lg bg-white dark:bg-slate-800 shadow-lg ring-1 ring-slate-200 dark:ring-slate-700 pop-in">
           <div className="p-2 border-b border-slate-100 dark:border-slate-700">
             <input

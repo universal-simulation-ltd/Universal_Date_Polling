@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { phoneApp } from '../native/shell'
 import { Chip, SignInDialog, useFileDrop, useRevealOnOpen, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
@@ -1164,7 +1165,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 </button>
               </span>
               <span className="basis-full text-[11px] text-slate-400">
-                You can still connect one any time from your profile menu (top right) → Tune this app → This poll's options.
+                You can still connect one any time from {phoneApp() ? 'Tune (top right)' : 'your profile menu (top right) → Tune this app'} → This poll's options.
               </span>
             </div>
           )}
@@ -1257,7 +1258,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             {!bookingMode && <> · {notifyOnResponse ? 'response alerts on' : 'no response alerts'}</>}
             {mode === 'times' && <> · {timezone}</>}
           </span>
-          <span className="text-slate-400">— change these in your profile menu (top right) → Tune this app → This poll's options.</span>
+          <span className="text-slate-400">— change these in {phoneApp() ? 'Tune (top right)' : 'your profile menu (top right) → Tune this app'} → This poll's options.</span>
         </div>
 
         {/* The options themselves. Until 2026-09-11 this was a "More options"
@@ -1267,6 +1268,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             (inheriting the theme variables) without occupying the layout. */}
         {settingsSection !== null && (
           <SettingsDialog
+            back="New poll"
             title="This poll's options"
             description="These apply to the poll you're creating now."
             onClose={() => setSettingsSection(null)}
@@ -1520,7 +1522,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   We'll send a quick code to confirm it's you — that's how you'll manage this poll later
                   {notifyOnResponse
                     ? <> and where we'll send your response alerts.</>
-                    : <>. Want an email each time a guest responds? Turn that on in your profile menu (top right) → Tune this app → This poll's options.</>}
+                    : <>. Want an email each time a guest responds? Turn that on in {phoneApp() ? 'Tune (top right)' : 'your profile menu (top right) → Tune this app'} → This poll's options.</>}
                 </p>
               )}
             </label>
@@ -1597,7 +1599,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 </span>
               </span>
             </button>
-            {!suiteLoggedIn && (
+            {/* Not in the phone app: it has no sign-in at all (store-listings
+                README §7), and a colour and logo can still be added by hand. */}
+            {!suiteLoggedIn && !phoneApp() && (
               <>
                 <button type="button" onClick={() => setSignInOpen(true)} className="text-xs font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] hover:underline whitespace-nowrap">
                   Sign in to import your branding →

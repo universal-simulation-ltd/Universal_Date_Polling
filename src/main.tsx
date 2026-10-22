@@ -7,7 +7,11 @@ import App from './App'
 import { UsageTracker } from '@unisim/sdk'
 import { SUITE_SUPABASE_URL, SUITE_SUPABASE_ANON } from './lib/supabase'
 import { useGuestSessionFollowsSuiteSignOut } from './lib/otpSession'
+import { installBack } from './native/back'
 import './index.css'
+
+// Android's Back closes the phone app's pages and sheets first (native/back.ts).
+installBack()
 
 console.log(`build: ${import.meta.env.VITE_BUILD_SHA}`)
 

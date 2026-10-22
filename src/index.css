@@ -134,3 +134,16 @@ body {
     font-size: max(16px, 1em) !important;
   }
 }
+
+/* ---- Phone app layers (src/native/parts.tsx) --------------------------------
+   A page slides in from the right, a sheet rises from the foot, the scrim
+   fades. The website never renders these classes. */
+@keyframes phone-page-in { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes phone-sheet-in { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes phone-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.phone-page { animation: phone-page-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.phone-sheet { animation: phone-sheet-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.phone-scrim { animation: phone-fade-in 200ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .phone-page, .phone-sheet, .phone-scrim { animation: none; }
+}

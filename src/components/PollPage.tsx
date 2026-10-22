@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { askConfirm } from '../native/parts'
 import { Chip, useRevealOnOpen, useUser, useUniversal, ValueChip } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
 import { bookSlot, BookingError, cancelBooking, claimPoll, currentUser, deleteResponse, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, responseNameForToken, saveResponseEmail, setFinalSlot, signOut, startGuestSession, submitResponse } from '../lib/api'
@@ -384,7 +385,8 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     const question = asHost
       ? `Remove ${who}’s answers from this poll? This can’t be undone.`
       : 'Remove your answers from this poll? This can’t be undone.'
-    if (!window.confirm(question)) return
+    // A bottom sheet in the phone app, the browser's own question on the web.
+    if (!(await askConfirm(question, { confirm: 'Remove', danger: true }))) return
     setError(null)
     setRemoving(true)
     try {
@@ -1338,13 +1340,14 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
           {isHost && (
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 // Un-confirming a poll disappoints nobody — the slot was never
                 // promised. Cancelling a BOOKING takes a meeting out of
                 // somebody's diary, so it asks first and says who it affects.
-                if (isBooking && !window.confirm(
+                if (isBooking && !(await askConfirm(
                   `Cancel this booking?\n\n${bookedBy ? bookedBy : 'Your guest'} will be emailed to say it's off, and the page opens for them to pick another time.`,
-                )) return
+                  { confirm: 'Cancel the booking', cancel: 'Keep it', danger: true },
+                ))) return
                 onUnconfirm()
               }}
               disabled={confirming}

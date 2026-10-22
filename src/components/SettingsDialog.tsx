@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
+import { phoneApp } from '../native/shell'
+import { PhonePage, PhoneSheet } from '../native/parts'
 
 /**
  * The modal the Profile → Tune this app ▸ "This poll's options" row opens.
@@ -13,7 +15,33 @@ import { useEffect, useId, useRef } from 'react'
  * heading). What goes inside is the caller's, because the settings are the
  * caller's state.
  */
-export default function SettingsDialog({ title, description, onClose, children }: {
+export default function SettingsDialog({ phone = 'page', back = 'Back', ...props }: {
+  title: string
+  description?: string
+  onClose: () => void
+  children: React.ReactNode
+  /** In the phone app: a full page with a back link (this poll's options), or
+   *  a bottom sheet (Copy email). The website always gets the dialog. */
+  phone?: 'page' | 'sheet'
+  /** The phone page's back link: where it goes. */
+  back?: string
+}) {
+  if (phoneApp()) {
+    return phone === 'sheet' ? (
+      <PhoneSheet label={props.title} onClose={props.onClose} title={props.title}>
+        {props.description && <p className="-mt-1 mb-4 text-sm text-slate-500 dark:text-slate-400">{props.description}</p>}
+        {props.children}
+      </PhoneSheet>
+    ) : (
+      <PhonePage title={props.title} description={props.description} back={back} onBack={props.onClose}>
+        {props.children}
+      </PhonePage>
+    )
+  }
+  return <WebDialog {...props} />
+}
+
+function WebDialog({ title, description, onClose, children }: {
   title: string
   description?: string
   onClose: () => void

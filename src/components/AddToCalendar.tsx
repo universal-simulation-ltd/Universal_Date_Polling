@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Poll, Slot } from '../lib/types'
 import { downloadIcs, googleCalendarUrl, outlookCalendarUrl } from '../lib/calendar'
+import { phoneApp } from '../native/shell'
+import { PhoneSheet, SheetRow } from '../native/parts'
 
 const MENU_WIDTH = 208 // matches w-52
 
@@ -34,12 +36,15 @@ export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
     setPos({ top: r.bottom + 6, left })
   }
 
+  // In the phone app the choices are a bottom sheet, not a menu under the button.
+  const phone = phoneApp()
+
   useLayoutEffect(() => {
-    if (open) place()
-  }, [open])
+    if (open && !phone) place()
+  }, [open, phone])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || phone) return
     const onDocPointer = (e: MouseEvent) => {
       const t = e.target as Node
       if (btnRef.current?.contains(t) || menuRef.current?.contains(t)) return
@@ -58,7 +63,7 @@ export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
       window.removeEventListener('scroll', onReflow, true)
       window.removeEventListener('resize', onReflow)
     }
-  }, [open])
+  }, [open, phone])
 
   const openExternal = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer')
@@ -83,7 +88,20 @@ export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
           no Tailwind class can beat — the scale stops at 50 and an inline style
           wins regardless. The menu is portalled to document.body, so it shares
           the root stacking context with the bar and the comparison is real. */}
-      {open && createPortal(
+      {open && phone && (
+        <PhoneSheet label="Add to calendar" title="Add to calendar" onClose={() => setOpen(false)}>
+          {guests.length > 0 && (
+            <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+              Invites the {guests.length === 1 ? 'person' : `${guests.length} people`} free then — they're in the guests box, and nothing is sent until you save.
+            </p>
+          )}
+          <SheetRow onClick={() => openExternal(googleCalendarUrl(poll, slot, pollUrl, guests))}>Google Calendar</SheetRow>
+          <SheetRow onClick={() => openExternal(outlookCalendarUrl(poll, slot, pollUrl, guests))}>Outlook</SheetRow>
+          <SheetRow onClick={() => { downloadIcs(poll, slot, pollUrl); setOpen(false) }}>Apple / other (.ics)</SheetRow>
+        </PhoneSheet>
+      )}
+
+      {open && !phone && createPortal(
         <div
           ref={menuRef}
           role="menu"
