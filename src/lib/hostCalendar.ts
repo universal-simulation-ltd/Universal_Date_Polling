@@ -7,6 +7,7 @@
 // wall-clock segments for the week grid, and is unit-tested in isolation.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { phoneApp } from '../native/shell'
 import { appBase } from './appUrl'
 import { addCalendarDays, zonedDayAndMinute, zonedWallClockToInstant } from './time'
 
@@ -153,7 +154,15 @@ export async function startCalendarConnect(
   // one-time claim code that the closer page hands back to us, and only this
   // host's login can take them — so a leaked OAuth state can't bind somebody
   // else's calendar to the wrong host. See `claimCalendar`.
-  const d = await invokeCalendarOauth(client, { action: 'start', provider, base, scope, claim: true })
+  //
+  // ⚠️ NOT in the phone app. There `window.open` hands the consent page to the
+  // system browser (Capacitor), which has no `opener`, so the closer page can
+  // never post the claim back and the parked tokens would expire unclaimed:
+  // the connect would look finished and store nothing. The phone app keeps the
+  // old flow (tokens stored on the callback, `watchPopup` re-reads the status)
+  // until the connect runs in an in-app browser that can return the claim.
+  // Don't set CALENDAR_OAUTH_REQUIRE_CLAIM=1 on the server before then.
+  const d = await invokeCalendarOauth(client, { action: 'start', provider, base, scope, claim: !phoneApp() })
   return d.url as string
 }
 
