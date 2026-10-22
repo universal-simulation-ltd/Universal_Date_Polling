@@ -12,7 +12,7 @@ import { useFreeAllowance } from '../lib/useFreeAllowance'
 import { SUPABASE_CONFIGURED, supabase } from '../lib/supabase'
 import { addLocalDays, formatTime, listTimezones, localTimezone, tzAbbrev, zonedDayAndMinute } from '../lib/time'
 import {
-  busySegmentsByDay, calendarConfigured, calendarStatus, disconnectCalendar, fetchFreeBusy, startCalendarConnect,
+  busySegmentsByDay, calendarConfigured, calendarMessage, calendarMessageOriginOk, calendarStatus, claimCalendar, disconnectCalendar, fetchFreeBusy, startCalendarConnect,
   type BusyInterval, type CalendarProvider, type CalendarStatus, type ProviderFetchStatus,
 } from '../lib/hostCalendar'
 import { suggestFreeSlots, SUGGEST_COUNT } from '../lib/autoSlots'
@@ -457,14 +457,24 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   // The connect popup ends on our own static calendar-connected.html (the
   // edge function 302s it there), which postMessages back; refresh on success.
   useEffect(() => {
-    function onMsg(e: MessageEvent) {
-      if (e.origin !== window.location.origin) return
-      const d = e.data as { type?: string; ok?: boolean } | null
-      if (!d || d.type !== 'unisim-calendar') return
+    async function onMsg(e: MessageEvent) {
+      if (!calendarMessageOriginOk(e.origin, phoneApp())) return
+      const d = calendarMessage(e.data)
+      if (!d) return
       if (d.ok) {
         setCalError(null)
         fetchedWeeksRef.current.clear()
         setCalBusy([])
+        // Claim mode (platform 0308): the tokens are stored only now, with
+        // this host's login, before the status is re-read.
+        if (d.claim) {
+          try {
+            await claimCalendar(calClientRef.current, d.claim)
+          } catch (err) {
+            setCalError(messageOf(err))
+            return
+          }
+        }
         calendarStatus(calClientRef.current).then(setCalStatus).catch(() => {})
       } else {
         setCalError('Calendar connection was cancelled or failed.')

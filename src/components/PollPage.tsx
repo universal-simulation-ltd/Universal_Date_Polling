@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { askConfirm } from '../native/parts'
+import { phoneApp } from '../native/shell'
 import { Chip, useRevealOnOpen, useUser, useUniversal, ValueChip } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
 import { bookSlot, BookingError, cancelBooking, claimPoll, currentUser, deleteResponse, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, responseNameForToken, saveResponseEmail, setFinalSlot, signOut, startGuestSession, submitResponse } from '../lib/api'
@@ -15,7 +16,7 @@ import {
 import { CONTAINER_POLL } from '../lib/layout'
 import { adminLink, editLink, pollLink } from '../lib/appUrl'
 import {
-  addConfirmedTimeToCalendar, calendarStatus, removeConfirmedTimeFromCalendar, startCalendarConnect,
+  addConfirmedTimeToCalendar, calendarMessage, calendarMessageOriginOk, calendarStatus, claimCalendar, removeConfirmedTimeFromCalendar, startCalendarConnect,
   type CalendarProvider, type CalendarStatus,
 } from '../lib/hostCalendar'
 import { guestEmailsForSlot, uniqueEmails, type RespondentContact } from '../lib/confirmedEmail'
@@ -578,11 +579,21 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         setCalWrite({ status: 'error', message: 'Allow pop-ups for this site to reconnect your calendar.' })
         return
       }
-      const onMessage = (e: MessageEvent) => {
-        const d = e.data as { type?: string; ok?: boolean } | null
-        if (!d || d.type !== 'unisim-calendar' || e.origin !== window.location.origin) return
+      const onMessage = async (e: MessageEvent) => {
+        const d = calendarMessage(e.data)
+        if (!d || !calendarMessageOriginOk(e.origin, phoneApp())) return
         window.removeEventListener('message', onMessage)
         if (!d.ok) return
+        // Claim mode (platform 0308): store the parked tokens with this host's
+        // login before re-reading the status.
+        if (d.claim) {
+          try {
+            await claimCalendar(client, d.claim)
+          } catch (err) {
+            setCalWrite({ status: 'error', message: errorMessage(err, 'Could not finish connecting your calendar.') })
+            return
+          }
+        }
         setCalWrite({ status: 'idle' })
         void calendarStatus(client).then(setCalStatus).catch(() => {})
       }

@@ -18,11 +18,19 @@
     var params = new URLSearchParams(window.location.search)
     var ok = params.get('ok') === '1'
     var provider = params.get('provider') || ''
+    // Claim mode (calendar-oauth, platform 0308): the one-time code the app
+    // hands back with the host's login to store the tokens. Empty otherwise.
+    var claim = params.get('claim') || ''
     document.getElementById('msg').textContent = ok ? 'Calendar connected ✓' : 'Calendar connection failed or was cancelled.'
     try {
       // Same-origin as the create screen that opened this popup, so the app's
       // listener can check event.origin === window.location.origin.
-      if (window.opener) window.opener.postMessage({ type: 'unisim-calendar', ok: ok, provider: provider }, window.location.origin)
+      // The phone app opens this from capacitor://localhost (or https://localhost
+      // on Android), which this page can't name, so a cross-origin opener gets
+      // '*'. Safe: the claim code stores nothing without the host's own login.
+      var target = window.location.origin
+      try { if (window.opener && window.opener.location.origin !== target) target = '*' } catch (e) { target = '*' }
+      if (window.opener) window.opener.postMessage({ type: 'unisim-calendar', ok: ok, provider: provider, claim: claim }, target)
     } catch (e) { /* opener gone */ }
     setTimeout(function () { window.close() }, 800)
   </script>

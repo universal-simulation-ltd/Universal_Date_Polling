@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { busySegmentsByDay, mergeSegments, providerStatusOf, type BusyInterval } from './hostCalendar'
+import { busySegmentsByDay, calendarMessage, mergeSegments, providerStatusOf, type BusyInterval } from './hostCalendar'
 
 const iv = (start: string, end: string, title?: string): BusyInterval =>
   title ? { start, end, title } : { start, end }
@@ -236,5 +236,20 @@ describe('providerStatusOf', () => {
       connected: false, email: null, writable: false, detailed: true,
       ceiling: { writable: true, detailed: true },
     })
+  })
+})
+
+describe('calendarMessage (the closer page, claim mode 0308)', () => {
+  it('reads the claim code when there is one', () => {
+    expect(calendarMessage({ type: 'unisim-calendar', ok: true, provider: 'google', claim: 'ab'.repeat(32) }))
+      .toEqual({ ok: true, provider: 'google', claim: 'ab'.repeat(32) })
+  })
+  it('an empty or missing claim is none (a server not in claim mode)', () => {
+    expect(calendarMessage({ type: 'unisim-calendar', ok: true, provider: 'google', claim: '' })?.claim).toBeNull()
+    expect(calendarMessage({ type: 'unisim-calendar', ok: false })?.claim).toBeNull()
+  })
+  it('ignores anything else', () => {
+    expect(calendarMessage({ type: 'other', ok: true })).toBeNull()
+    expect(calendarMessage(null)).toBeNull()
   })
 })

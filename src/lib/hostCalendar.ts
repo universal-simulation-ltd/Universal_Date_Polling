@@ -127,7 +127,7 @@ export async function calendarConfigured(client: SupabaseClient): Promise<{ goog
 /** Returns the provider consent URL to open in a popup. The flow ends with the
  *  edge function 302ing the popup to this app's own static
  *  `calendar-connected.html`, which postMessages
- *  `{type:'unisim-calendar', ok, provider}` back to the opener (same-origin)
+ *  `{type:'unisim-calendar', ok, provider, claim}` back to the opener (same-origin)
  *  and closes itself — so the function needs our base URL, not just the
  *  origin (the app is path-routed under /polling/ in production). */
 /** `scope` decides how much we ask the provider for. Connecting from the create
@@ -149,8 +149,34 @@ export async function startCalendarConnect(
   // `watchPopup` in CreatePoll already covers: it refreshes when the popup
   // closes, however it closed.
   const base = appBase(import.meta.env.BASE_URL)
-  const d = await invokeCalendarOauth(client, { action: 'start', provider, base, scope })
+  // `claim: true` (platform 0308): the tokens are parked server-side under a
+  // one-time claim code that the closer page hands back to us, and only this
+  // host's login can take them — so a leaked OAuth state can't bind somebody
+  // else's calendar to the wrong host. See `claimCalendar`.
+  const d = await invokeCalendarOauth(client, { action: 'start', provider, base, scope, claim: true })
   return d.url as string
+}
+
+/** Store the tokens a claim-mode connect parked (calendar-oauth `claim`). The
+ *  code comes from the closer page's postMessage; a claim works once, and only
+ *  for the host who started the connect. */
+export async function claimCalendar(client: SupabaseClient, claim: string): Promise<void> {
+  await invokeCalendarOauth(client, { action: 'claim', claim })
+}
+
+/** Where the closer page's message may come from: this app, or — in the phone
+ *  app, whose own origin (capacitor://localhost) the provider can't redirect to
+ *  — the hosted site the connect was sent through. Safe: a claim code is
+ *  useless without the host's own login. */
+export function calendarMessageOriginOk(origin: string, phone: boolean): boolean {
+  return origin === window.location.origin || (phone && origin === 'https://opensource.unisim.co.uk')
+}
+
+/** The closer page's message, if this is one. */
+export function calendarMessage(data: unknown): { ok: boolean; provider: string; claim: string | null } | null {
+  const d = data as { type?: string; ok?: boolean; provider?: string; claim?: string | null } | null
+  if (!d || d.type !== 'unisim-calendar') return null
+  return { ok: !!d.ok, provider: d.provider ?? '', claim: typeof d.claim === 'string' && d.claim ? d.claim : null }
 }
 
 export async function disconnectCalendar(client: SupabaseClient, provider: CalendarProvider): Promise<void> {
