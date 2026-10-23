@@ -102,6 +102,13 @@ export function I18nRoot({ children }: { children: ReactNode }) {
   if (typeof document !== 'undefined' && document.documentElement.lang !== language) {
     document.documentElement.lang = language
   }
+  // The tab title and the meta description follow the language too. index.html
+  // holds the English, which is what a crawler without JavaScript reads.
+  useEffect(() => {
+    const lang = shown(language)
+    document.title = lookup(lang, 'app.meta_title')
+    document.querySelector('meta[name="description"]')?.setAttribute('content', lookup(lang, 'app.meta_description'))
+  }, [language])
   // For store screenshots and layout checks: drive the app in English, switch
   // language just before each capture. Only what a user can already do from
   // Tune this app: it sets this app's override.

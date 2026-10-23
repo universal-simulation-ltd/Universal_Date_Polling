@@ -13,6 +13,8 @@ const app: Draft['app'] = {
   'poll_options': 'Bu anketin seçenekleri',
   'poll_options_info': 'Randevu sayfası, bağlantının süresi, yanıt bildirimleri, takvim ve saat dilimi',
   'slot_view_label': 'Uygunluk şu görünümde açılır',
+  'meta_title': 'Universal Date Polling — herkese uyan bir zaman bulun',
+  'meta_description': 'Universal Date Polling — ücretsiz bir grup planlayıcısı. Bir anket oluşturun, tarih ve saatler seçin, bir bağlantı paylaşın ve herkesin ne zaman uygun olduğunu görün. Oy vermek için kayıt gerekmez, %100 ücretsiz, açık kaynak.',
 }
 
 export default app

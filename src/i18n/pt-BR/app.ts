@@ -13,6 +13,8 @@ const app: Draft['app'] = {
   'poll_options': 'Opções desta enquete',
   'poll_options_info': 'Página de agendamento, validade do link, alertas de resposta, agenda e fuso horário',
   'slot_view_label': 'A disponibilidade abre em',
+  'meta_title': 'Universal Date Polling — encontre um horário que funcione para todos',
+  'meta_description': 'Universal Date Polling — um agendador de grupo gratuito. Crie uma enquete, escolha datas e horários, compartilhe um link e veja quando todos estão livres. Sem cadastro para votar, 100% gratuito, código aberto.',
 }
 
 export default app

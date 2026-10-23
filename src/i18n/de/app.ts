@@ -13,6 +13,8 @@ const app: Draft['app'] = {
   'poll_options': 'Optionen dieser Umfrage',
   'poll_options_info': 'Buchungsseite, Ablauf des Links, Antwort-Benachrichtigungen, Kalender und Zeitzone',
   'slot_view_label': 'Verfügbarkeit startet mit',
+  'meta_title': 'Universal Date Polling — finde einen Termin, der allen passt',
+  'meta_description': 'Universal Date Polling — ein kostenloser Gruppenplaner. Erstelle eine Umfrage, wähle Tage und Uhrzeiten, teile einen Link und sieh, wann alle frei sind. Abstimmen ohne Anmeldung, 100 % kostenlos, Open Source.',
 }
 
 export default app

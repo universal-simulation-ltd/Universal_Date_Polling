@@ -14,4 +14,8 @@ export default {
   'poll_options': "This poll's options", // opens the poll's options panel
   'poll_options_info': 'Booking page, link expiry, response alerts, calendar and timezone', // the row's one-line description
   'slot_view_label': 'Availability opens on', // which availability picker the create page opens on
+
+  // The browser tab and the search snippet (index.html's <title> and meta description, set at run time)
+  'meta_title': 'Universal Date Polling — find a time that works for everyone', // the browser tab title; keep the product name untranslated
+  'meta_description': 'Universal Date Polling — a free group scheduler. Create a poll, pick some dates and times, share a link, and see when everyone is free. No sign-up to vote, 100% free, open source.', // the page's meta description, about 160 characters
 }

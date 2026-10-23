@@ -13,6 +13,8 @@ const app: Draft['app'] = {
   'poll_options': 'Opzioni di questo sondaggio',
   'poll_options_info': 'Pagina di prenotazione, scadenza del link, avvisi di risposta, calendario e fuso orario',
   'slot_view_label': 'La disponibilità si apre su',
+  'meta_title': 'Universal Date Polling — trova un orario che vada bene a tutti',
+  'meta_description': 'Universal Date Polling — un pianificatore di gruppo gratuito. Crea un sondaggio, scegli date e orari, condividi un link e scopri quando sono tutti liberi. Nessuna registrazione per votare, 100% gratuito, open source.',
 }
 
 export default app
