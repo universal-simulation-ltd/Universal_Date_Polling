@@ -26,6 +26,9 @@ const ROOT = path.resolve(HERE, '..')
 // Converter's suite hard-codes ../../Universal_Beam and simply cannot run on a
 // machine where that checkout is absent.
 function resolvePlaywright() {
+  // CI installs it into this repo with --no-save (.github/workflows/e2e.yml).
+  const own = path.join(ROOT, 'node_modules', 'playwright', 'index.mjs')
+  if (fs.existsSync(own)) return pathToFileURL(own).href
   const apps = path.resolve(ROOT, '..')
   for (const dir of fs.readdirSync(apps)) {
     const candidate = path.join(apps, dir, 'node_modules', 'playwright', 'index.mjs')

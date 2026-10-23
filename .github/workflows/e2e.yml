@@ -1,0 +1,81 @@
+# The browser suites in `e2e/*.e2e.mjs`, on every push and pull request. Each
+# suite starts its own Vite dev server on a free port and stubs the backend at
+# the network boundary (page.route), so nothing here talks to a real Supabase.
+#
+# Playwright is not a dependency of the app (locally the suites borrow a
+# sibling repo's copy, see e2e/harness.mjs), so it is installed here with
+# --no-save at the version below. The job runs in Playwright's own image for
+# that version, which already holds the browsers AND their system libraries:
+# installing the libraries on a bare runner took 9 to 38 minutes of apt per
+# job in Universal PDF (measured 2026-10-22), where pulling the image takes
+# about one. Keep its tag and PLAYWRIGHT_VERSION the same.
+#
+# Free: the repo is public, so ubuntu-latest minutes cost nothing.
+
+name: e2e
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to a branch or PR cancels the older run, but not on main: main
+# moves often (several sessions push to it), and every commit there should
+# get its own result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  PLAYWRIGHT_VERSION: '1.62.1'
+  # Placeholders in the right shape, not credentials: every request the suites
+  # make is stubbed, and anything that slips past the stubs fails offline
+  # instead of reaching the real project (src/lib/supabase.ts falls back to the
+  # production project when these are unset).
+  VITE_SUPABASE_URL: 'https://ci-placeholder.supabase.co'
+  VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiI.eyJyb2xlIjoiYW5vbiJ9.c2lnbmF0dXJl'
+
+jobs:
+  e2e:
+    name: e2e (chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      # --ipc=host: Chromium runs out of shared memory in a container
+      # without it. --user 1001: the runner's own user (Playwright's advice),
+      # so the checkout is writable.
+      options: --ipc=host --user 1001
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Playwright ${{ env.PLAYWRIGHT_VERSION }}
+        run: npm install --no-save --no-audit --no-fund "playwright@$PLAYWRIGHT_VERSION"
+
+      # Every suite runs even after one fails, so a red run lists them all.
+      - name: Run the suites
+        run: |
+          failed=()
+          for suite in e2e/*.e2e.mjs; do
+            echo "::group::$suite"
+            node "$suite" || failed+=("$suite")
+            echo "::endgroup::"
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            printf 'failed: %s\n' "${failed[@]}"
+            exit 1
+          fi

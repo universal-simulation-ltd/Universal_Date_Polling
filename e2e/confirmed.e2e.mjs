@@ -96,6 +96,25 @@ async function recordWindowOpen(page) {
 
 const text = (page) => page.locator('body').innerText()
 
+/** Opening a folded section scrolls it into view smoothly (the SDK's
+ *  reveal-on-open), and the Add to calendar menu closes on any scroll — it is
+ *  pinned under its button and would otherwise float away from it. So a click
+ *  that lands mid-scroll opens a menu the next scroll frame shuts. Wait until
+ *  the page has been still for a few frames, as a person would. */
+async function settleScroll(page) {
+  await page.evaluate(() => new Promise((resolve) => {
+    let last = window.scrollY
+    let still = 0
+    const tick = () => {
+      still = window.scrollY === last ? still + 1 : 0
+      last = window.scrollY
+      if (still >= 5) resolve()
+      else requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }))
+}
+
 // ── Run ──────────────────────────────────────────────────────────────────────
 
 const port = await freePort()
@@ -124,6 +143,7 @@ try {
     check('and folds away again', !(await text(page)).includes('Save my availability'))
 
     await page.getByRole('button', { name: /^Results/ }).click()
+    await settleScroll(page)
     body = await text(page)
     check('the results open again with the names', body.includes('Sam') && body.includes('not free: Jo'))
 
@@ -150,6 +170,7 @@ try {
     await stubBackend(page, { host: true, emailReads })
     await page.goto(`${base}/p/conf123`, { waitUntil: 'networkidle' })
     await page.getByRole('button', { name: /Copy email/ }).waitFor({ timeout: 5000 })
+    await settleScroll(page)
 
     let body = await text(page)
     check('the host sees Copy email', body.includes('Copy email'))

@@ -11,10 +11,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
-// Playwright lives in whichever sibling app installed it — this repo doesn't
-// carry it. Resolved by looking rather than by naming a sibling, so a machine
-// without that particular checkout can still run the suite.
+// Playwright is not a dependency of this repo. CI installs it here with
+// --no-save (.github/workflows/e2e.yml); locally it lives in whichever sibling
+// app installed it. Resolved by looking rather than by naming a sibling, so a
+// machine without that particular checkout can still run the suite.
 async function importPlaywright() {
+  const own = path.join(ROOT, 'node_modules', 'playwright', 'index.mjs')
+  if (fs.existsSync(own)) return import(pathToFileURL(own).href).then((m) => m.default ?? m)
   const apps = path.resolve(ROOT, '..')
   for (const dir of fs.readdirSync(apps)) {
     const candidate = path.join(apps, dir, 'node_modules', 'playwright', 'index.mjs')
