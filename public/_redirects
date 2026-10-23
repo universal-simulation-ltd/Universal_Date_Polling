@@ -23,6 +23,9 @@
 # that lands on /calendar-connected, which matches no product and 404s. The
 # extensionless request never triggers the 308.
 /polling/calendar-connected   /calendar-connected   200
+# The same page for the phone app's in-app browser: it sees /app/ and sends the
+# claim on to unisim-polling://calendar-connected (src/native/calendarReturn.ts).
+/polling/app/calendar-connected /calendar-connected 200
 /polling/favicon.svg          /favicon.svg          200
 /polling/unisim-icon.png      /unisim-icon.png      200
 /polling/og-image.png         /og-image.png         200

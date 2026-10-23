@@ -7,32 +7,82 @@
   <!-- The calendar-oauth edge function 302s the OAuth popup here (it cannot
        serve this page itself: the functions gateway rewrites Content-Type to
        text/plain, so inline HTML shows as raw markup). This page tells the
-       create screen the outcome and closes the popup. -->
+       create screen the outcome and closes the popup.
+
+       Two addresses serve it (public/_redirects):
+         /polling/calendar-connected      the website's popup: postMessage to
+                                          the opener, then close.
+         /polling/app/calendar-connected  the phone app's in-app browser, which
+                                          has no opener: go on to the app's own
+                                          scheme, unisim-polling://calendar-
+                                          connected?<same query>, which the app
+                                          reads (src/native/calendarReturn.ts).
+       Its words follow the browser's language; it is a static page with no
+       app around it, so it carries its own few strings. -->
 </head>
 <body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f8fafc;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
   <div style="text-align:center;padding:24px;">
     <p id="msg" style="font-size:16px;font-weight:600;margin:0;">Finishing up…</p>
-    <p style="font-size:13px;color:#64748b;margin-top:8px;">You can close this window.</p>
+    <p id="hint" style="font-size:13px;color:#64748b;margin-top:8px;">You can close this window.</p>
+    <p id="back" style="display:none;margin-top:20px;">
+      <a id="back-link" href="#" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#c2410c;color:#fff;font-size:16px;font-weight:600;text-decoration:none;">Back to Date Polling</a>
+    </p>
   </div>
   <script>
+    var WORDS = {
+      en: ['Finishing up…', 'Calendar connected ✓', 'Calendar connection failed or was cancelled.', 'You can close this window.', 'Back to Date Polling'],
+      fr: ['Finalisation…', 'Agenda connecté ✓', 'La connexion de l’agenda a échoué ou a été annulée.', 'Vous pouvez fermer cette fenêtre.', 'Revenir à Date Polling'],
+      es: ['Terminando…', 'Calendario conectado ✓', 'La conexión del calendario falló o se canceló.', 'Puedes cerrar esta ventana.', 'Volver a Date Polling'],
+      it: ['Quasi fatto…', 'Calendario collegato ✓', 'Il collegamento del calendario non è riuscito o è stato annullato.', 'Puoi chiudere questa finestra.', 'Torna a Date Polling'],
+      de: ['Wird abgeschlossen…', 'Kalender verbunden ✓', 'Die Kalenderverbindung ist fehlgeschlagen oder wurde abgebrochen.', 'Du kannst dieses Fenster schließen.', 'Zurück zu Date Polling'],
+      'pt-BR': ['Finalizando…', 'Agenda conectada ✓', 'A conexão da agenda falhou ou foi cancelada.', 'Você pode fechar esta janela.', 'Voltar ao Date Polling'],
+      'pt-PT': ['A concluir…', 'Calendário ligado ✓', 'A ligação do calendário falhou ou foi cancelada.', 'Pode fechar esta janela.', 'Voltar ao Date Polling'],
+      tr: ['Tamamlanıyor…', 'Takvim bağlandı ✓', 'Takvim bağlantısı başarısız oldu veya iptal edildi.', 'Bu pencereyi kapatabilirsiniz.', 'Date Polling’e dön']
+    }
+    function pick() {
+      var langs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en'])
+      for (var i = 0; i < langs.length; i++) {
+        var l = String(langs[i]).toLowerCase()
+        if (l === 'pt-br') return 'pt-BR'
+        if (l.indexOf('pt') === 0) return 'pt-PT'
+        var base = l.split('-')[0]
+        if (WORDS[base]) return base
+      }
+      return 'en'
+    }
+    var lang = pick()
+    var w = WORDS[lang]
+    document.documentElement.lang = lang
     var params = new URLSearchParams(window.location.search)
     var ok = params.get('ok') === '1'
     var provider = params.get('provider') || ''
     // Claim mode (calendar-oauth, platform 0308): the one-time code the app
     // hands back with the host's login to store the tokens. Empty otherwise.
     var claim = params.get('claim') || ''
-    document.getElementById('msg').textContent = ok ? 'Calendar connected ✓' : 'Calendar connection failed or was cancelled.'
-    try {
-      // Same-origin as the create screen that opened this popup, so the app's
-      // listener can check event.origin === window.location.origin.
-      // The phone app opens this from capacitor://localhost (or https://localhost
-      // on Android), which this page can't name, so a cross-origin opener gets
-      // '*'. Safe: the claim code stores nothing without the host's own login.
-      var target = window.location.origin
-      try { if (window.opener && window.opener.location.origin !== target) target = '*' } catch (e) { target = '*' }
-      if (window.opener) window.opener.postMessage({ type: 'unisim-calendar', ok: ok, provider: provider, claim: claim }, target)
-    } catch (e) { /* opener gone */ }
-    setTimeout(function () { window.close() }, 800)
+    document.getElementById('msg').textContent = ok ? w[1] : w[2]
+    document.getElementById('hint').textContent = w[3]
+
+    if (/\/app\/calendar-connected/.test(window.location.pathname)) {
+      // The phone app's in-app browser. Hand the same query to the app's own
+      // scheme; the button is there for a browser that wants a tap before it
+      // opens an app (Android's Custom Tabs can).
+      var deep = 'unisim-polling://calendar-connected' + window.location.search
+      document.getElementById('hint').textContent = ''
+      var link = document.getElementById('back-link')
+      link.href = deep
+      link.textContent = w[4]
+      document.getElementById('back').style.display = 'block'
+      window.location.href = deep
+    } else {
+      try {
+        // Same-origin as the create screen that opened this popup, so the app's
+        // listener can check event.origin === window.location.origin.
+        var target = window.location.origin
+        try { if (window.opener && window.opener.location.origin !== target) target = '*' } catch (e) { target = '*' }
+        if (window.opener) window.opener.postMessage({ type: 'unisim-calendar', ok: ok, provider: provider, claim: claim }, target)
+      } catch (e) { /* opener gone */ }
+      setTimeout(function () { window.close() }, 800)
+    }
   </script>
 </body>
 </html>

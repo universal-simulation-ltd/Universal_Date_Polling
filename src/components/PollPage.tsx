@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { askConfirm } from '../native/parts'
 import { phoneApp } from '../native/shell'
+import { openConsentWindow } from '../native/calendarReturn'
 import { Chip, useRevealOnOpen, useUser, useUniversal, ValueChip } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
 import { bookSlot, BookingError, cancelBooking, claimPoll, currentUser, deleteResponse, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, responseNameForToken, saveResponseEmail, setFinalSlot, signOut, startGuestSession, submitResponse } from '../lib/api'
@@ -577,7 +578,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       // read-only, so this is the only consent screen that mentions creating
       // events — and it appears only once a host has asked for exactly that.
       const url = await startCalendarConnect(client, provider, 'write')
-      const popup = window.open(url, 'unisim-calendar', 'width=540,height=680')
+      // A popup on the website; the in-app browser in the phone app
+      // (native/calendarReturn.ts), whose return arrives as the same message.
+      const popup = await openConsentWindow(url)
       if (!popup) {
         setCalWrite({ status: 'error', message: t('poll.cal_popups') })
         return

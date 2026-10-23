@@ -22,6 +22,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- The calendar connect's way back: the hosted closer page sends
+                 the in-app browser to unisim-polling://calendar-connected?…
+                 with the claim code (src/native/calendarReturn.ts). iOS has
+                 the same scheme in Info.plist. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="unisim-polling" android:host="calendar-connected" />
+            </intent-filter>
+
         </activity>
 
         <provider

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { phoneApp } from '../native/shell'
+import { openConsentWindow, type ConsentWindow } from '../native/calendarReturn'
 import { useT, getT } from '../i18n'
 import { Chip, SignInDialog, useFileDrop, useRevealOnOpen, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
@@ -446,7 +447,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
    *  partitions the provider's cookies can strand it too. So when the window
    *  goes away, refresh regardless. Both routes are idempotent, so receiving a
    *  message *and* seeing the close is harmless. */
-  const watchPopup = useCallback((popup: Window) => {
+  const watchPopup = useCallback((popup: ConsentWindow) => {
     const timer = window.setInterval(() => {
       if (!popup.closed) return
       window.clearInterval(timer)
@@ -491,7 +492,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     setCalError(null)
     try {
       const url = await startCalendarConnect(calClient, provider)
-      const popup = window.open(url, 'unisim-calendar', 'width=540,height=680')
+      // A popup on the website; the in-app browser in the phone app, which
+      // comes back through the app's own scheme (native/calendarReturn.ts).
+      const popup = await openConsentWindow(url)
       if (!popup) setCalError(t('create.popup_blocked'))
       else watchPopup(popup)
     } catch (e) {

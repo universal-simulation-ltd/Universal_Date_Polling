@@ -146,24 +146,22 @@ export async function startCalendarConnect(
   // ⚠️ Not `window.location.origin` — inside the iPhone app that is
   // `capacitor://localhost`, which the provider would refuse as a redirect
   // target, so the consent screen would die before it opened. The hosted site
-  // stands in there. The popup's postMessage is then cross-origin and gets
-  // dropped by the listener's origin check, which is exactly the case
-  // `watchPopup` in CreatePoll already covers: it refreshes when the popup
-  // closes, however it closed.
-  const base = appBase(import.meta.env.BASE_URL)
+  // stands in there.
+  //
+  // The phone app asks for `…/app/` under it: the closer page there sends the
+  // in-app browser back to the app's own scheme with the claim, rather than
+  // posting it to an opener it does not have (native/calendarReturn.ts).
+  const base = appBase(import.meta.env.BASE_URL) + (phoneApp() ? 'app/' : '')
   // `claim: true` (platform 0308): the tokens are parked server-side under a
   // one-time claim code that the closer page hands back to us, and only this
   // host's login can take them — so a leaked OAuth state can't bind somebody
-  // else's calendar to the wrong host. See `claimCalendar`.
-  //
-  // ⚠️ NOT in the phone app. There `window.open` hands the consent page to the
-  // system browser (Capacitor), which has no `opener`, so the closer page can
-  // never post the claim back and the parked tokens would expire unclaimed:
-  // the connect would look finished and store nothing. The phone app keeps the
-  // old flow (tokens stored on the callback, `watchPopup` re-reads the status)
-  // until the connect runs in an in-app browser that can return the claim.
-  // Don't set CALENDAR_OAUTH_REQUIRE_CLAIM=1 on the server before then.
-  const d = await invokeCalendarOauth(client, { action: 'start', provider, base, scope, claim: !phoneApp() })
+  // else's calendar to the wrong host. See `claimCalendar`. On the website the
+  // code comes back by postMessage; in the phone app by the deep link
+  // `unisim-polling://calendar-connected?…&claim=`, which calendarReturn.ts
+  // re-dispatches as the same message. So both now use claim mode, and
+  // CALENDAR_OAUTH_REQUIRE_CLAIM=1 can be set on the server once a phone build
+  // with this is the one people have (older installs still send no claim).
+  const d = await invokeCalendarOauth(client, { action: 'start', provider, base, scope, claim: true })
   return d.url as string
 }
 
