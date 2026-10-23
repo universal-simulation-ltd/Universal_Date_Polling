@@ -3,6 +3,25 @@
 import type { Draft } from '../en/index.ts'
 
 const common: Draft['common'] = {
+  // Everyday buttons
+  'cancel': 'Cancelar',
+  'close': 'Fechar',
+  'done': 'Concluído',
+  'back': 'Voltar',
+  'copy': 'Copiar',
+  'delete': 'Excluir',
+  'remove': 'Remover',
+  'retry': 'Tentar de novo',
+
+  // Counts
+  'responses_one': '{count} resposta',
+  'responses_other': '{count} respostas',
+  'days_one': '{count} dia',
+  'days_other': '{count} dias',
+
+  // Product name, never translated
+  'product_name': 'Universal Date Polling',
+  'product_short': 'Date Polling',
 }
 
 export default common

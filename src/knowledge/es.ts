@@ -65,7 +65,7 @@ Si crea una encuesta mientras viaja, su dispositivo puede estar en la zona del l
     body: `## Crear una encuesta
 
 1. Ponga un título a la encuesta y elija entre horas o días completos.
-2. Añada sus opciones. Si ha conectado un calendario, las horas en las que ya está ocupado aparecen sombreadas, y **Suggest times** puede rellenar la encuesta con cuatro opciones de su tiempo libre: solo días laborables, entre las 10:00 y las 16:00 en la zona horaria de la encuesta, y como mucho una por la mañana y otra por la tarde en un mismo día.
+2. Añada sus opciones. Si ha conectado un calendario, las horas en las que ya está ocupado aparecen sombreadas, y **Sugerir horas** puede rellenar la encuesta con cuatro opciones de su tiempo libre: solo días laborables, entre las 10:00 y las 16:00 en la zona horaria de la encuesta, y como mucho una por la mañana y otra por la tarde en un mismo día.
 3. Inicie sesión con su Universal ID, o continúe sin él. Sin él, recibe un enlace de administración privado para gestionar la encuesta (vea más abajo), y su correo electrónico es opcional: añádalo y confírmelo con un código de un solo uso si quiere avisos de respuestas, una página de reserva o encontrar sus encuestas desde otro dispositivo.
 4. Comparta el enlace.
 
@@ -75,17 +75,17 @@ Justo después de crear una encuesta puede volver a cambiar las horas, siempre q
 
 ## Confirmar una hora
 
-Cuando tenga las respuestas, elija la opción ganadora con **Confirm this time**. Solo el organizador puede hacerlo. Todo el que abra el enlace verá entonces un aviso «Confirmed» con la hora elegida. Puede cambiar o deshacer la elección más adelante.
+Cuando tenga las respuestas, elija la opción ganadora con **Confirmar esta hora**. Solo el organizador puede hacerlo. Todo el que abra el enlace verá entonces un aviso «Hora confirmada» con la hora elegida. Puede cambiar o deshacer la elección más adelante.
 
 Desde ese aviso puede:
 
 - Enviar por correo la hora confirmada, con una invitación de calendario adjunta, a todos los que dejaron una dirección. Solo ocurre cuando usted hace clic, nunca de forma automática.
-- Usar **Copy email** para enviar el mensaje desde su propio correo, con los destinatarios, el asunto y el texto listos para copiar.
+- Usar **Copiar correo** para enviar el mensaje desde su propio correo, con los destinatarios, el asunto y el texto listos para copiar.
 - Añadir la hora a su propio calendario.
 
 ## Añadir a un calendario
 
-Cada resultado, y también el aviso de confirmación, tiene un botón **Add to calendar** con Google Calendar, Outlook o un archivo de calendario para aplicaciones como Calendario de Apple. El evento se prepara en su dispositivo.
+Cada resultado, y también el aviso de confirmación, tiene un botón **Añadir al calendario** con Google Calendar, Outlook o un archivo de calendario para aplicaciones como Calendario de Apple. El evento se prepara en su dispositivo.
 
 ## Su enlace de administración privado
 
@@ -103,11 +103,11 @@ En el dispositivo donde las creó, en un dispositivo donde abrió el enlace de a
   {
     id: 'poll-options',
     title: 'Páginas de reserva, caducidad, avisos y calendarios',
-    summary: 'Para qué sirve cada una de las opciones de «This poll’s options».',
+    summary: 'Para qué sirve cada una de las opciones de «Opciones de esta encuesta».',
     group: 'Cómo funciona',
-    body: `Las opciones de la encuesta que está creando están en su menú de perfil, en **Tune this app** → **This poll's options**. Solo se aplican a esa encuesta.
+    body: `Las opciones de la encuesta que está creando están en su menú de perfil, en **Ajustar esta app** → **Opciones de esta encuesta**. Solo se aplican a esa encuesta.
 
-## Página de reserva («Just the two of us»)
+## Página de reserva («Solo nosotros dos»)
 
 Para una reunión a solas con una persona. En lugar de recoger la disponibilidad de todos, la persona a quien envía el enlace elige una de sus horas, introduce su nombre y su correo, y la cita queda reservada al momento. Usted no tiene que confirmar nada, y ambos reciben una invitación de calendario por correo. Si ha conectado un calendario que lo permita, la invitación puede salir de su propio calendario. Puede cancelar una reserva más tarde, y se avisa a la otra persona. Una página de reserva necesita su correo electrónico, porque es adonde se envían sus reservas.
 
@@ -157,7 +157,7 @@ Los enlaces de las encuestas tienen diez caracteres aleatorios, lo que los hace 
 
 ## Solo usted puede cambiar su respuesta
 
-La primera vez que guarda una respuesta, la encuesta entrega a este dispositivo una clave privada para ella. Solo un dispositivo que tenga esa clave puede cambiar o eliminar sus respuestas, así que otra persona que escriba el mismo nombre no puede sobrescribirlas. Bajo su respuesta guardada, **Your edit link** lleva esa clave: ábralo en otro dispositivo para cambiar allí sus respuestas, y no lo comparta, porque cualquiera que lo tenga puede cambiarlas o eliminarlas. **Remove my answers** quita sus respuestas de la encuesta. Si pierde el enlace, hable con el organizador: puede eliminar su respuesta para que pueda responder de nuevo.
+La primera vez que guarda una respuesta, la encuesta entrega a este dispositivo una clave privada para ella. Solo un dispositivo que tenga esa clave puede cambiar o eliminar sus respuestas, así que otra persona que escriba el mismo nombre no puede sobrescribirlas. Bajo su respuesta guardada, **Tu enlace de edición** lleva esa clave: ábralo en otro dispositivo para cambiar allí sus respuestas, y no lo comparta, porque cualquiera que lo tenga puede cambiarlas o eliminarlas. **Quitar mis respuestas** quita sus respuestas de la encuesta. Si pierde el enlace, hable con el organizador: puede eliminar su respuesta para que pueda responder de nuevo.
 
 Cada nombre solo puede usarse una vez por encuesta, así que si alguien ya respondió con el suyo, añada una inicial o su apellido. Las respuestas guardadas antes de que existieran los enlaces de edición aún pueden actualizarse escribiendo exactamente el mismo nombre, hasta que el siguiente guardado las vincule a ese dispositivo.
 
@@ -205,7 +205,7 @@ Los correos se envían a través de un servicio de envío de correo en nuestro n
 
 ## En su dispositivo
 
-Este dispositivo recuerda el nombre y el correo de su última respuesta, los enlaces de edición de las respuestas que dio aquí, sus ajustes de visualización y, si organiza encuestas, su sesión y los enlaces de administración privados de las encuestas que creó o abrió aquí. Los eventos que añade con **Add to calendar** se preparan en su dispositivo. Elegir Google u Outlook abre ese servicio con los datos del evento ya rellenados.
+Este dispositivo recuerda el nombre y el correo de su última respuesta, los enlaces de edición de las respuestas que dio aquí, sus ajustes de visualización y, si organiza encuestas, su sesión y los enlaces de administración privados de las encuestas que creó o abrió aquí. Los eventos que añade con **Añadir al calendario** se preparan en su dispositivo. Elegir Google u Outlook abre ese servicio con los datos del evento ya rellenados.
 
 ## Su Universal ID
 

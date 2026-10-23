@@ -65,7 +65,7 @@ Seyahatteyken anket oluşturursanız cihazınız bulunduğunuz yerin saat dilimi
     body: `## Anket oluşturmak
 
 1. Ankete bir başlık veriniz ve saatli ya da tam gün türünü seçiniz.
-2. Seçeneklerinizi ekleyiniz. Bir takvim bağladıysanız meşgul olduğunuz saatler gölgeli görünür ve **Suggest times**, anketi boş zamanınızdan dört seçenekle doldurabilir: yalnızca hafta içi, anketin saat diliminde 10.00 ile 16.00 arası ve bir günde en fazla bir sabah ile bir öğleden sonra.
+2. Seçeneklerinizi ekleyiniz. Bir takvim bağladıysanız meşgul olduğunuz saatler gölgeli görünür ve **Zaman öner**, anketi boş zamanınızdan dört seçenekle doldurabilir: yalnızca hafta içi, anketin saat diliminde 10.00 ile 16.00 arası ve bir günde en fazla bir sabah ile bir öğleden sonra.
 3. Universal ID'nizle oturum açınız ya da oturum açmadan devam ediniz. Oturum açmazsanız anketi yönetmek için özel bir yönetim bağlantısı alırsınız (aşağıya bakınız) ve e-posta adresi isteğe bağlıdır: yanıt bildirimleri, bir randevu sayfası istiyorsanız ya da anketlerinizi başka bir cihazdan bulmak istiyorsanız adresinizi ekleyip tek kullanımlık bir kodla doğrulayınız.
 4. Bağlantıyı paylaşınız.
 
@@ -75,17 +75,17 @@ Anketi oluşturduktan hemen sonra, henüz kimse yanıt vermediyse geri dönüp z
 
 ## Bir zamanı onaylamak
 
-Yanıtlar geldiğinde kazanan seçeneği **Confirm this time** ile seçiniz. Bunu yalnızca düzenleyen kişi yapabilir. Bağlantıyı açan herkes bundan sonra seçilen zamanı gösteren bir "Confirmed" bandı görür. Seçimi daha sonra değiştirebilir veya geri alabilirsiniz.
+Yanıtlar geldiğinde kazanan seçeneği **Bu zamanı onayla** ile seçiniz. Bunu yalnızca düzenleyen kişi yapabilir. Bağlantıyı açan herkes bundan sonra seçilen zamanı gösteren bir "Onaylanan zaman" bandı görür. Seçimi daha sonra değiştirebilir veya geri alabilirsiniz.
 
 Bu banttan şunları yapabilirsiniz:
 
 - Adres bırakan herkese onaylanan zamanı, ekinde bir takvim davetiyle e-postayla göndermek. Bu yalnızca siz tıkladığınızda olur, hiçbir zaman otomatik olarak olmaz.
-- **Copy email** ile mesajı kendi e-posta kutunuzdan göndermek; alıcılar, konu ve metin kopyalanmaya hazırdır.
+- **E-postayı kopyala** ile mesajı kendi e-posta kutunuzdan göndermek; alıcılar, konu ve metin kopyalanmaya hazırdır.
 - Zamanı kendi takviminize eklemek.
 
 ## Takvime eklemek
 
-Her sonuçta ve onay bandında Google Takvim, Outlook ya da Apple Takvim gibi uygulamalar için bir takvim dosyası seçenekleri sunan bir **Add to calendar** düğmesi bulunur. Takvim etkinliği cihazınızda hazırlanır.
+Her sonuçta ve onay bandında Google Takvim, Outlook ya da Apple Takvim gibi uygulamalar için bir takvim dosyası seçenekleri sunan bir **Takvime ekle** düğmesi bulunur. Takvim etkinliği cihazınızda hazırlanır.
 
 ## Özel yönetim bağlantınız
 
@@ -103,11 +103,11 @@ Anketleri oluşturduğunuz cihazda, bir anketin yönetim bağlantısını açtı
   {
     id: 'poll-options',
     title: 'Randevu sayfaları, bağlantı süresi, bildirimler ve takvimler',
-    summary: '"This poll’s options" altındaki her seçeneğin ne işe yaradığı.',
+    summary: '"Bu anketin seçenekleri" altındaki her seçeneğin ne işe yaradığı.',
     group: 'Nasıl çalışır',
-    body: `Oluşturduğunuz anketin seçenekleri profil menünüzde, **Tune this app** → **This poll's options** altında yer alır. Yalnızca o anket için geçerlidir.
+    body: `Oluşturduğunuz anketin seçenekleri profil menünüzde, **Bu uygulamayı ayarla** → **Bu anketin seçenekleri** altında yer alır. Yalnızca o anket için geçerlidir.
 
-## Randevu sayfası ("Just the two of us")
+## Randevu sayfası ("Yalnızca ikimiz")
 
 Bire bir görüşmeler içindir. Herkesin uygunluğunu toplamak yerine, bağlantıyı gönderdiğiniz kişi zamanlarınızdan birini seçer, adını ve e-posta adresini girer ve randevu anında alınır. Sizin onaylamanız gereken bir şey yoktur; ikiniz de e-postayla bir takvim daveti alırsınız. Buna izin veren bir takvim bağladıysanız davet kendi takviminizden de gönderilebilir. Bir randevuyu daha sonra iptal edebilirsiniz ve karşı taraf bilgilendirilir. Randevu sayfası e-posta adresinizi gerektirir; çünkü randevularınız oraya gönderilir.
 
@@ -157,7 +157,7 @@ Anket bağlantıları on rastgele karakterden oluşur ve bu da tahmin edilmeleri
 
 ## Yanıtınızı yalnızca siz değiştirebilirsiniz
 
-Bir yanıtı ilk kez kaydettiğinizde anket, bu cihaza o yanıt için özel bir anahtar verir. Yanıtlarınızı yalnızca bu anahtara sahip bir cihaz değiştirebilir veya kaldırabilir; bu yüzden aynı adı yazan başka biri yanıtlarınızın üzerine yazamaz. Kaydedilen yanıtınızın altındaki **Your edit link** bu anahtarı taşır: yanıtlarınızı başka bir cihazda değiştirmek için bağlantıyı orada açınız ve kimseyle paylaşmayınız, çünkü bağlantıya sahip olan herkes yanıtlarınızı değiştirebilir veya kaldırabilir. **Remove my answers** yanıtlarınızı anketten kaldırır. Bağlantıyı kaybederseniz düzenleyene başvurunuz: yeniden yanıt verebilmeniz için yanıtınızı kaldırabilir.
+Bir yanıtı ilk kez kaydettiğinizde anket, bu cihaza o yanıt için özel bir anahtar verir. Yanıtlarınızı yalnızca bu anahtara sahip bir cihaz değiştirebilir veya kaldırabilir; bu yüzden aynı adı yazan başka biri yanıtlarınızın üzerine yazamaz. Kaydedilen yanıtınızın altındaki **Düzenleme bağlantınız** bu anahtarı taşır: yanıtlarınızı başka bir cihazda değiştirmek için bağlantıyı orada açınız ve kimseyle paylaşmayınız, çünkü bağlantıya sahip olan herkes yanıtlarınızı değiştirebilir veya kaldırabilir. **Yanıtlarımı kaldır** yanıtlarınızı anketten kaldırır. Bağlantıyı kaybederseniz düzenleyene başvurunuz: yeniden yanıt verebilmeniz için yanıtınızı kaldırabilir.
 
 Her ad bir ankette yalnızca bir kez kullanılabilir; adınızla daha önce yanıt verilmişse bir baş harf veya soyadınızı ekleyiniz. Düzenleme bağlantılarından önce kaydedilen yanıtlar, bir sonraki kayıt onları o cihaza bağlayana kadar tamamen aynı ad yazılarak güncellenebilir.
 
@@ -205,7 +205,7 @@ E-postalar bizim adımıza bir e-posta gönderim hizmeti aracılığıyla gönde
 
 ## Cihazınızda
 
-Bu cihaz; son yanıtınızdaki adı ve e-posta adresini, burada verdiğiniz yanıtların düzenleme bağlantılarını, görüntüleme ayarlarınızı ve anket düzenliyorsanız oturumunuzu ve burada oluşturduğunuz ya da açtığınız anketlerin özel yönetim bağlantılarını hatırlar. **Add to calendar** ile eklediğiniz takvim etkinlikleri cihazınızda hazırlanır. Google veya Outlook'u seçmek, etkinlik bilgileri doldurulmuş olarak o hizmeti açar.
+Bu cihaz; son yanıtınızdaki adı ve e-posta adresini, burada verdiğiniz yanıtların düzenleme bağlantılarını, görüntüleme ayarlarınızı ve anket düzenliyorsanız oturumunuzu ve burada oluşturduğunuz ya da açtığınız anketlerin özel yönetim bağlantılarını hatırlar. **Takvime ekle** ile eklediğiniz takvim etkinlikleri cihazınızda hazırlanır. Google veya Outlook'u seçmek, etkinlik bilgileri doldurulmuş olarak o hizmeti açar.
 
 ## Universal ID'niz
 

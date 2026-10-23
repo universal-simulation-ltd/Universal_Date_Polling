@@ -65,7 +65,7 @@ Se crei un sondaggio mentre sei in viaggio, il tuo dispositivo potrebbe essere i
     body: `## Creare un sondaggio
 
 1. Dai un titolo al sondaggio e scegli tra orari e giornate intere.
-2. Aggiungi le opzioni. Se hai collegato un calendario, gli orari in cui sei già occupato sono ombreggiati, e **Suggest times** può riempire il sondaggio con quattro opzioni prese dal tuo tempo libero: solo nei giorni feriali, tra le 10:00 e le 16:00 nel fuso del sondaggio, e al massimo una al mattino e una al pomeriggio nello stesso giorno.
+2. Aggiungi le opzioni. Se hai collegato un calendario, gli orari in cui sei già occupato sono ombreggiati, e **Suggerisci orari** può riempire il sondaggio con quattro opzioni prese dal tuo tempo libero: solo nei giorni feriali, tra le 10:00 e le 16:00 nel fuso del sondaggio, e al massimo una al mattino e una al pomeriggio nello stesso giorno.
 3. Accedi con il tuo Universal ID, oppure prosegui senza. Senza, ricevi un link di amministrazione privato per gestire il sondaggio (vedi sotto) e l’indirizzo email è facoltativo: aggiungilo e confermalo con un codice monouso se vuoi gli avvisi di risposta, una pagina di prenotazione o ritrovare i tuoi sondaggi da un altro dispositivo.
 4. Condividi il link.
 
@@ -75,17 +75,17 @@ Subito dopo aver creato un sondaggio puoi tornare a modificare gli orari, finch�
 
 ## Confermare un orario
 
-Quando le risposte sono arrivate, scegli l’opzione vincente con **Confirm this time**. Solo chi organizza può farlo. Chiunque apra il link vede allora un banner «Confirmed» con l’orario scelto. Puoi cambiare o annullare la scelta in seguito.
+Quando le risposte sono arrivate, scegli l’opzione vincente con **Conferma questo orario**. Solo chi organizza può farlo. Chiunque apra il link vede allora un banner «Confermato» con l’orario scelto. Puoi cambiare o annullare la scelta in seguito.
 
 Dal banner puoi:
 
 - Inviare via email l’orario confermato, con un invito di calendario allegato, a tutti coloro che hanno lasciato un indirizzo. Succede solo quando fai clic, mai in automatico.
-- Usare **Copy email** per inviare il messaggio dalla tua casella di posta, con destinatari, oggetto e testo pronti da copiare.
+- Usare **Copia email** per inviare il messaggio dalla tua casella di posta, con destinatari, oggetto e testo pronti da copiare.
 - Aggiungere l’orario al tuo calendario.
 
 ## Aggiungere a un calendario
 
-Ogni risultato, e anche il banner di conferma, ha un pulsante **Add to calendar** con Google Calendar, Outlook o un file di calendario per app come Calendario di Apple. L’evento viene preparato sul tuo dispositivo.
+Ogni risultato, e anche il banner di conferma, ha un pulsante **Aggiungi al calendario** con Google Calendar, Outlook o un file di calendario per app come Calendario di Apple. L’evento viene preparato sul tuo dispositivo.
 
 ## Il tuo link di amministrazione privato
 
@@ -103,11 +103,11 @@ Sul dispositivo in cui li hai creati, su un dispositivo in cui hai aperto il lin
   {
     id: 'poll-options',
     title: 'Pagine di prenotazione, scadenza, avvisi e calendari',
-    summary: 'A cosa serve ciascuna delle opzioni di «This poll’s options».',
+    summary: 'A cosa serve ciascuna delle opzioni di «Opzioni di questo sondaggio».',
     group: 'Come funziona',
-    body: `Le opzioni del sondaggio che stai creando si trovano nel menu del tuo profilo, sotto **Tune this app** → **This poll's options**. Valgono solo per quel sondaggio.
+    body: `Le opzioni del sondaggio che stai creando si trovano nel menu del tuo profilo, sotto **Regola questa app** → **Opzioni di questo sondaggio**. Valgono solo per quel sondaggio.
 
-## Pagina di prenotazione («Just the two of us»)
+## Pagina di prenotazione («Solo noi due»)
 
 Per un incontro a due. Invece di raccogliere le disponibilità di tutti, la persona a cui mandi il link sceglie uno dei tuoi orari, inserisce nome e indirizzo email, e l’appuntamento viene prenotato subito. Non devi confermare nulla, e ricevete entrambi un invito di calendario via email. Se hai collegato un calendario che lo consente, l’invito può partire dal tuo calendario. Puoi annullare una prenotazione in seguito, e l’altra persona viene avvisata. Una pagina di prenotazione richiede il tuo indirizzo email, perché è lì che vengono inviate le prenotazioni.
 
@@ -157,7 +157,7 @@ I link dei sondaggi sono composti da dieci caratteri casuali, il che li rende mo
 
 ## Solo tu puoi modificare la tua risposta
 
-La prima volta che salvi una risposta, il sondaggio dà a questo dispositivo una chiave privata per quella risposta. Solo un dispositivo che ha quella chiave può modificare o eliminare le tue risposte, quindi chi scrive lo stesso nome non può sovrascriverle. Sotto la risposta salvata, **Your edit link** contiene la chiave: aprilo su un altro dispositivo per modificare lì le tue risposte, e tienilo per te, perché chiunque lo abbia può modificarle o eliminarle. **Remove my answers** toglie le tue risposte dal sondaggio. Se perdi il link, chiedi a chi organizza: può eliminare la tua risposta così potrai rispondere di nuovo.
+La prima volta che salvi una risposta, il sondaggio dà a questo dispositivo una chiave privata per quella risposta. Solo un dispositivo che ha quella chiave può modificare o eliminare le tue risposte, quindi chi scrive lo stesso nome non può sovrascriverle. Sotto la risposta salvata, **Il tuo link di modifica** contiene la chiave: aprilo su un altro dispositivo per modificare lì le tue risposte, e tienilo per te, perché chiunque lo abbia può modificarle o eliminarle. **Rimuovi le mie risposte** toglie le tue risposte dal sondaggio. Se perdi il link, chiedi a chi organizza: può eliminare la tua risposta così potrai rispondere di nuovo.
 
 Ogni nome si può usare una sola volta per sondaggio: se qualcuno ha già risposto con il tuo, aggiungi un’iniziale o il cognome. Le risposte salvate prima che esistessero i link di modifica si possono ancora aggiornare scrivendo esattamente lo stesso nome, finché il salvataggio successivo non le lega a quel dispositivo.
 
@@ -205,7 +205,7 @@ Le email vengono inviate per nostro conto tramite un servizio di invio email.
 
 ## Sul tuo dispositivo
 
-Questo dispositivo ricorda il nome e l’indirizzo email della tua ultima risposta, i link di modifica delle risposte date qui, le impostazioni di visualizzazione e, se organizzi, il tuo accesso e i link di amministrazione privati dei sondaggi creati o aperti qui. Gli eventi che aggiungi con **Add to calendar** vengono preparati sul tuo dispositivo. Scegliendo Google o Outlook si apre quel servizio con i dettagli dell’evento già compilati.
+Questo dispositivo ricorda il nome e l’indirizzo email della tua ultima risposta, i link di modifica delle risposte date qui, le impostazioni di visualizzazione e, se organizzi, il tuo accesso e i link di amministrazione privati dei sondaggi creati o aperti qui. Gli eventi che aggiungi con **Aggiungi al calendario** vengono preparati sul tuo dispositivo. Scegliendo Google o Outlook si apre quel servizio con i dettagli dell’evento già compilati.
 
 ## Il tuo Universal ID
 

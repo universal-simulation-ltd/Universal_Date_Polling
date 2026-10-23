@@ -65,7 +65,7 @@ Wenn Sie eine Umfrage auf Reisen erstellen, ist Ihr Gerät vielleicht auf die Zo
     body: `## Eine Umfrage erstellen
 
 1. Geben Sie der Umfrage einen Titel und wählen Sie zwischen Uhrzeiten und ganzen Tagen.
-2. Fügen Sie Ihre Optionen hinzu. Wenn Sie einen Kalender verbunden haben, sind belegte Zeiten schattiert, und **Suggest times** kann die Umfrage mit vier Optionen aus Ihrer freien Zeit füllen: nur werktags, zwischen 10:00 und 16:00 in der Zeitzone der Umfrage und höchstens eine am Vormittag und eine am Nachmittag pro Tag.
+2. Fügen Sie Ihre Optionen hinzu. Wenn Sie einen Kalender verbunden haben, sind belegte Zeiten schattiert, und **Zeiten vorschlagen** kann die Umfrage mit vier Optionen aus Ihrer freien Zeit füllen: nur werktags, zwischen 10:00 und 16:00 in der Zeitzone der Umfrage und höchstens eine am Vormittag und eine am Nachmittag pro Tag.
 3. Melden Sie sich mit Ihrer Universal ID an, oder machen Sie ohne weiter. Ohne Anmeldung erhalten Sie einen privaten Verwaltungslink für die Umfrage (siehe unten), und Ihre E-Mail-Adresse ist freiwillig: Geben Sie sie an und bestätigen Sie sie mit einem Einmalcode, wenn Sie Benachrichtigungen bei neuen Antworten, eine Buchungsseite oder Ihre Umfragen auf einem anderen Gerät wiederfinden möchten.
 4. Teilen Sie den Link.
 
@@ -75,17 +75,17 @@ Direkt nach dem Erstellen können Sie die Termine noch ändern, solange niemand 
 
 ## Einen Termin bestätigen
 
-Wenn die Antworten da sind, wählen Sie den besten Termin mit **Confirm this time**. Das kann nur die einladende Person. Alle, die den Link öffnen, sehen dann ein „Confirmed“-Banner mit dem gewählten Termin. Sie können die Wahl später ändern oder zurücknehmen.
+Wenn die Antworten da sind, wählen Sie den besten Termin mit **Diesen Termin bestätigen**. Das kann nur die einladende Person. Alle, die den Link öffnen, sehen dann ein „Bestätigter Termin“-Banner mit dem gewählten Termin. Sie können die Wahl später ändern oder zurücknehmen.
 
 Über das Banner können Sie:
 
 - Allen, die eine Adresse hinterlassen haben, den bestätigten Termin mit Kalendereinladung im Anhang per E-Mail senden. Das geschieht nur, wenn Sie klicken, nie automatisch.
-- Mit **Copy email** die Nachricht aus Ihrem eigenen Postfach senden, mit Empfängern, Betreff und Text zum Kopieren.
+- Mit **E-Mail kopieren** die Nachricht aus Ihrem eigenen Postfach senden, mit Empfängern, Betreff und Text zum Kopieren.
 - Den Termin in Ihren eigenen Kalender übernehmen.
 
 ## In einen Kalender übernehmen
 
-Jedes Ergebnis und auch das Bestätigungsbanner hat eine Schaltfläche **Add to calendar** für Google Kalender, Outlook oder eine Kalenderdatei für Apps wie den Apple-Kalender. Der Kalendereintrag wird auf Ihrem Gerät erstellt.
+Jedes Ergebnis und auch das Bestätigungsbanner hat eine Schaltfläche **Zum Kalender hinzufügen** für Google Kalender, Outlook oder eine Kalenderdatei für Apps wie den Apple-Kalender. Der Kalendereintrag wird auf Ihrem Gerät erstellt.
 
 ## Ihr privater Verwaltungslink
 
@@ -103,11 +103,11 @@ Auf dem Gerät, auf dem Sie sie erstellt haben, auf einem Gerät, auf dem Sie de
   {
     id: 'poll-options',
     title: 'Buchungsseiten, Ablauf, Benachrichtigungen und Kalender',
-    summary: 'Wofür jede der Optionen unter „This poll’s options“ gut ist.',
+    summary: 'Wofür jede der Optionen unter „Optionen dieser Umfrage“ gut ist.',
     group: 'So funktioniert es',
-    body: `Die Optionen für die Umfrage, die Sie gerade erstellen, finden Sie in Ihrem Profilmenü unter **Tune this app** → **This poll's options**. Sie gelten nur für diese Umfrage.
+    body: `Die Optionen für die Umfrage, die Sie gerade erstellen, finden Sie in Ihrem Profilmenü unter **Diese App anpassen** → **Optionen dieser Umfrage**. Sie gelten nur für diese Umfrage.
 
-## Buchungsseite („Just the two of us“)
+## Buchungsseite („Nur wir zwei“)
 
 Für ein Treffen zu zweit. Statt die Verfügbarkeit aller zu sammeln, wählt die Person, der Sie den Link schicken, einen Ihrer Termine, gibt Namen und E-Mail-Adresse ein, und der Termin ist sofort gebucht. Sie müssen nichts bestätigen, und Sie beide erhalten eine Kalendereinladung per E-Mail. Haben Sie einen Kalender verbunden, der das erlaubt, kann die Einladung auch aus Ihrem eigenen Kalender kommen. Sie können eine Buchung später stornieren, und die andere Person wird informiert. Eine Buchungsseite braucht Ihre E-Mail-Adresse, denn dorthin werden Ihre Buchungen geschickt.
 
@@ -157,7 +157,7 @@ Umfragelinks bestehen aus zehn zufälligen Zeichen und sind daher sehr schwer zu
 
 ## Nur Sie können Ihre Antwort ändern
 
-Wenn Sie eine Antwort zum ersten Mal speichern, erhält dieses Gerät einen privaten Schlüssel dafür. Nur ein Gerät mit diesem Schlüssel kann Ihre Antworten ändern oder entfernen; wer denselben Namen eintippt, kann sie also nicht überschreiben. Unter Ihrer gespeicherten Antwort enthält **Your edit link** diesen Schlüssel: Öffnen Sie den Link auf einem anderen Gerät, um Ihre Antworten dort zu ändern, und behalten Sie ihn für sich, denn wer ihn hat, kann Ihre Antworten ändern oder entfernen. **Remove my answers** nimmt Ihre Antworten aus der Umfrage. Wenn Sie den Link verlieren, wenden Sie sich an die einladende Person: Sie kann Ihre Antwort entfernen, damit Sie neu antworten können.
+Wenn Sie eine Antwort zum ersten Mal speichern, erhält dieses Gerät einen privaten Schlüssel dafür. Nur ein Gerät mit diesem Schlüssel kann Ihre Antworten ändern oder entfernen; wer denselben Namen eintippt, kann sie also nicht überschreiben. Unter Ihrer gespeicherten Antwort enthält **Dein Bearbeitungslink** diesen Schlüssel: Öffnen Sie den Link auf einem anderen Gerät, um Ihre Antworten dort zu ändern, und behalten Sie ihn für sich, denn wer ihn hat, kann Ihre Antworten ändern oder entfernen. **Meine Antworten entfernen** nimmt Ihre Antworten aus der Umfrage. Wenn Sie den Link verlieren, wenden Sie sich an die einladende Person: Sie kann Ihre Antwort entfernen, damit Sie neu antworten können.
 
 Jeder Name kann pro Umfrage nur einmal verwendet werden. Hat schon jemand unter Ihrem Namen geantwortet, ergänzen Sie einen Anfangsbuchstaben oder Ihren Nachnamen. Antworten, die vor den Bearbeitungslinks gespeichert wurden, lassen sich weiterhin mit genau demselben Namen aktualisieren, bis das nächste Speichern sie an dieses Gerät bindet.
 
@@ -205,7 +205,7 @@ Die E-Mails werden in unserem Auftrag über einen E-Mail-Versanddienst verschick
 
 ## Auf Ihrem Gerät
 
-Dieses Gerät merkt sich den Namen und die E-Mail-Adresse Ihrer letzten Antwort, die Bearbeitungslinks der hier gegebenen Antworten, Ihre Anzeigeeinstellungen und, wenn Sie Umfragen erstellen, Ihre Anmeldung und die privaten Verwaltungslinks der hier erstellten oder geöffneten Umfragen. Kalendereinträge, die Sie mit **Add to calendar** hinzufügen, werden auf Ihrem Gerät erstellt. Wenn Sie Google oder Outlook wählen, öffnet sich dieser Dienst mit bereits ausgefüllten Termindaten.
+Dieses Gerät merkt sich den Namen und die E-Mail-Adresse Ihrer letzten Antwort, die Bearbeitungslinks der hier gegebenen Antworten, Ihre Anzeigeeinstellungen und, wenn Sie Umfragen erstellen, Ihre Anmeldung und die privaten Verwaltungslinks der hier erstellten oder geöffneten Umfragen. Kalendereinträge, die Sie mit **Zum Kalender hinzufügen** hinzufügen, werden auf Ihrem Gerät erstellt. Wenn Sie Google oder Outlook wählen, öffnet sich dieser Dienst mit bereits ausgefüllten Termindaten.
 
 ## Ihre Universal ID
 

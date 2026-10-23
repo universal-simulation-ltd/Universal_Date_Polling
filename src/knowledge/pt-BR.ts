@@ -65,7 +65,7 @@ Se você criar uma enquete durante uma viagem, seu dispositivo pode estar no fus
     body: `## Criar uma enquete
 
 1. Dê um título à enquete e escolha entre horários ou dias inteiros.
-2. Adicione as opções. Se você conectou uma agenda, os horários em que já está ocupado aparecem sombreados, e **Suggest times** pode preencher a enquete com quatro opções do seu tempo livre: só em dias úteis, entre 10:00 e 16:00 no fuso da enquete, e no máximo uma de manhã e uma à tarde no mesmo dia.
+2. Adicione as opções. Se você conectou uma agenda, os horários em que já está ocupado aparecem sombreados, e **Sugerir 4 horários** pode preencher a enquete com quatro opções do seu tempo livre: só em dias úteis, entre 10:00 e 16:00 no fuso da enquete, e no máximo uma de manhã e uma à tarde no mesmo dia.
 3. Entre com seu Universal ID, ou continue sem ele. Sem ele, você recebe um link de administração privado para gerenciar a enquete (veja abaixo), e o e-mail é opcional: informe-o e confirme-o com um código de uso único se quiser alertas de respostas, uma página de agendamento ou encontrar suas enquetes de outro dispositivo.
 4. Compartilhe o link.
 
@@ -75,17 +75,17 @@ Logo depois de criar uma enquete, você pode voltar e alterar os horários, desd
 
 ## Confirmar um horário
 
-Quando as respostas chegarem, escolha a opção vencedora com **Confirm this time**. Só quem organiza pode fazer isso. Todos que abrirem o link passam a ver um aviso "Confirmed" com o horário escolhido. Você pode mudar ou desfazer a escolha depois.
+Quando as respostas chegarem, escolha a opção vencedora com **Confirmar este horário**. Só quem organiza pode fazer isso. Todos que abrirem o link passam a ver um aviso "Horário confirmado" com o horário escolhido. Você pode mudar ou desfazer a escolha depois.
 
 A partir desse aviso você pode:
 
 - Enviar por e-mail o horário confirmado, com um convite de agenda anexado, para todos que deixaram um endereço. Isso só acontece quando você clica, nunca automaticamente.
-- Usar **Copy email** para enviar a mensagem do seu próprio e-mail, com destinatários, assunto e texto prontos para copiar.
+- Usar **Copiar e-mail** para enviar a mensagem do seu próprio e-mail, com destinatários, assunto e texto prontos para copiar.
 - Adicionar o horário à sua própria agenda.
 
 ## Adicionar à agenda
 
-Cada resultado, e também o aviso de confirmação, tem um botão **Add to calendar** com Google Agenda, Outlook ou um arquivo de agenda para apps como o Calendário da Apple. O evento é montado no seu dispositivo.
+Cada resultado, e também o aviso de confirmação, tem um botão **Adicionar à agenda** com Google Agenda, Outlook ou um arquivo de agenda para apps como o Calendário da Apple. O evento é montado no seu dispositivo.
 
 ## Seu link de administração privado
 
@@ -103,11 +103,11 @@ No dispositivo em que você as criou, em um dispositivo em que abriu o link de a
   {
     id: 'poll-options',
     title: 'Páginas de agendamento, validade, alertas e agendas',
-    summary: 'Para que serve cada uma das opções em "This poll’s options".',
+    summary: 'Para que serve cada uma das opções em "Opções desta enquete".',
     group: 'Como funciona',
-    body: `As opções da enquete que você está criando ficam no seu menu de perfil, em **Tune this app** → **This poll's options**. Elas valem só para essa enquete.
+    body: `As opções da enquete que você está criando ficam no seu menu de perfil, em **Ajustar este app** → **Opções desta enquete**. Elas valem só para essa enquete.
 
-## Página de agendamento ("Just the two of us")
+## Página de agendamento ("Só nós dois")
 
 Para um encontro a dois. Em vez de reunir a disponibilidade de todos, a pessoa para quem você envia o link escolhe um dos seus horários, informa nome e e-mail, e o horário é reservado na hora. Você não precisa confirmar nada, e os dois recebem um convite de agenda por e-mail. Se você conectou uma agenda que permita isso, o convite pode sair da sua própria agenda. Você pode cancelar um agendamento depois, e a outra pessoa é avisada. Uma página de agendamento precisa do seu e-mail, porque é para lá que os agendamentos são enviados.
 
@@ -157,7 +157,7 @@ Os links das enquetes têm dez caracteres aleatórios, o que os torna muito dif�
 
 ## Só você pode mudar sua resposta
 
-Na primeira vez que você salva uma resposta, a enquete entrega a este dispositivo uma chave privada para ela. Só um dispositivo com essa chave pode mudar ou remover suas respostas, então outra pessoa que digite o mesmo nome não consegue substituí-las. Abaixo da resposta salva, **Your edit link** leva essa chave: abra-o em outro dispositivo para mudar suas respostas por lá, e guarde-o só para você, porque qualquer pessoa com ele pode mudá-las ou removê-las. **Remove my answers** tira suas respostas da enquete. Se perder o link, fale com quem organiza: essa pessoa pode remover sua resposta para você responder de novo.
+Na primeira vez que você salva uma resposta, a enquete entrega a este dispositivo uma chave privada para ela. Só um dispositivo com essa chave pode mudar ou remover suas respostas, então outra pessoa que digite o mesmo nome não consegue substituí-las. Abaixo da resposta salva, **Seu link de edição** leva essa chave: abra-o em outro dispositivo para mudar suas respostas por lá, e guarde-o só para você, porque qualquer pessoa com ele pode mudá-las ou removê-las. **Remover minhas respostas** tira suas respostas da enquete. Se perder o link, fale com quem organiza: essa pessoa pode remover sua resposta para você responder de novo.
 
 Cada nome só pode ser usado uma vez por enquete; se alguém já respondeu com o seu, acrescente uma inicial ou seu sobrenome. Respostas salvas antes de existirem os links de edição ainda podem ser atualizadas digitando exatamente o mesmo nome, até que o próximo salvamento as vincule àquele dispositivo.
 
@@ -205,7 +205,7 @@ Os e-mails são enviados em nosso nome por um serviço de envio de e-mails.
 
 ## No seu dispositivo
 
-Este dispositivo lembra o nome e o e-mail da sua última resposta, os links de edição das respostas dadas aqui, suas configurações de exibição e, se você organiza enquetes, seu login e os links de administração privados das enquetes criadas ou abertas aqui. Os eventos que você adiciona com **Add to calendar** são montados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
+Este dispositivo lembra o nome e o e-mail da sua última resposta, os links de edição das respostas dadas aqui, suas configurações de exibição e, se você organiza enquetes, seu login e os links de administração privados das enquetes criadas ou abertas aqui. Os eventos que você adiciona com **Adicionar à agenda** são montados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
 
 ## Seu Universal ID
 

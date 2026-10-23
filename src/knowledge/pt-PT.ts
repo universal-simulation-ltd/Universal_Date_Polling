@@ -65,7 +65,7 @@ Se criar uma sondagem durante uma viagem, o seu dispositivo pode estar no fuso d
     body: `## Criar uma sondagem
 
 1. Dê um título à sondagem e escolha entre horas ou dias inteiros.
-2. Adicione as opções. Se tiver ligado um calendário, as horas em que já está ocupado aparecem sombreadas, e **Suggest times** pode preencher a sondagem com quatro opções do seu tempo livre: só em dias úteis, entre as 10:00 e as 16:00 no fuso da sondagem, e no máximo uma de manhã e uma à tarde no mesmo dia.
+2. Adicione as opções. Se tiver ligado um calendário, as horas em que já está ocupado aparecem sombreadas, e **Sugerir horários** pode preencher a sondagem com quatro opções do seu tempo livre: só em dias úteis, entre as 10:00 e as 16:00 no fuso da sondagem, e no máximo uma de manhã e uma à tarde no mesmo dia.
 3. Inicie sessão com o seu Universal ID, ou continue sem ele. Sem ele, recebe uma ligação de administração privada para gerir a sondagem (ver abaixo), e o endereço de e-mail é opcional: indique-o e confirme-o com um código de utilização única se quiser alertas de respostas, uma página de marcação ou encontrar as suas sondagens a partir de outro dispositivo.
 4. Partilhe a ligação.
 
@@ -75,17 +75,17 @@ Logo depois de criar uma sondagem, pode voltar atrás e alterar os horários, de
 
 ## Confirmar um horário
 
-Quando tiver as respostas, escolha a opção vencedora com **Confirm this time**. Só quem organiza o pode fazer. Todos os que abrirem a ligação passam a ver um aviso "Confirmed" com o horário escolhido. Pode alterar ou anular a escolha mais tarde.
+Quando tiver as respostas, escolha a opção vencedora com **Confirmar este horário**. Só quem organiza o pode fazer. Todos os que abrirem a ligação passam a ver um aviso "Confirmado" com o horário escolhido. Pode alterar ou anular a escolha mais tarde.
 
 A partir desse aviso pode:
 
 - Enviar por e-mail o horário confirmado, com um convite de calendário em anexo, a todos os que deixaram um endereço. Só acontece quando clica, nunca automaticamente.
-- Usar **Copy email** para enviar a mensagem a partir do seu próprio e-mail, com destinatários, assunto e texto prontos a copiar.
+- Usar **Copiar e-mail** para enviar a mensagem a partir do seu próprio e-mail, com destinatários, assunto e texto prontos a copiar.
 - Adicionar o horário ao seu próprio calendário.
 
 ## Adicionar ao calendário
 
-Cada resultado, e também o aviso de confirmação, tem um botão **Add to calendar** com Google Calendar, Outlook ou um ficheiro de calendário para aplicações como o Calendário da Apple. O evento é preparado no seu dispositivo.
+Cada resultado, e também o aviso de confirmação, tem um botão **Adicionar ao calendário** com Google Calendar, Outlook ou um ficheiro de calendário para aplicações como o Calendário da Apple. O evento é preparado no seu dispositivo.
 
 ## A sua ligação de administração privada
 
@@ -103,11 +103,11 @@ No dispositivo em que as criou, num dispositivo em que abriu a ligação de admi
   {
     id: 'poll-options',
     title: 'Páginas de marcação, validade, alertas e calendários',
-    summary: 'Para que serve cada uma das opções em "This poll’s options".',
+    summary: 'Para que serve cada uma das opções em "Opções desta sondagem".',
     group: 'Como funciona',
-    body: `As opções da sondagem que está a criar estão no seu menu de perfil, em **Tune this app** → **This poll's options**. Aplicam-se apenas a essa sondagem.
+    body: `As opções da sondagem que está a criar estão no seu menu de perfil, em **Ajustar esta aplicação** → **Opções desta sondagem**. Aplicam-se apenas a essa sondagem.
 
-## Página de marcação ("Just the two of us")
+## Página de marcação ("Só nós os dois")
 
 Para um encontro a dois. Em vez de recolher a disponibilidade de todos, a pessoa a quem envia a ligação escolhe um dos seus horários, indica o nome e o endereço de e-mail, e o horário fica marcado de imediato. Não tem nada para confirmar, e ambos recebem um convite de calendário por e-mail. Se tiver ligado um calendário que o permita, o convite pode sair do seu próprio calendário. Pode cancelar uma marcação mais tarde, e a outra pessoa é avisada. Uma página de marcação precisa do seu endereço de e-mail, porque é para lá que as marcações são enviadas.
 
@@ -157,7 +157,7 @@ As ligações das sondagens têm dez caracteres aleatórios, o que as torna muit
 
 ## A sua resposta só pode ser alterada por si
 
-Da primeira vez que guarda uma resposta, a sondagem entrega a este dispositivo uma chave privada para ela. Só um dispositivo com essa chave pode alterar ou remover as suas respostas, por isso outra pessoa que escreva o mesmo nome não as consegue substituir. Por baixo da resposta guardada, **Your edit link** contém essa chave: abra a ligação noutro dispositivo para alterar aí as suas respostas, e guarde-a só para si, porque qualquer pessoa que a tenha pode alterá-las ou removê-las. **Remove my answers** retira as suas respostas da sondagem. Se perder a ligação, fale com quem organiza: pode remover a sua resposta para que possa responder de novo.
+Da primeira vez que guarda uma resposta, a sondagem entrega a este dispositivo uma chave privada para ela. Só um dispositivo com essa chave pode alterar ou remover as suas respostas, por isso outra pessoa que escreva o mesmo nome não as consegue substituir. Por baixo da resposta guardada, **A sua ligação de edição** contém essa chave: abra a ligação noutro dispositivo para alterar aí as suas respostas, e guarde-a só para si, porque qualquer pessoa que a tenha pode alterá-las ou removê-las. **Remover as minhas respostas** retira as suas respostas da sondagem. Se perder a ligação, fale com quem organiza: pode remover a sua resposta para que possa responder de novo.
 
 Cada nome só pode ser usado uma vez por sondagem; se alguém já respondeu com o seu, acrescente uma inicial ou o apelido. As respostas guardadas antes de existirem as ligações de edição ainda podem ser atualizadas escrevendo exatamente o mesmo nome, até que a gravação seguinte as associe a esse dispositivo.
 
@@ -205,7 +205,7 @@ Os e-mails são enviados em nosso nome através de um serviço de envio de e-mai
 
 ## No seu dispositivo
 
-Este dispositivo lembra o nome e o endereço de e-mail da sua última resposta, as ligações de edição das respostas dadas aqui, as suas definições de apresentação e, se organizar sondagens, a sua sessão e as ligações de administração privadas das sondagens criadas ou abertas aqui. Os eventos que adiciona com **Add to calendar** são preparados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
+Este dispositivo lembra o nome e o endereço de e-mail da sua última resposta, as ligações de edição das respostas dadas aqui, as suas definições de apresentação e, se organizar sondagens, a sua sessão e as ligações de administração privadas das sondagens criadas ou abertas aqui. Os eventos que adiciona com **Adicionar ao calendário** são preparados no seu dispositivo. Escolher Google ou Outlook abre esse serviço com os dados do evento já preenchidos.
 
 ## O seu Universal ID
 

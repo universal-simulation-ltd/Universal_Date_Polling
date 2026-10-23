@@ -65,7 +65,7 @@ Si vous créez un sondage en voyage, votre appareil est peut-être réglé sur l
     body: `## Créer un sondage
 
 1. Donnez un titre au sondage et choisissez entre horaires et journées entières.
-2. Ajoutez vos options. Si vous avez connecté un agenda, les moments où vous êtes déjà occupé sont grisés, et **Suggest times** peut remplir le sondage avec quatre options prises dans votre temps libre : en semaine uniquement, entre 10:00 et 16:00 dans le fuseau du sondage, et au plus un créneau le matin et un l’après-midi par jour.
+2. Ajoutez vos options. Si vous avez connecté un agenda, les moments où vous êtes déjà occupé sont grisés, et **Suggérer des horaires** peut remplir le sondage avec quatre options prises dans votre temps libre : en semaine uniquement, entre 10:00 et 16:00 dans le fuseau du sondage, et au plus un créneau le matin et un l’après-midi par jour.
 3. Connectez-vous avec votre Universal ID, ou continuez sans. Sans Universal ID, vous recevez un lien d’administration privé pour gérer le sondage (voir plus bas), et votre adresse e-mail est facultative : ajoutez-la et confirmez-la avec un code à usage unique si vous voulez des alertes de réponse, une page de réservation, ou retrouver vos sondages depuis un autre appareil.
 4. Partagez le lien.
 
@@ -75,17 +75,17 @@ Juste après avoir créé un sondage, vous pouvez revenir modifier les créneaux
 
 ## Confirmer un créneau
 
-Une fois les réponses reçues, choisissez l’option retenue avec **Confirm this time**. Seul l’organisateur peut le faire. Toute personne qui ouvre le lien voit alors une bannière « Confirmed » avec le créneau choisi. Vous pouvez modifier ou annuler ce choix plus tard.
+Une fois les réponses reçues, choisissez l’option retenue avec **Confirmer cet horaire**. Seul l’organisateur peut le faire. Toute personne qui ouvre le lien voit alors une bannière « Horaire confirmé » avec le créneau choisi. Vous pouvez modifier ou annuler ce choix plus tard.
 
 Depuis la bannière, vous pouvez :
 
 - Envoyer par e-mail le créneau confirmé, avec une invitation d’agenda en pièce jointe, à toutes les personnes qui ont laissé une adresse. Cela ne se produit que si vous cliquez, jamais automatiquement.
-- Utiliser **Copy email** pour envoyer le message depuis votre propre messagerie, avec les destinataires, l’objet et le texte prêts à copier.
+- Utiliser **Copier l’e-mail** pour envoyer le message depuis votre propre messagerie, avec les destinataires, l’objet et le texte prêts à copier.
 - Ajouter le créneau à votre propre agenda.
 
 ## Ajouter à un agenda
 
-Chaque résultat, ainsi que la bannière de confirmation, propose un bouton **Add to calendar** : Google Agenda, Outlook, ou un fichier d’agenda pour des applications comme Calendrier d’Apple. L’événement est préparé sur votre appareil.
+Chaque résultat, ainsi que la bannière de confirmation, propose un bouton **Ajouter à l’agenda** : Google Agenda, Outlook, ou un fichier d’agenda pour des applications comme Calendrier d’Apple. L’événement est préparé sur votre appareil.
 
 ## Votre lien d’administration privé
 
@@ -103,11 +103,11 @@ Sur l’appareil où vous les avez créés, sur un appareil où vous avez ouvert
   {
     id: 'poll-options',
     title: 'Pages de réservation, expiration, alertes et agendas',
-    summary: 'À quoi sert chacune des options « This poll’s options ».',
+    summary: 'À quoi sert chacune des options « Options de ce sondage ».',
     group: 'Comment ça marche',
-    body: `Les options du sondage que vous créez se trouvent dans votre menu de profil, sous **Tune this app** → **This poll's options**. Elles ne s’appliquent qu’à ce sondage.
+    body: `Les options du sondage que vous créez se trouvent dans votre menu de profil, sous **Régler cette application** → **Options de ce sondage**. Elles ne s’appliquent qu’à ce sondage.
 
-## Page de réservation (« Just the two of us »)
+## Page de réservation (« Juste nous deux »)
 
 Pour un rendez-vous en tête-à-tête. Au lieu de recueillir les disponibilités de chacun, la personne à qui vous envoyez le lien choisit l’un de vos créneaux, saisit son nom et son adresse e-mail, et le rendez-vous est réservé immédiatement. Vous n’avez rien à confirmer, et vous recevez tous les deux une invitation d’agenda par e-mail. Si vous avez connecté un agenda qui le permet, l’invitation peut venir de votre propre agenda. Vous pouvez annuler une réservation plus tard, et la personne en est informée. Une page de réservation nécessite votre adresse e-mail, car c’est là que vos réservations sont envoyées.
 
@@ -157,7 +157,7 @@ Les liens de sondage sont composés de dix caractères aléatoires, ce qui les r
 
 ## Vous seul pouvez modifier votre réponse
 
-La première fois que vous enregistrez une réponse, le sondage remet à cet appareil une clé privée pour celle-ci. Seul un appareil qui détient cette clé peut modifier ou supprimer vos réponses : une autre personne qui tape le même nom ne peut donc pas les remplacer. Sous votre réponse enregistrée, **Your edit link** contient cette clé : ouvrez-le sur un autre appareil pour y modifier vos réponses, et gardez-le pour vous, car toute personne qui le possède peut les modifier ou les supprimer. **Remove my answers** retire vos réponses du sondage. Si vous perdez le lien, adressez-vous à l’organisateur : il peut supprimer votre réponse pour que vous puissiez répondre à nouveau.
+La première fois que vous enregistrez une réponse, le sondage remet à cet appareil une clé privée pour celle-ci. Seul un appareil qui détient cette clé peut modifier ou supprimer vos réponses : une autre personne qui tape le même nom ne peut donc pas les remplacer. Sous votre réponse enregistrée, **Votre lien de modification** contient cette clé : ouvrez-le sur un autre appareil pour y modifier vos réponses, et gardez-le pour vous, car toute personne qui le possède peut les modifier ou les supprimer. **Supprimer mes réponses** retire vos réponses du sondage. Si vous perdez le lien, adressez-vous à l’organisateur : il peut supprimer votre réponse pour que vous puissiez répondre à nouveau.
 
 Chaque nom ne peut servir qu’une fois par sondage : si quelqu’un a déjà répondu sous le vôtre, ajoutez une initiale ou votre nom de famille. Les réponses enregistrées avant l’arrivée des liens de modification peuvent encore être mises à jour en tapant exactement le même nom, jusqu’à ce que le prochain enregistrement les lie à cet appareil.
 
@@ -205,7 +205,7 @@ Les e-mails sont envoyés en notre nom par un service d’envoi d’e-mails.
 
 ## Sur votre appareil
 
-Cet appareil retient le nom et l’adresse e-mail de votre dernière réponse, les liens de modification des réponses données ici, vos réglages d’affichage et, si vous organisez, votre connexion et les liens d’administration privés des sondages créés ou ouverts ici. Les événements ajoutés avec **Add to calendar** sont préparés sur votre appareil. Choisir Google ou Outlook ouvre ce service avec les détails de l’événement déjà remplis.
+Cet appareil retient le nom et l’adresse e-mail de votre dernière réponse, les liens de modification des réponses données ici, vos réglages d’affichage et, si vous organisez, votre connexion et les liens d’administration privés des sondages créés ou ouverts ici. Les événements ajoutés avec **Ajouter à l’agenda** sont préparés sur votre appareil. Choisir Google ou Outlook ouvre ce service avec les détails de l’événement déjà remplis.
 
 ## Votre Universal ID
 

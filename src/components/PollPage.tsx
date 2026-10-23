@@ -876,12 +876,15 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                     const inst = slotInstant(s.start, poll.timezone)
                     const v = mine[s.id]
                     return (
-                      <div key={s.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
-                        <div className="min-w-0">
+                      // flex-wrap + a 3.25rem floor on the time: where the three answer
+                      // buttons are long (French "Si nécessaire", German "Notfalls")
+                      // they move under the time instead of squeezing it to "14:0".
+                      <div key={s.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
+                        <div className="min-w-[3.25rem] flex-1 basis-[3.25rem]">
                           <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{dayMode ? t('poll.all_day') : formatRange(inst, s.durationMins, activeTz)}</div>
                           {tzNote && <div className="text-xs text-slate-500 dark:text-slate-400">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</div>}
                         </div>
-                        <div className="flex shrink-0 gap-1.5">
+                        <div className="ml-auto flex shrink-0 gap-1.5">
                           <button
                             type="button"
                             onClick={() => cycle(s.id, 'yes')}
