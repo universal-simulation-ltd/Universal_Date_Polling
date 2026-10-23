@@ -176,9 +176,9 @@ You can answer without giving an email address. If you leave one, the host can e
 
 A poll has to live somewhere everyone can reach it, so polls and answers are stored on our servers. That includes:
 
-- The poll itself: its title, options, time zone, settings, and the host's email address if they gave one.
+- The poll itself: its title, options, time zone, settings, the language the host was using, and the host's email address if they gave one.
 - Each answer: the name given, the choices made, when it was saved, and a one-way fingerprint (a hash) of its edit link. The link itself is not stored.
-- Email addresses respondents chose to leave, and a booking guest's name and email address.
+- Email addresses respondents chose to leave, and a booking guest's name and email address, each with the language that person was using.
 - A logo the host uploaded. The poll page has to show it, so the poll carries a long-lived link to the logo that anyone with the poll link can load.
 - If the host connected a calendar, the access keys for that connection. These are kept on the server only, are never sent to the app, and are used only to do what the host asked. Disconnecting deletes them.
 - For a poll with a private admin link, a one-way fingerprint (a hash) of it, used to check the link when it is opened. The link itself is not stored.
@@ -201,7 +201,7 @@ The app only sends email in these cases:
 - The confirmed time to respondents who left an address, only when the host clicks to send it.
 - Booking confirmations and cancellations, on a booking page.
 
-Emails are sent through an email delivery service on our behalf.
+Each email is written in the language of the person it is for: the one they were using when they left their address, or the one the host made the poll in. Emails are sent through an email delivery service on our behalf.
 
 ## On your device
 

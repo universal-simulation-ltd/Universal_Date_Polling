@@ -6,7 +6,7 @@ import { Chip, SignInDialog, useFileDrop, useRevealOnOpen, useOrg, useOrgBrandin
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
-import { adminLinksSupported, createPoll, createPollGated, currentUser, sendHostCode, startGuestSession, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollEditing, setPollLocation as apiSetLocation, shortId, signOut, updatePollDraft, uploadPollLogo, verifyHostCode } from '../lib/api'
+import { adminLinksSupported, createPoll, createPollGated, currentUser, sendHostCode, startGuestSession, setBookingMode as apiSetBookingMode, setNotifyOnResponse as apiSetNotify, setPollEditing, setPollLocation as apiSetLocation, setPollLanguage, shortId, signOut, updatePollDraft, uploadPollLogo, verifyHostCode } from '../lib/api'
 import { EDIT_HEARTBEAT_MS } from '../lib/editing'
 import { useOtpUser } from '../lib/otpSession'
 import { NEED_MORE_URL, atLimitCopy, isAtLimit, isNearLimit, nearLimitCopy } from '../lib/freeAllowance'
@@ -828,6 +828,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       // already created.
       if (freeGated && pollDraft.location) {
         try { await apiSetLocation(client, poll.id, pollDraft.location) } catch { /* poll still created */ }
+      }
+      // And the host's language, for the emails the server sends them.
+      if (freeGated) {
+        try { await setPollLanguage(client, poll.id) } catch { /* emails fall back to English */ }
       }
       // Likewise booking mode: the gated RPC predates the column, so the free
       // tier gets it as a follow-up. Failing here would leave the host with an

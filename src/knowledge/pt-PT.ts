@@ -176,9 +176,9 @@ Pode responder sem indicar nenhum endereço de e-mail. Se deixar um, quem organi
 
 Uma sondagem tem de estar num sítio a que todos consigam aceder, por isso as sondagens e as respostas são guardadas nos nossos servidores. Isto inclui:
 
-- A própria sondagem: título, opções, fuso horário, definições e, se indicado, o endereço de e-mail de quem organiza.
+- A própria sondagem: título, opções, fuso horário, definições, o idioma que quem organiza estava a usar e, se indicado, o endereço de e-mail dessa pessoa.
 - Cada resposta: o nome indicado, as escolhas feitas, quando foi guardada e uma impressão digital unidirecional (um hash) da sua ligação de edição. A ligação em si não é guardada.
-- Os endereços de e-mail que os participantes escolheram deixar, e o nome e o endereço de e-mail de quem marca numa página de marcação.
+- Os endereços de e-mail que os participantes escolheram deixar, e o nome e o endereço de e-mail de quem marca numa página de marcação, cada um com o idioma que essa pessoa estava a usar.
 - Um logótipo carregado por quem organiza. A página da sondagem precisa de o mostrar, por isso a sondagem leva uma ligação de longa duração para o logótipo, que qualquer pessoa com a ligação da sondagem pode carregar.
 - Se quem organiza ligou um calendário, as chaves de acesso dessa ligação. Ficam apenas no servidor, nunca são enviadas para a aplicação e só são usadas para fazer o que quem organiza pediu. Desligar o calendário apaga-as.
 - Numa sondagem com ligação de administração privada, uma impressão digital de sentido único (um hash) dessa ligação, usada para a verificar quando é aberta. A própria ligação não é guardada.
@@ -201,7 +201,7 @@ A aplicação só envia e-mails nestes casos:
 - O horário confirmado aos participantes que deixaram um endereço, só quando quem organiza clica para o enviar.
 - Confirmações e cancelamentos de marcações, numa página de marcação.
 
-Os e-mails são enviados em nosso nome através de um serviço de envio de e-mail.
+Cada e-mail é escrito no idioma de quem o recebe: o que a pessoa usava quando deixou o endereço, ou aquele em que quem organiza criou a sondagem. Os e-mails são enviados em nosso nome através de um serviço de envio de e-mail.
 
 ## No seu dispositivo
 

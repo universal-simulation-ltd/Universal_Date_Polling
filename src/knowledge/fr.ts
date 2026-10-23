@@ -176,9 +176,9 @@ Vous pouvez répondre sans donner d’adresse e-mail. Si vous en laissez une, l�
 
 Un sondage doit être accessible à tous : les sondages et les réponses sont donc conservés sur nos serveurs. Cela comprend :
 
-- Le sondage lui-même : titre, options, fuseau horaire, réglages et, s’il l’a donnée, adresse e-mail de l’organisateur.
+- Le sondage lui-même : titre, options, fuseau horaire, réglages, langue utilisée par l’organisateur et, s’il l’a donnée, adresse e-mail de l’organisateur.
 - Chaque réponse : le nom indiqué, les choix faits, la date d’enregistrement et une empreinte à sens unique (un hachage) de son lien de modification. Le lien lui-même n’est pas conservé.
-- Les adresses e-mail que les participants ont choisi de laisser, ainsi que le nom et l’adresse e-mail de la personne qui réserve sur une page de réservation.
+- Les adresses e-mail que les participants ont choisi de laisser, ainsi que le nom et l’adresse e-mail de la personne qui réserve sur une page de réservation, chacune avec la langue qu’utilisait cette personne.
 - Un logo envoyé par l’organisateur. La page du sondage doit l’afficher : le sondage contient donc un lien de longue durée vers le logo, que toute personne ayant le lien du sondage peut charger.
 - Si l’organisateur a connecté un agenda, les clés d’accès de cette connexion. Elles restent uniquement sur le serveur, ne sont jamais envoyées à l’application, et ne servent qu’à faire ce que l’organisateur a demandé. La déconnexion les supprime.
 - Pour un sondage doté d’un lien d’administration privé, une empreinte à sens unique (un hachage) de ce lien, qui sert à le vérifier quand il est ouvert. Le lien lui-même n’est pas conservé.
@@ -201,7 +201,7 @@ L’application n’envoie d’e-mails que dans ces cas :
 - Le créneau confirmé aux participants qui ont laissé une adresse, uniquement lorsque l’organisateur clique pour l’envoyer.
 - Les confirmations et annulations de réservation, sur une page de réservation.
 
-Les e-mails sont envoyés en notre nom par un service d’envoi d’e-mails.
+Chaque e-mail est rédigé dans la langue de son destinataire : celle qu’il utilisait en laissant son adresse, ou celle dans laquelle l’organisateur a créé le sondage. Les e-mails sont envoyés en notre nom par un service d’envoi d’e-mails.
 
 ## Sur votre appareil
 

@@ -176,9 +176,9 @@ Sie können antworten, ohne eine E-Mail-Adresse anzugeben. Hinterlassen Sie eine
 
 Eine Umfrage muss an einem Ort liegen, den alle erreichen können. Deshalb werden Umfragen und Antworten auf unseren Servern gespeichert. Dazu gehören:
 
-- Die Umfrage selbst: Titel, Optionen, Zeitzone, Einstellungen und, falls angegeben, die E-Mail-Adresse der einladenden Person.
+- Die Umfrage selbst: Titel, Optionen, Zeitzone, Einstellungen, die Sprache, die die einladende Person verwendet hat, und, falls angegeben, ihre E-Mail-Adresse.
 - Jede Antwort: der angegebene Name, die getroffene Auswahl, der Zeitpunkt der Speicherung und ein Einweg-Fingerabdruck (ein Hash) ihres Bearbeitungslinks. Der Link selbst wird nicht gespeichert.
-- E-Mail-Adressen, die Teilnehmende freiwillig hinterlassen haben, sowie Name und E-Mail-Adresse der Person, die auf einer Buchungsseite bucht.
+- E-Mail-Adressen, die Teilnehmende freiwillig hinterlassen haben, sowie Name und E-Mail-Adresse der Person, die auf einer Buchungsseite bucht, jeweils mit der Sprache, die diese Person verwendet hat.
 - Ein Logo, das die einladende Person hochgeladen hat. Die Umfrageseite muss es anzeigen, deshalb enthält die Umfrage einen lange gültigen Link zum Logo, den alle mit dem Umfragelink laden können.
 - Wenn die einladende Person einen Kalender verbunden hat, die Zugangsschlüssel dieser Verbindung. Sie bleiben ausschließlich auf dem Server, werden nie an die App geschickt und nur für das verwendet, worum die einladende Person gebeten hat. Beim Trennen werden sie gelöscht.
 - Bei einer Umfrage mit privatem Verwaltungslink ein nicht umkehrbarer Fingerabdruck (ein Hash) davon, mit dem der Link beim Öffnen geprüft wird. Der Link selbst wird nicht gespeichert.
@@ -201,7 +201,7 @@ Die App verschickt nur in diesen Fällen E-Mails:
 - Den bestätigten Termin an Teilnehmende mit hinterlassener Adresse, nur wenn die einladende Person zum Senden klickt.
 - Buchungsbestätigungen und Stornierungen auf einer Buchungsseite.
 
-Die E-Mails werden in unserem Auftrag über einen E-Mail-Versanddienst verschickt.
+Jede E-Mail ist in der Sprache der Person geschrieben, für die sie ist: in der, die sie beim Hinterlassen ihrer Adresse verwendet hat, oder in der, in der die einladende Person die Umfrage erstellt hat. Die E-Mails werden in unserem Auftrag über einen E-Mail-Versanddienst verschickt.
 
 ## Auf Ihrem Gerät
 

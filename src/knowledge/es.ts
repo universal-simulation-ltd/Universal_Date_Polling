@@ -176,9 +176,9 @@ Puede responder sin dar ninguna dirección de correo. Si deja una, el organizado
 
 Una encuesta tiene que estar en algún sitio al que todos puedan acceder, así que las encuestas y las respuestas se guardan en nuestros servidores. Esto incluye:
 
-- La encuesta en sí: título, opciones, zona horaria, ajustes y, si lo indicó, el correo del organizador.
+- La encuesta en sí: título, opciones, zona horaria, ajustes, el idioma que usaba el organizador y, si lo indicó, su correo.
 - Cada respuesta: el nombre indicado, lo que se eligió, cuándo se guardó y una huella unidireccional (un hash) de su enlace de edición. El enlace en sí no se guarda.
-- Las direcciones de correo que los participantes decidieron dejar, y el nombre y el correo de quien reserva en una página de reserva.
+- Las direcciones de correo que los participantes decidieron dejar, y el nombre y el correo de quien reserva en una página de reserva, cada una con el idioma que usaba esa persona.
 - Un logotipo que haya subido el organizador. La página de la encuesta tiene que mostrarlo, así que la encuesta lleva un enlace de larga duración al logotipo que cualquiera con el enlace de la encuesta puede cargar.
 - Si el organizador conectó un calendario, las claves de acceso de esa conexión. Se guardan solo en el servidor, nunca se envían a la aplicación y solo se usan para hacer lo que el organizador pidió. Al desconectar se eliminan.
 - En una encuesta con enlace de administración privado, una huella de un solo sentido (un hash) de ese enlace, que sirve para comprobarlo cuando se abre. El enlace en sí no se guarda.
@@ -201,7 +201,7 @@ La aplicación solo envía correos en estos casos:
 - La hora confirmada a los participantes que dejaron una dirección, solo cuando el organizador hace clic para enviarla.
 - Las confirmaciones y cancelaciones de reservas, en una página de reserva.
 
-Los correos se envían a través de un servicio de envío de correo en nuestro nombre.
+Cada correo se escribe en el idioma de su destinatario: el que usaba al dejar su dirección, o aquel en el que el organizador creó la encuesta. Los correos se envían a través de un servicio de envío de correo en nuestro nombre.
 
 ## En su dispositivo
 

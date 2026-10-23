@@ -266,6 +266,8 @@ try {
     check('POSTed the slot that was clicked', sent.slotId === 'slot-b', JSON.stringify(sent))
     check('POSTed the guest name and email', sent.name === 'Sam' && sent.email === 'sam@example.com', JSON.stringify(sent))
     check('POSTed the book action for this poll', sent.action === 'book' && sent.pollId === 'book123', JSON.stringify(sent))
+    // The guest's emails go out in the page's language (platform 0311).
+    check('POSTed the page language for the emails', /^en(-gb)?$/i.test(String(sent.lang)), JSON.stringify(sent))
     await page.close()
   }
 

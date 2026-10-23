@@ -5,6 +5,14 @@ import { emailReturnUrl } from './appUrl'
 import type { Availability, MyPoll, NewPoll, Poll, PollResponse } from './types'
 import { getT } from '../i18n/runtime'
 
+/** The app's language as a tag the server keeps (platform 0311) so the poll's
+ *  emails go out in it: `en-gb`, `fr`, `pt-BR` … Anything else (the dev-only
+ *  pseudo-language) is not sent, and the emails fall back to English. */
+export function languageTag(): string | undefined {
+  const lang = getT().lang
+  return /^[A-Za-z]{2,3}(-[A-Za-z]{2,4})?$/.test(lang) ? lang : undefined
+}
+
 // ---- Short, URL-safe poll ids (no ambiguous characters) --------------------
 const ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789'
 export function shortId(len = 10): string {
@@ -147,6 +155,8 @@ export async function createPoll(
     // hasn't taken 0120 yet — it just can't make booking pages.
     ...(p.booking_mode ? { booking_mode: true } : {}),
     ...(adminTokenHash ? { admin_token_hash: adminTokenHash } : {}),
+    // The host's language, for the emails the server sends them (0311).
+    ...(languageTag() ? { language: languageTag() } : {}),
   }
   const { data, error } = await client.from('polls').insert(row).select().single()
   if (error) throw error
@@ -275,6 +285,15 @@ export async function setNotifyOnResponse(
   if (error) throw error
 }
 
+/** The gated create RPC takes no language, so the free tier sets it as a
+ *  follow-up (the direct insert already carries it). */
+export async function setPollLanguage(client: SupabaseClient, pollId: string): Promise<void> {
+  const language = languageTag()
+  if (!language) return
+  const { error } = await client.from('polls').update({ language }).eq('id', pollId)
+  if (error) throw error
+}
+
 /** Best-effort: ask the edge function to email the host that `respondentName`
  *  just responded. Fire-and-forget — the response is already saved, so a failure
  *  here (offline, provider down, host not opted in) must never surface as an
@@ -316,6 +335,8 @@ export async function saveResponseEmail(pollId: string, name: string, email: str
     p_name: name.trim(),
     p_email: email.trim(),
     ...(editToken ? { p_edit_token: editToken } : {}),
+    // Their language, for the confirmation email (0311).
+    ...(languageTag() ? { p_language: languageTag() } : {}),
   })
   if (error) throw error
 }
@@ -383,7 +404,7 @@ export async function bookSlot(
   email: string,
 ): Promise<BookingResult> {
   const { data, error } = await supabase.functions.invoke('book-poll-slot', {
-    body: { action: 'book', pollId, slotId, name: name.trim(), email: email.trim() },
+    body: { action: 'book', pollId, slotId, name: name.trim(), email: email.trim(), lang: languageTag() },
   })
   if (error) throw await functionError(error, getT()('lib.err_book_retry'))
   if (!data?.ok) throw new BookingError(data?.error ?? getT()('lib.err_book'), data?.code ?? null)

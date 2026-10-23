@@ -176,9 +176,9 @@ Puoi rispondere senza indicare un indirizzo email. Se ne lasci uno, chi organizz
 
 Un sondaggio deve stare in un posto raggiungibile da tutti, quindi sondaggi e risposte sono conservati sui nostri server. Questo comprende:
 
-- Il sondaggio stesso: titolo, opzioni, fuso orario, impostazioni e, se indicato, l’indirizzo email di chi organizza.
+- Il sondaggio stesso: titolo, opzioni, fuso orario, impostazioni, la lingua usata da chi organizza e, se indicato, il suo indirizzo email.
 - Ogni risposta: il nome indicato, le scelte fatte, quando è stata salvata e un’impronta a senso unico (un hash) del suo link di modifica. Il link in sé non viene conservato.
-- Gli indirizzi email che i partecipanti hanno scelto di lasciare, e il nome e l’indirizzo email di chi prenota su una pagina di prenotazione.
+- Gli indirizzi email che i partecipanti hanno scelto di lasciare, e il nome e l’indirizzo email di chi prenota su una pagina di prenotazione, ciascuno con la lingua che quella persona stava usando.
 - Un logo caricato da chi organizza. La pagina del sondaggio deve mostrarlo, quindi il sondaggio contiene un link di lunga durata al logo, che chiunque abbia il link del sondaggio può caricare.
 - Se chi organizza ha collegato un calendario, le chiavi di accesso di quella connessione. Restano solo sul server, non vengono mai inviate all’app e servono solo a fare ciò che chi organizza ha chiesto. Scollegando il calendario vengono eliminate.
 - Per un sondaggio con link di amministrazione privato, un’impronta a senso unico (un hash) del link, usata per verificarlo quando viene aperto. Il link stesso non viene conservato.
@@ -201,7 +201,7 @@ L’app invia email solo in questi casi:
 - L’orario confermato ai partecipanti che hanno lasciato un indirizzo, solo quando chi organizza fa clic per inviarlo.
 - Le conferme e gli annullamenti delle prenotazioni, su una pagina di prenotazione.
 
-Le email vengono inviate per nostro conto tramite un servizio di invio email.
+Ogni email è scritta nella lingua di chi la riceve: quella che usava quando ha lasciato il suo indirizzo, o quella in cui chi organizza ha creato il sondaggio. Le email vengono inviate per nostro conto tramite un servizio di invio email.
 
 ## Sul tuo dispositivo
 

@@ -176,9 +176,9 @@ E-posta adresi vermeden yanıt verebilirsiniz. Bir adres bırakırsanız düzenl
 
 Bir anketin herkesin erişebileceği bir yerde durması gerekir; bu yüzden anketler ve yanıtlar sunucularımızda saklanır. Bunlara şunlar dahildir:
 
-- Anketin kendisi: başlığı, seçenekleri, saat dilimi, ayarları ve verdiyse düzenleyen kişinin e-posta adresi.
+- Anketin kendisi: başlığı, seçenekleri, saat dilimi, ayarları, düzenleyen kişinin kullandığı dil ve verdiyse düzenleyen kişinin e-posta adresi.
 - Her yanıt: verilen ad, yapılan seçimler, kaydedildiği zaman ve düzenleme bağlantısının tek yönlü bir parmak izi (karma). Bağlantının kendisi saklanmaz.
-- Katılımcıların bırakmayı seçtiği e-posta adresleri ile randevu sayfasında randevu alan kişinin adı ve e-posta adresi.
+- Katılımcıların bırakmayı seçtiği e-posta adresleri ile randevu sayfasında randevu alan kişinin adı ve e-posta adresi; her biri o kişinin kullandığı dille birlikte.
 - Düzenleyen kişinin yüklediği bir logo. Anket sayfasının logoyu göstermesi gerektiğinden anket, logoya giden uzun süreli bir bağlantı içerir; anket bağlantısına sahip herkes logoyu yükleyebilir.
 - Düzenleyen kişi bir takvim bağladıysa o bağlantının erişim anahtarları. Bunlar yalnızca sunucuda tutulur, uygulamaya hiçbir zaman gönderilmez ve yalnızca düzenleyen kişinin istediği işler için kullanılır. Bağlantıyı kesmek bunları siler.
 - Özel yönetim bağlantısı olan bir ankette, bağlantı açıldığında doğrulamak için kullanılan tek yönlü bir parmak izi (hash). Bağlantının kendisi saklanmaz.
@@ -201,7 +201,7 @@ Uygulama yalnızca şu durumlarda e-posta gönderir:
 - Adres bırakan katılımcılara onaylanan zaman; yalnızca düzenleyen kişi göndermek için tıkladığında.
 - Randevu sayfasında randevu onayları ve iptalleri.
 
-E-postalar bizim adımıza bir e-posta gönderim hizmeti aracılığıyla gönderilir.
+Her e-posta, alıcısının dilinde yazılır: adresini bırakırken kullandığı dil ya da düzenleyen kişinin anketi oluşturduğu dil. E-postalar bizim adımıza bir e-posta gönderim hizmeti aracılığıyla gönderilir.
 
 ## Cihazınızda
 

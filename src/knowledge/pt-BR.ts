@@ -176,9 +176,9 @@ Você pode responder sem informar nenhum e-mail. Se deixar um, quem organiza pod
 
 Uma enquete precisa ficar em algum lugar que todos consigam acessar, então enquetes e respostas ficam guardadas em nossos servidores. Isso inclui:
 
-- A enquete em si: título, opções, fuso horário, configurações e, se informado, o e-mail de quem organiza.
+- A enquete em si: título, opções, fuso horário, configurações, o idioma que quem organiza estava usando e, se informado, o e-mail dessa pessoa.
 - Cada resposta: o nome informado, as escolhas feitas, quando foi salva e uma impressão digital de mão única (um hash) do seu link de edição. O link em si não é guardado.
-- Os e-mails que os participantes escolheram deixar, e o nome e o e-mail de quem agenda em uma página de agendamento.
+- Os e-mails que os participantes escolheram deixar, e o nome e o e-mail de quem agenda em uma página de agendamento, cada um com o idioma que essa pessoa estava usando.
 - Um logotipo enviado por quem organiza. A página da enquete precisa exibi-lo, então a enquete leva um link de longa duração para o logotipo, que qualquer pessoa com o link da enquete pode carregar.
 - Se quem organiza conectou uma agenda, as chaves de acesso dessa conexão. Elas ficam só no servidor, nunca são enviadas ao app e só são usadas para fazer o que quem organiza pediu. Desconectar apaga essas chaves.
 - Para uma enquete com link de administração privado, uma impressão digital de mão única (um hash) desse link, usada para conferi-lo quando é aberto. O link em si não é guardado.
@@ -201,7 +201,7 @@ O app só envia e-mails nestes casos:
 - O horário confirmado para os participantes que deixaram um endereço, só quando quem organiza clica para enviar.
 - Confirmações e cancelamentos de agendamento, em uma página de agendamento.
 
-Os e-mails são enviados em nosso nome por um serviço de envio de e-mails.
+Cada e-mail é escrito no idioma de quem o recebe: o que a pessoa usava ao deixar o endereço, ou aquele em que quem organiza criou a enquete. Os e-mails são enviados em nosso nome por um serviço de envio de e-mails.
 
 ## No seu dispositivo
 
