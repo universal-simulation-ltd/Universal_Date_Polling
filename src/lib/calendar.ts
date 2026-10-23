@@ -12,6 +12,7 @@
 import type { Poll, Slot } from './types'
 import { addCalendarDays, slotDayKey, slotEnd, slotInstant } from './time'
 import { saveBlob } from '@unisim/media/save'
+import { getT } from '../i18n/runtime'
 
 interface CalendarEventBase {
   title: string
@@ -46,9 +47,10 @@ export type CalendarEvent =
 /** Build the calendar event for a single poll slot. `pollUrl` is the public
  *  poll page link, woven into the event body so an attendee can get back to it. */
 export function eventForSlot(poll: Poll, slot: Slot, pollUrl: string): CalendarEvent {
-  const title = poll.title.trim() || 'Meeting'
+  const t = getT()
+  const title = poll.title.trim() || t('lib.event_title_fallback')
   const location = poll.location?.trim() || ''
-  const description = `Scheduled with Universal Date Polling.${pollUrl ? `\n\nView or update the poll: ${pollUrl}` : ''}`
+  const description = `${t('lib.event_description')}${pollUrl ? `\n\n${t('lib.event_view_poll', { url: pollUrl })}` : ''}`
 
   if (poll.mode === 'days') {
     const startDay = slotDayKey(slot)

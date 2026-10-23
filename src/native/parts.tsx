@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useBack } from './back'
 import { useEdgeSwipeBack } from './edgeSwipe'
+import { getT } from '../i18n/runtime'
 
 // The phone app's two shapes for anything the website opens as a popup
 // (Docs_UNI_SIM/store-listings/README.md §7, BRANDING.md's phone rules):
@@ -192,8 +193,14 @@ let showAsk: ((ask: Ask) => void) | null = null
  */
 export function askConfirm(
   question: string,
-  { confirm = 'OK', cancel = 'Cancel', danger = false }: { confirm?: string; cancel?: string; danger?: boolean } = {},
+  opts: { confirm?: string; cancel?: string; danger?: boolean } = {},
 ): Promise<boolean> {
+  // The default buttons are read when the question is asked, so they are in
+  // the language the app is in now.
+  const t = getT()
+  const confirm = opts.confirm ?? t('native.confirm_ok')
+  const cancel = opts.cancel ?? t('common.cancel')
+  const danger = opts.danger ?? false
   return new Promise((resolve) => {
     if (!showAsk) {
       resolve(window.confirm(question))

@@ -29,6 +29,8 @@ import EditLinkBox from './EditLinkBox'
 import CopyAsText from './CopyAsText'
 import CopyEmail from './CopyEmail'
 import TimezonePicker from './TimezonePicker'
+import { useT } from '../i18n'
+import { getT } from '../i18n/runtime'
 
 type Load = 'loading' | 'ready' | 'notfound' | 'error'
 
@@ -83,6 +85,7 @@ type BookingState =
   | { status: 'error'; message: string }
 
 export default function PollPage({ id, pollBase }: { id: string; pollBase: string }) {
+  const t = useT()
   const [state, setState] = useState<Load>('loading')
   // The app's light/dark mode — a custom-hex accent renders differently in each.
   const colorMode = useThemeStore((s) => s.effective)
@@ -236,7 +239,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         setState('ready')
       } catch (e) {
         if (!live) return
-        setError(errorMessage(e, 'Failed to load poll.'))
+        setError(errorMessage(e, t('poll.load_failed')))
         setState('error')
       }
     }
@@ -267,7 +270,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   const hostEditingNow = !!poll && hostIsEditing(poll)
   useEffect(() => {
     if (!hostEditingNow) return
-    const t = setInterval(async () => {
+    const timer = setInterval(async () => {
       try {
         const p = await getPollResilient(id)
         if (!p) return
@@ -275,7 +278,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         setResponses(await getResponses(id))
       } catch { /* try again on the next tick */ }
     }, 15_000)
-    return () => clearInterval(t)
+    return () => clearInterval(timer)
   }, [hostEditingNow, id])
 
   // The host's respondent addresses, for a confirmed ordinary poll. Not on a
@@ -326,9 +329,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   async function save() {
     if (!poll) return
     setError(null)
-    if (!name.trim()) { setError('Add your name so people know who you are.'); return }
+    if (!name.trim()) { setError(t('poll.err_name')); return }
     if (email.trim() && !EMAIL_RE.test(email.trim())) {
-      setError("That email doesn't look right — fix it or leave it blank.")
+      setError(t('poll.err_email'))
       return
     }
     const availability: Record<string, Availability> = {}
@@ -366,12 +369,12 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         // error the user was never shown, so "try saving again" was advice
         // that could not work. The RPC raises sentences meant to be read.
         const why = errorMessage(e, '')
-        setError(`Your availability was saved, but your email couldn't be stored${why ? ` — ${why}` : ' — try saving again'}.`)
+        setError(why ? t('poll.err_email_store_why', { why }) : t('poll.err_email_store'))
       }
       setResponses(await getResponses(poll.id))
       setSavedAt(Date.now())
     } catch (e) {
-      setError(errorMessage(e, 'Could not save your response.'))
+      setError(errorMessage(e, t('poll.err_save')))
     } finally {
       setSaving(false)
     }
@@ -384,16 +387,16 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     const client = asHost ? hostClientFor(poll) : supabase
     if (!client) return
     const question = asHost
-      ? `Remove ${who}’s answers from this poll? This can’t be undone.`
-      : 'Remove your answers from this poll? This can’t be undone.'
+      ? t('poll.remove_confirm_host', { name: who })
+      : t('poll.remove_confirm_own')
     // A bottom sheet in the phone app, the browser's own question on the web.
-    if (!(await askConfirm(question, { confirm: 'Remove', danger: true }))) return
+    if (!(await askConfirm(question, { confirm: t('poll.remove_confirm_button'), cancel: t('common.cancel'), danger: true }))) return
     setError(null)
     setRemoving(true)
     try {
       const ok = await deleteResponse(client, poll.id, who, asHost ? null : (tokens[who] ?? null))
       if (!ok) {
-        setError(asHost ? 'That answer could not be removed — reload and try again.' : 'Only the person who gave these answers can remove them.')
+        setError(asHost ? t('poll.err_remove_host') : t('poll.err_remove_own'))
         return
       }
       forgetResponseToken(poll.id, who)
@@ -408,7 +411,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       }
       setResponses(await getResponses(poll.id))
     } catch (e) {
-      setError(errorMessage(e, 'Could not remove those answers.'))
+      setError(errorMessage(e, t('poll.err_remove')))
     } finally {
       setRemoving(false)
     }
@@ -447,7 +450,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         void removeConfirmedTimeFromCalendar(client, poll.id).catch(() => {})
       }
     } catch (e) {
-      setError(errorMessage(e, 'Could not confirm the time.'))
+      setError(errorMessage(e, t('poll.err_confirm')))
     } finally {
       setConfirming(false)
     }
@@ -460,9 +463,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
    *  second. */
   async function book(slotId: string) {
     if (!poll) return
-    if (!name.trim()) { setBooking({ status: 'error', message: 'Add your name so they know who they\u2019re meeting.' }); return }
+    if (!name.trim()) { setBooking({ status: 'error', message: t('poll.err_book_name') }); return }
     if (!EMAIL_RE.test(email.trim())) {
-      setBooking({ status: 'error', message: 'Add the email address your invite should go to.' })
+      setBooking({ status: 'error', message: t('poll.err_book_email') })
       return
     }
     setBooking({ status: 'booking' })
@@ -478,7 +481,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       // booking.
       try { setResponses(await getResponses(poll.id)) } catch { /* cosmetic */ }
     } catch (e) {
-      const message = errorMessage(e, 'Could not book that time.')
+      const message = errorMessage(e, t('poll.err_book'))
       setBooking({ status: 'error', message })
       // Somebody got there first. Reload rather than leaving the page showing
       // times that can no longer be booked — the confirmed banner is the
@@ -507,10 +510,10 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       // the email didn't go, nothing can send it later and the host is the only
       // one who can put it right. Saying so is not optional.
       if (!notified) {
-        setError("The booking is cancelled and the page is open again — but we couldn't email your guest. Please let them know yourself.")
+        setError(t('poll.cancel_not_notified'))
       }
     } catch (e) {
-      setError(errorMessage(e, 'Could not cancel that booking.'))
+      setError(errorMessage(e, t('poll.err_cancel')))
     } finally {
       setConfirming(false)
     }
@@ -529,7 +532,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       setNotifyState({ status: 'sent', sent })
       if (sent > 0 && poll.final_slot_id) setPoll({ ...poll, final_notified_slot_id: poll.final_slot_id })
     } catch (e) {
-      setNotifyState({ status: 'error', message: errorMessage(e, 'Could not send the emails.') })
+      setNotifyState({ status: 'error', message: errorMessage(e, t('poll.err_send')) })
     }
   }
 
@@ -552,13 +555,13 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       const values = Object.values(res.providers)
       if (values.includes('read_only')) { setCalWrite({ status: 'stale' }); return }
       if (values.includes('reconnect')) {
-        setCalWrite({ status: 'error', message: 'Your calendar connection expired — reconnect it on the create screen.' })
+        setCalWrite({ status: 'error', message: t('poll.cal_expired') })
         void calendarStatus(client).then(setCalStatus).catch(() => {})
         return
       }
-      setCalWrite({ status: 'error', message: "Couldn't add this to your calendar." })
+      setCalWrite({ status: 'error', message: t('poll.cal_add_failed') })
     } catch (e) {
-      setCalWrite({ status: 'error', message: errorMessage(e, "Couldn't add this to your calendar.") })
+      setCalWrite({ status: 'error', message: errorMessage(e, t('poll.cal_add_failed')) })
     }
   }
 
@@ -576,7 +579,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       const url = await startCalendarConnect(client, provider, 'write')
       const popup = window.open(url, 'unisim-calendar', 'width=540,height=680')
       if (!popup) {
-        setCalWrite({ status: 'error', message: 'Allow pop-ups for this site to reconnect your calendar.' })
+        setCalWrite({ status: 'error', message: t('poll.cal_popups') })
         return
       }
       const onMessage = async (e: MessageEvent) => {
@@ -590,7 +593,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           try {
             await claimCalendar(client, d.claim)
           } catch (err) {
-            setCalWrite({ status: 'error', message: errorMessage(err, 'Could not finish connecting your calendar.') })
+            setCalWrite({ status: 'error', message: errorMessage(err, t('poll.cal_claim_failed')) })
             return
           }
         }
@@ -599,11 +602,11 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       }
       window.addEventListener('message', onMessage)
     } catch (e) {
-      setCalWrite({ status: 'error', message: errorMessage(e, 'Could not start the reconnect.') })
+      setCalWrite({ status: 'error', message: errorMessage(e, t('poll.cal_reconnect_failed')) })
     }
   }
 
-  if (state === 'loading') return <Centered>Loading poll…</Centered>
+  if (state === 'loading') return <Centered>{t('poll.loading')}</Centered>
   if (state === 'notfound') return <NotFound pollBase={pollBase} />
   if (state === 'error' || !poll) return <LoadError message={error} onRetry={() => setReloadKey((k) => k + 1)} />
 
@@ -655,13 +658,13 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {isBooking
             ? (poll.final_slot_id
-                ? 'This time is booked.'
+                ? t('poll.header_booked')
                 : isHost
-                  ? "Waiting for your guest to pick a time."
-                  : "Pick the time that suits you \u2014 it's booked straight away.")
-            : responses.length === 0 ? 'Be the first to respond.' : `${responses.length} ${responses.length === 1 ? 'person has' : 'people have'} responded.`}
+                  ? t('poll.header_waiting')
+                  : t('poll.header_pick'))
+            : responses.length === 0 ? t('poll.header_first') : t.plural('poll.header_responded', responses.length)}
           {!dayMode && (
-            <>{' · '}Times in <span className="font-medium">{tzAbbrev(activeTz, anchor)}</span></>
+            <>{' · '}{t.rich('poll.times_in', { tz: <span className="font-medium">{tzAbbrev(activeTz, anchor)}</span> })}</>
           )}
         </p>
         {poll.location && <PollLocation location={poll.location} className="mt-3 justify-center" />}
@@ -676,8 +679,8 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
 
       {editing && (
         <div role="status" className="mt-6 rounded-2xl bg-amber-50 dark:bg-amber-950/40 px-5 py-4 text-center text-sm text-amber-900 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900">
-          <p className="font-semibold">The host is just changing the times, please check back shortly.</p>
-          <p className="mt-1 text-amber-800 dark:text-amber-200">This page will update by itself when they're done.</p>
+          <p className="font-semibold">{t('poll.editing_title')}</p>
+          <p className="mt-1 text-amber-800 dark:text-amber-200">{t('poll.editing_body')}</p>
         </div>
       )}
 
@@ -704,22 +707,22 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       )}
       {isBooking && booking.status === 'booked' && (
         <div className="mt-3 rounded-xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-700 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-          <span className="font-semibold text-slate-900 dark:text-slate-100">You're booked in.</span>{' '}
+          <span className="font-semibold text-slate-900 dark:text-slate-100">{t('poll.booked_title')}</span>{' '}
           {booking.viaCalendar
-            ? <>A calendar invitation is on its way to <span className="font-medium">{email.trim()}</span> — accept it and the meeting lands in your calendar.</>
+            ? t.rich('poll.booked_via_calendar', { email: <span className="font-medium">{email.trim()}</span> })
             : booking.emailed
-              ? <>We've emailed the invite to <span className="font-medium">{email.trim()}</span> — open the attachment to add it to your calendar.</>
-              : <>We couldn't email you a copy just now, so add it to your calendar from the button above — the time itself is booked.</>}
+              ? t.rich('poll.booked_emailed', { email: <span className="font-medium">{email.trim()}</span> })
+              : t('poll.booked_not_emailed')}
         </div>
       )}
       {isHost && !finalSlot && !isBooking && responses.length > 0 && (
         <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
-          You're the host — pick the final time below with <span className="font-medium text-slate-700 dark:text-slate-300">Confirm this time</span>, and everyone with the link will see it.
+          {t.rich('poll.host_hint', { button: <span className="font-medium text-slate-700 dark:text-slate-300">{t('poll.host_hint_button')}</span> })}
         </p>
       )}
       {isHost && !finalSlot && isBooking && !expired && (
         <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
-          This is a booking page. Send the link to one person — whichever time they pick is booked immediately, and you'll both get a calendar invite.
+          {t('poll.host_booking_hint')}
         </p>
       )}
 
@@ -735,20 +738,18 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       )}
 
       {adminClaim === 'claiming' && (
-        <p role="status" className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">Checking your admin link…</p>
+        <p role="status" className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">{t('poll.admin_checking')}</p>
       )}
       {(adminClaim === 'failed' || adminClaim === 'unsupported') && (
         <div role="status" className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm">
-          {adminClaim === 'failed'
-            ? "That admin link didn't work for this poll, so you're seeing it as a guest. Check you copied the whole link."
-            : "Admin links aren't available just yet, so you're seeing this poll as a guest. Please try the link again later."}
+          {adminClaim === 'failed' ? t('poll.admin_failed') : t('poll.admin_unsupported')}
         </div>
       )}
 
       {isHost && myAdminToken && (
         <details className="mt-3 text-center">
           <summary className="cursor-pointer text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2">
-            Your private admin link
+            {t('poll.admin_link_summary')}
           </summary>
           <AdminLinkBox url={adminLink(pollBase, poll.id, myAdminToken)} hasEmail={isOtpHost && !!otpUser?.email} />
         </details>
@@ -756,17 +757,20 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
 
       {isOtpHost && otpUser?.email && (
         <p className="mt-3 text-center text-xs text-slate-400">
-          Signed in as <span className="font-medium text-slate-500 dark:text-slate-400">{otpUser.email}</span> —{' '}
-          <button type="button" onClick={handleSignOut} className="underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-300">
-            Sign out
-          </button>
+          {t.rich('poll.signed_in_as', {
+            email: <span className="font-medium text-slate-500 dark:text-slate-400">{otpUser.email}</span>,
+            signout: (
+              <button type="button" onClick={handleSignOut} className="underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-300">
+                {t('poll.sign_out')}
+              </button>
+            ),
+          })}
         </p>
       )}
 
       {expired && (
         <div className="mt-6 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm">
-          This poll's link has expired — it's read-only now, and it will be deleted{' '}
-          {PURGE_GRACE_DAYS} days after it expired, answers and all.
+          {t.plural('poll.expired', PURGE_GRACE_DAYS)}
         </div>
       )}
 
@@ -790,8 +794,8 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           can no longer make it. */}
       {!expired && !isBooking && !editing && finalSlot && !showRespond && (
         <FoldedSection
-          title={dayMode ? 'Are you free on these days?' : 'Are you free at these times?'}
-          summary="A time is confirmed, so this is folded away. You can still change your answers."
+          title={dayMode ? t('poll.respond_title_days') : t('poll.respond_title_times')}
+          summary={t('poll.respond_folded')}
           onOpen={() => setShowRespond(true)}
         />
       )}
@@ -799,70 +803,66 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
         <section ref={respondRevealRef} className="mt-7 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-6 pop-in">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              {dayMode ? 'Are you free on these days?' : 'Are you free at these times?'}
+              {dayMode ? t('poll.respond_title_days') : t('poll.respond_title_times')}
             </h2>
             {finalSlot && <FoldButton onClick={() => setShowRespond(false)} />}
           </div>
           {/* What's being asked, in one line, for a guest who has only ever
               been sent a link — and that there is nothing to sign up for. */}
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Add your name, answer each {dayMode ? 'day' : 'time'}, then save. No account needed.
+            {dayMode ? t('poll.respond_intro_days') : t('poll.respond_intro_times')}
           </p>
           <div className="mt-3 flex flex-col sm:flex-row gap-3">
             <label className="block">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Your name</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('poll.your_name')}</span>
               <input
                 type="text"
                 value={name}
                 maxLength={120}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Sam"
+                placeholder={t('poll.name_placeholder')}
                 className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Your email <span className="font-normal text-slate-400">(optional)</span></span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('poll.your_email')} <span className="font-normal text-slate-400">{t('poll.optional')}</span></span>
               <input
                 type="email"
                 value={email}
                 maxLength={320}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t('poll.email_placeholder')}
                 className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
               />
             </label>
           </div>
           {editLinkState === 'ok' && (
             <p role="status" className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/30">
-              Your edit link worked: these are your answers. Change them and save.
+              {t('poll.edit_link_ok')}
             </p>
           )}
           {editLinkState === 'failed' && (
             <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30">
-              That edit link doesn’t match an answer on this poll. It may have been removed. You can still answer below.
+              {t('poll.edit_link_failed')}
             </p>
           )}
           {status === 'claimed' && (
             <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30">
-              “{name.trim()}” has already answered this poll, and only they can change those answers. If that’s
-              you, open the edit link you were given, or use the device you answered on. If not, add an initial
-              or your surname.
+              {t('poll.name_claimed', { name: name.trim() })}
             </p>
           )}
           {nameClash && (
             <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30">
-              “{name.trim()}” has already answered this poll. Saving will replace those answers — fine if
-              they’re yours. If not, add an initial or your surname so you don’t overwrite someone else.
+              {t('poll.name_unclaimed', { name: name.trim() })}
             </p>
           )}
           {status === 'similar' && (
             <p role="status" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30">
-              Someone has already answered as “{responses.find((r) => r.name.trim().toLowerCase() === name.trim().toLowerCase())?.name}”.
-              Add an initial or your surname so people can tell you apart.
+              {t('poll.name_similar', { name: responses.find((r) => r.name.trim().toLowerCase() === name.trim().toLowerCase())?.name ?? '' })}
             </p>
           )}
           <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-            Leave your email and you'll get the final date (with a calendar invite) once the host confirms it. Only the host can see it — never other respondents.
+            {t('poll.email_note')}
           </p>
 
           <div className="mt-4 space-y-4">
@@ -878,7 +878,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                     return (
                       <div key={s.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
                         <div className="min-w-0">
-                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{dayMode ? 'All day' : formatRange(inst, s.durationMins, activeTz)}</div>
+                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{dayMode ? t('poll.all_day') : formatRange(inst, s.durationMins, activeTz)}</div>
                           {tzNote && <div className="text-xs text-slate-500 dark:text-slate-400">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</div>}
                         </div>
                         <div className="flex shrink-0 gap-1.5">
@@ -888,7 +888,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                             aria-pressed={v === 'yes'}
                             className={`h-9 px-3 rounded-md text-sm font-medium ring-1 transition ${v === 'yes' ? 'bg-[var(--accent)] text-white ring-[var(--accent)]' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 ring-slate-300 dark:ring-slate-600 hover:ring-[var(--accent)]'}`}
                           >
-                            Yes 👍
+                            {t('poll.answer_yes')}
                           </button>
                           <button
                             type="button"
@@ -896,7 +896,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                             aria-pressed={v === 'maybe'}
                             className={`h-9 px-3 rounded-md text-sm font-medium ring-1 transition ${v === 'maybe' ? 'bg-[var(--accent-soft)] text-[var(--accent-text)] ring-[var(--accent)]' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 ring-slate-300 dark:ring-slate-600 hover:ring-[var(--accent)]'}`}
                           >
-                            If need be
+                            {t('poll.answer_maybe')}
                           </button>
                           <button
                             type="button"
@@ -904,7 +904,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                             aria-pressed={v === 'no'}
                             className={`h-9 px-3 rounded-md text-sm font-medium ring-1 transition ${v === 'no' ? 'bg-rose-600 text-white ring-rose-600' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 ring-slate-300 dark:ring-slate-600 hover:ring-rose-400'}`}
                           >
-                            No 🙅‍♀️
+                            {t('poll.answer_no')}
                           </button>
                         </div>
                       </div>
@@ -923,9 +923,9 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
               disabled={saving || removing || status === 'claimed'}
               className="h-11 px-5 rounded-xl whitespace-nowrap bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
             >
-              {saving ? 'Saving…' : nameClash ? `Replace ${name.trim()}’s answers` : 'Save my availability'}
+              {saving ? t('poll.saving') : nameClash ? t('poll.replace_answers', { name: name.trim() }) : t('poll.save_availability')}
             </button>
-            {savedAt && <span className="text-sm text-green-600 dark:text-green-400">Saved — thanks!</span>}
+            {savedAt && <span className="text-sm text-green-600 dark:text-green-400">{t('poll.saved')}</span>}
             {myToken && myRow && (
               <button
                 type="button"
@@ -933,7 +933,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
                 disabled={saving || removing}
                 className="ml-auto text-sm font-medium text-slate-500 dark:text-slate-400 underline-offset-2 hover:underline hover:text-rose-600 dark:hover:text-rose-400 disabled:opacity-60"
               >
-                {removing ? 'Removing…' : 'Remove my answers'}
+                {removing ? t('poll.removing') : t('poll.remove_my_answers')}
               </button>
             )}
           </div>
@@ -945,9 +945,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
               one doing the confirming, nor once a time is already set. */}
           {savedAt && !isHost && !finalSlot && (
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              {email.trim()
-                ? "The host picks the final time once everyone's answered — we'll email it to you then, with a calendar invite."
-                : "The host picks the final time once everyone's answered. Open this link again to see it, or add your email above and save again to have it sent to you."}
+              {email.trim() ? t('poll.next_with_email') : t('poll.next_without_email')}
             </p>
           )}
         </section>
@@ -998,14 +996,15 @@ function BookingPanel({ poll, slots, dayMode, activeTz, viewerTz, tzNote, name, 
   picked: string | null; onPick: (id: string | null) => void
   state: BookingState; onBook: (slotId: string) => void
 }) {
+  const t = useT()
   const busy = state.status === 'booking'
   return (
     <section className="mt-7 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-6 pop-in">
       <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-        {dayMode ? 'Pick a day' : 'Pick a time'}
+        {dayMode ? t('poll.pick_day') : t('poll.pick_time')}
       </h2>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        Whichever you choose is booked straight away — there's nothing else to send back, and no account needed.
+        {t('poll.booking_intro')}
       </p>
 
       <div className="mt-4 space-y-2">
@@ -1040,30 +1039,30 @@ function BookingPanel({ poll, slots, dayMode, activeTz, viewerTz, tzNote, name, 
 
       <div className="mt-5 flex flex-col sm:flex-row gap-3">
         <label className="block">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Your name</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('poll.your_name')}</span>
           <input
             type="text"
             value={name}
             maxLength={120}
             onChange={(e) => onName(e.target.value)}
-            placeholder="e.g. Sam"
+            placeholder={t('poll.name_placeholder')}
             className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Your email</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('poll.your_email')}</span>
           <input
             type="email"
             value={email}
             maxLength={320}
             onChange={(e) => onEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder={t('poll.email_placeholder')}
             className="mt-1 w-full sm:w-72 h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </label>
       </div>
       <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-        Your calendar invite goes here. It's only ever used for this booking.
+        {t('poll.booking_email_note')}
       </p>
 
       {state.status === 'error' && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{state.message}</p>}
@@ -1075,7 +1074,11 @@ function BookingPanel({ poll, slots, dayMode, activeTz, viewerTz, tzNote, name, 
           disabled={busy || !picked}
           className="h-11 px-5 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
         >
-          {busy ? 'Booking…' : picked ? `Book ${dayMode ? 'this day' : 'this time'}` : `Pick a ${dayMode ? 'day' : 'time'} above`}
+          {busy
+            ? t('poll.booking')
+            : picked
+              ? (dayMode ? t('poll.book_day') : t('poll.book_time'))
+              : (dayMode ? t('poll.pick_day_above') : t('poll.pick_time_above'))}
         </button>
       </div>
     </section>
@@ -1088,9 +1091,10 @@ function BookingPanel({ poll, slots, dayMode, activeTz, viewerTz, tzNote, name, 
 function OfferedTimes({ poll, slots, dayMode, activeTz, viewerTz, tzNote }: {
   poll: Poll; slots: Slot[]; dayMode: boolean; activeTz: string; viewerTz: string; tzNote: boolean
 }) {
+  const t = useT()
   return (
     <section className="mt-7 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-6">
-      <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{dayMode ? "Days you're offering" : "Times you're offering"}</h2>
+      <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{dayMode ? t('poll.offering_days') : t('poll.offering_times')}</h2>
       <div className="mt-3 space-y-2">
         {slots.map((slot) => (
           <div key={slot.id} className="rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5">
@@ -1111,23 +1115,20 @@ function OfferedTimes({ poll, slots, dayMode, activeTz, viewerTz, tzNote }: {
  * problem that does not exist while missing the one that does.
  */
 function BookingNotifyBanner({ which, guest }: { which: 'host' | 'invitee' | 'both'; guest: string | null }) {
-  const who = guest ?? 'your guest'
+  const t = useT()
+  const who = guest ?? t('poll.notify_your_guest')
+  const whoNode = <span className="font-medium">{who}</span>
   return (
     <div
       role="status"
       className="mt-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm"
     >
-      <span className="font-semibold">This time is booked — but an email didn't get through.</span>{' '}
-      {which === 'both' ? (
-        <>Neither you nor <span className="font-medium">{who}</span> was emailed about it. The time is held either
-        way, so it's worth contacting them directly to confirm it.</>
-      ) : which === 'invitee' ? (
-        <>We couldn't email <span className="font-medium">{who}</span>, so they may not know it's confirmed. The
-        time is held — contacting them directly is the reliable fix.</>
-      ) : (
-        <><span className="font-medium">{who}</span> was emailed and has the details, but our copy to you bounced.
-        Check the address on your account if you'd expected it.</>
-      )}
+      <span className="font-semibold">{t('poll.notify_title')}</span>{' '}
+      {which === 'both'
+        ? t.rich('poll.notify_both', { who: whoNode })
+        : which === 'invitee'
+          ? t.rich('poll.notify_invitee', { who: whoNode })
+          : t.rich('poll.notify_host', { who: whoNode })}
     </div>
   )
 }
@@ -1142,6 +1143,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
    *  respondent who lost their edit link and wants to answer again). */
   onRemove?: (name: string) => void; removing?: boolean
 }) {
+  const t = useT()
   // Show ▾ swaps the fold for the whole results section: scroll it on screen.
   const revealRef = useRevealOnOpen<HTMLElement>()
   const tally = useMemo(() => {
@@ -1153,7 +1155,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
     })
   }, [slots, responses])
 
-  const maxYes = Math.max(0, ...tally.map((t) => t.yes.length))
+  const maxYes = Math.max(0, ...tally.map((row) => row.yes.length))
   const total = responses.length
   const dayMode = poll.mode === 'days'
   const tzNote = !dayMode && activeTz !== viewerTz
@@ -1161,8 +1163,8 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
   if (foldable && !open) {
     return (
       <FoldedSection
-        title="Results"
-        summary={total === 0 ? 'Nobody responded.' : `${total} ${total === 1 ? 'person' : 'people'} responded.`}
+        title={t('poll.results')}
+        summary={total === 0 ? t('poll.results_nobody') : t.plural('poll.results_responded', total)}
         onOpen={() => onOpenChange(true)}
       />
     )
@@ -1171,12 +1173,12 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
   return (
     <section ref={revealRef} className="mt-7">
       <div className="flex items-center justify-between gap-3 px-1">
-        <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{foldable ? 'Results' : 'Results so far'}</h2>
+        <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">{foldable ? t('poll.results') : t('poll.results_so_far')}</h2>
         {foldable && <FoldButton onClick={() => onOpenChange(false)} />}
       </div>
       {total === 0 ? (
         <p className="mt-2 px-1 text-sm text-slate-500 dark:text-slate-400">
-          {isHost ? 'No responses yet — share the link to get started.' : "No responses yet — yours will be the first."}
+          {isHost ? t('poll.no_responses_host') : t('poll.no_responses_guest')}
         </p>
       ) : (
         <div className="mt-3 space-y-4">
@@ -1187,42 +1189,42 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
               </div>
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {list.map((s) => {
-                  const t = tally.find((x) => x.slot.id === s.id)!
+                  const row = tally.find((x) => x.slot.id === s.id)!
                   const inst = slotInstant(s.start, poll.timezone)
-                  const heat = total > 0 ? t.yes.length / total : 0
-                  const best = t.yes.length > 0 && t.yes.length === maxYes
+                  const heat = total > 0 ? row.yes.length / total : 0
+                  const best = row.yes.length > 0 && row.yes.length === maxYes
                   const isFinal = finalSlotId === s.id
                   return (
                     <div key={s.id} className={`px-4 py-3 ${isFinal ? 'bg-emerald-50/60 dark:bg-emerald-950/30' : ''}`}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{dayMode ? 'All day' : formatRange(inst, s.durationMins, activeTz)}</span>
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{dayMode ? t('poll.all_day') : formatRange(inst, s.durationMins, activeTz)}</span>
                           {tzNote && <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">{viewerTimeNote(formatTime(inst, viewerTz), inst, activeTz, viewerTz)}</span>}
                           {isFinal && (
                             <span className="ml-2 inline-block align-middle">
-                              <ValueChip size="sm" tone="good">✓ Confirmed</ValueChip>
+                              <ValueChip size="sm" tone="good">{t('poll.confirmed_chip')}</ValueChip>
                             </span>
                           )}
                           {best && !isFinal && (
                             <span className="ml-2 inline-block align-middle">
-                              <Chip size="sm">Best</Chip>
+                              <Chip size="sm">{t('poll.best_chip')}</Chip>
                             </span>
                           )}
                         </div>
                         <div className="shrink-0 text-sm text-slate-600 dark:text-slate-300">
-                          <span className="font-semibold text-slate-900 dark:text-slate-100">{t.yes.length}</span>
-                          {t.maybe.length > 0 && <span className="text-slate-400"> · {t.maybe.length} maybe</span>}
-                          {t.no.length > 0 && <span className="text-slate-400"> · {t.no.length} not free</span>}
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">{row.yes.length}</span>
+                          {row.maybe.length > 0 && <span className="text-slate-400"> · {t.plural('poll.tally_maybe', row.maybe.length)}</span>}
+                          {row.no.length > 0 && <span className="text-slate-400"> · {t.plural('poll.tally_no', row.no.length)}</span>}
                         </div>
                       </div>
                       <div className="mt-2 h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800">
-                        <div className="heat-cell h-2 rounded-full" style={{ width: `${Math.max(heat * 100, t.yes.length ? 6 : 0)}%`, ['--heat' as string]: '1' }} />
+                        <div className="heat-cell h-2 rounded-full" style={{ width: `${Math.max(heat * 100, row.yes.length ? 6 : 0)}%`, ['--heat' as string]: '1' }} />
                       </div>
-                      {(t.yes.length > 0 || t.maybe.length > 0 || t.no.length > 0) && (
+                      {(row.yes.length > 0 || row.maybe.length > 0 || row.no.length > 0) && (
                         <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                          {t.yes.length > 0 && <span className="text-[var(--accent-text)] font-medium">{t.yes.join(', ')}</span>}
-                          {t.maybe.length > 0 && <span> {t.yes.length > 0 ? '· ' : ''}maybe: {t.maybe.join(', ')}</span>}
-                          {t.no.length > 0 && <span> {t.yes.length > 0 || t.maybe.length > 0 ? '· ' : ''}not free: {t.no.join(', ')}</span>}
+                          {row.yes.length > 0 && <span className="text-[var(--accent-text)] font-medium">{row.yes.join(', ')}</span>}
+                          {row.maybe.length > 0 && <span> {row.yes.length > 0 ? '· ' : ''}{t('poll.names_maybe', { names: row.maybe.join(', ') })}</span>}
+                          {row.no.length > 0 && <span> {row.yes.length > 0 || row.maybe.length > 0 ? '· ' : ''}{t('poll.names_no', { names: row.no.join(', ') })}</span>}
                         </p>
                       )}
                       <div className="mt-2 flex items-center justify-end gap-2">
@@ -1233,7 +1235,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                             disabled={confirming}
                             className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition disabled:opacity-60"
                           >
-                            ✓ Confirm this time
+                            {t('poll.confirm_this_time')}
                           </button>
                         )}
                         {isHost && isFinal && (
@@ -1243,7 +1245,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                             disabled={confirming}
                             className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-300 transition disabled:opacity-60"
                           >
-                            Unconfirm
+                            {t('poll.unconfirm')}
                           </button>
                         )}
                         <AddToCalendar poll={poll} slot={s} pollUrl={pollUrl} />
@@ -1259,10 +1261,10 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
       {onRemove && total > 0 && (
         <details className="mt-4 px-1 text-sm">
           <summary className="cursor-pointer select-none text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-            Remove an answer
+            {t('poll.remove_an_answer')}
           </summary>
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            For junk, a duplicate, or someone who lost their edit link and wants to answer again.
+            {t('poll.remove_an_answer_hint')}
           </p>
           <ul className="mt-2 flex flex-wrap gap-2">
             {responses.map((r) => (
@@ -1271,7 +1273,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                   type="button"
                   onClick={() => onRemove(r.name)}
                   disabled={removing}
-                  aria-label={`Remove ${r.name}’s answers`}
+                  aria-label={t('poll.remove_name_aria', { name: r.name })}
                   className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700 hover:text-rose-700 dark:hover:text-rose-400 hover:ring-rose-300 dark:hover:ring-rose-800 transition disabled:opacity-60"
                 >
                   {r.name} <span aria-hidden="true">✕</span>
@@ -1304,6 +1306,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
    *  as calendar guests), and every respondent address ("Copy email"). */
   guests: string[]; recipients: string[]; recipientsLoading: boolean
 }) {
+  const t = useT()
   // Memoize the formatter chain: `inst` and the `when` label each run several
   // Intl.DateTimeFormat passes, and the banner re-renders on every poll refresh.
   // The confirmed time is shown in the viewer's active display zone.
@@ -1315,7 +1318,8 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
         ? formatCalendarDay(slot.start)
         : `${formatDateHeading(i, activeTz)} · ${formatRange(i, slot.durationMins, activeTz)} ${tzAbbrev(activeTz, i)}`,
     }
-  }, [slot.start, slot.durationMins, poll.timezone, activeTz, dayMode])
+    // t.lang: the formatters follow the app's language (lib/time).
+  }, [slot.start, slot.durationMins, poll.timezone, activeTz, dayMode, t.lang])
   const tzNote = !dayMode && activeTz !== viewerTz
   // Whether THIS confirmed slot has already been announced by email (stamped
   // server-side after a successful send, so it survives reloads).
@@ -1341,7 +1345,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-            {isBooking ? (bookedBy ? `✓ Booked by ${bookedBy}` : '✓ Booked') : '✓ Confirmed time'}
+            {isBooking ? (bookedBy ? t('poll.booked_by', { name: bookedBy }) : t('poll.booked')) : t('poll.confirmed_time')}
           </div>
           <div className="mt-0.5 text-lg font-bold text-slate-900 dark:text-slate-100 break-words">{when}</div>
           {tzNote && <div className="text-xs text-slate-500 dark:text-slate-400">{viewerTimeNote(formatRange(inst, slot.durationMins, viewerTz), inst, activeTz, viewerTz)}</div>}
@@ -1356,15 +1360,15 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
                 // promised. Cancelling a BOOKING takes a meeting out of
                 // somebody's diary, so it asks first and says who it affects.
                 if (isBooking && !(await askConfirm(
-                  `Cancel this booking?\n\n${bookedBy ? bookedBy : 'Your guest'} will be emailed to say it's off, and the page opens for them to pick another time.`,
-                  { confirm: 'Cancel the booking', cancel: 'Keep it', danger: true },
+                  bookedBy ? t('poll.cancel_booking_named', { name: bookedBy }) : t('poll.cancel_booking_unnamed'),
+                  { confirm: t('poll.cancel_booking_confirm'), cancel: t('poll.keep_it'), danger: true },
                 ))) return
                 onUnconfirm()
               }}
               disabled={confirming}
               className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700 hover:bg-white dark:hover:bg-slate-900 hover:text-slate-700 dark:hover:text-slate-300 transition disabled:opacity-60"
             >
-              {confirming ? 'Working…' : 'Change'}
+              {confirming ? t('poll.working') : t('poll.change')}
             </button>
           )}
           <AddToCalendar poll={poll} slot={slot} pollUrl={pollUrl} guests={guests} />
@@ -1379,10 +1383,10 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
             className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition disabled:opacity-60"
           >
             ✉️ {sending
-              ? 'Sending…'
+              ? t('poll.sending')
               : isBooking
-                ? 'Resend the confirmation'
-                : alreadyNotified || notifyState.status === 'sent' ? 'Email respondents again' : 'Email respondents this time'}
+                ? t('poll.resend')
+                : alreadyNotified || notifyState.status === 'sent' ? t('poll.email_again') : t('poll.email_this_time')}
           </button>
           {/* Not on a booking page: its guest already has the invite, and the
               email is written for a group that answered a poll. */}
@@ -1395,16 +1399,16 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
           <span className="text-xs text-slate-600 dark:text-slate-300">
             {notifyState.status === 'sent' && (
               notifyState.sent > 0
-                ? `Sent to ${notifyState.sent} ${notifyState.sent === 1 ? 'person' : 'people'} ✓`
-                : 'No one has left an email address yet.'
+                ? t.plural('poll.sent', notifyState.sent)
+                : t('poll.no_one_email')
             )}
             {notifyState.status === 'error' && <span className="text-red-600 dark:text-red-400">{notifyState.message}</span>}
             {notifyState.status === 'idle' && (
               isBooking
-                ? `${bookedBy ?? 'Your guest'} was emailed the invite when they booked ✓`
+                ? (bookedBy ? t('poll.guest_emailed_named', { name: bookedBy }) : t('poll.guest_emailed'))
                 : alreadyNotified
-                  ? 'Respondents have been emailed ✓'
-                  : 'Sends the confirmed date and a calendar invite to everyone who left an email.'
+                  ? t('poll.respondents_emailed')
+                  : t('poll.notify_hint')
             )}
           </span>
         </div>
@@ -1426,10 +1430,10 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
               className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition disabled:opacity-60"
             >
               📅 {calWrite.status === 'working'
-                ? 'Adding…'
+                ? t('poll.adding')
                 : calWrite.status === 'added'
-                  ? 'Update it in my calendar'
-                  : `Add to my ${writable.length === 1 ? PROVIDER_LABEL[writable[0]] : 'calendars'}`}
+                  ? t('poll.update_in_calendar')
+                  : writable.length === 1 ? t('poll.add_to_my_provider', { provider: PROVIDER_LABEL[writable[0]] }) : t('poll.add_to_my_calendars')}
             </button>
           ) : (
             <button
@@ -1437,21 +1441,23 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
               onClick={() => onReconnectCalendar(upgradable[0])}
               className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition"
             >
-              📅 Reconnect {PROVIDER_LABEL[upgradable[0]]} to add it
+              📅 {t('poll.reconnect_to_add', { provider: PROVIDER_LABEL[upgradable[0]] })}
             </button>
           )}
           <span className="text-xs text-slate-600 dark:text-slate-300">
             {calWrite.status === 'added' && (
-              `Added to ${calWrite.providers.map((p) => PROVIDER_LABEL[p]).join(' and ')} ✓`
+              t('poll.added_to', {
+                providers: calWrite.providers.length === 2
+                  ? t('poll.list_two', { a: PROVIDER_LABEL[calWrite.providers[0]], b: PROVIDER_LABEL[calWrite.providers[1]] })
+                  : calWrite.providers.map((p) => PROVIDER_LABEL[p]).join(', '),
+              })
             )}
             {calWrite.status === 'stale' && (
-              'Your calendar was connected for availability only — reconnect it once to allow adding events.'
+              t('poll.cal_stale')
             )}
             {calWrite.status === 'error' && <span className="text-red-600 dark:text-red-400">{calWrite.message}</span>}
             {(calWrite.status === 'idle' || calWrite.status === 'working' || calWrite.status === 'removed') && (
-              staleOnly
-                ? 'Connected for availability only. One reconnect lets this put the time straight in your diary.'
-                : 'Puts this time in your own calendar. Safe to click twice — it updates the same event.'
+              staleOnly ? t('poll.cal_stale_hint') : t('poll.cal_add_hint')
             )}
           </span>
         </div>
@@ -1494,13 +1500,16 @@ function TimezoneBar({ pollTz, activeTz, viewerTz, at, onChange }: {
   pollTz: string; activeTz: string; viewerTz: string; at: Date
   onChange: (tz: string) => void
 }) {
+  const t = useT()
   const viewingOwn = activeTz === viewerTz
   const viewingPoll = activeTz === pollTz
   return (
     <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
       <span>
-        This poll is in <span className="font-medium text-slate-700 dark:text-slate-300">{tzAbbrev(pollTz, at)}</span>
-        <span className="text-slate-400"> ({pollTz})</span>.
+        {t.rich('poll.tz_poll_in', {
+          tz: <span className="font-medium text-slate-700 dark:text-slate-300">{tzAbbrev(pollTz, at)}</span>,
+          zone: <span className="text-slate-400">({pollTz})</span>,
+        })}
       </span>
       {viewerTz !== pollTz && !viewingOwn && (
         <button
@@ -1508,7 +1517,7 @@ function TimezoneBar({ pollTz, activeTz, viewerTz, at, onChange }: {
           onClick={() => onChange(viewerTz)}
           className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent-text)] hover:bg-[var(--accent-softer)]"
         >
-          Show times in your timezone ({tzAbbrev(viewerTz, at)})
+          {t('poll.tz_show_mine', { tz: tzAbbrev(viewerTz, at) })}
         </button>
       )}
       <TimezonePicker value={activeTz} at={at} onChange={onChange} />
@@ -1518,7 +1527,7 @@ function TimezoneBar({ pollTz, activeTz, viewerTz, at, onChange }: {
           onClick={() => onChange(pollTz)}
           className="text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
         >
-          Reset to poll's timezone
+          {t('poll.tz_reset')}
         </button>
       )}
     </div>
@@ -1526,11 +1535,12 @@ function TimezoneBar({ pollTz, activeTz, viewerTz, at, onChange }: {
 }
 
 function BrandingHeader({ branding }: { branding: PollBranding }) {
+  const t = useT()
   const img = branding.logo_url ?? branding.icon_url
   if (!img && !branding.name) return null
   return (
     <div className="mb-5 flex items-center justify-center gap-2.5">
-      {img && <img src={img} alt={branding.name ?? 'Brand'} className="h-9 max-w-[200px] object-contain" />}
+      {img && <img src={img} alt={branding.name ?? t('poll.brand_alt')} className="h-9 max-w-[200px] object-contain" />}
       {branding.name && (
         <span className={`font-semibold ${img ? 'text-sm text-slate-700 dark:text-slate-300' : 'text-lg text-[var(--accent-text)]'}`}>{branding.name}</span>
       )}
@@ -1544,8 +1554,10 @@ function BrandingHeader({ branding }: { branding: PollBranding }) {
  *  slot late in the displayed evening reads as the wrong day for a viewer further
  *  east — for a confirmed meeting that's a missed-by-a-day bug. */
 function viewerTimeNote(timeText: string, inst: Date, displayTz: string, viewerTz: string): string {
-  const prefix = sameCalendarDay(inst, displayTz, viewerTz) ? '' : `${formatDateHeading(inst, viewerTz)}, `
-  return `${prefix}${timeText} your time`
+  const t = getT()
+  return sameCalendarDay(inst, displayTz, viewerTz)
+    ? t('poll.your_time', { time: timeText })
+    : t('poll.your_time_dated', { date: formatDateHeading(inst, viewerTz), time: timeText })
 }
 
 function groupByDay(slots: Slot[]): [string, Slot[]][] {
@@ -1562,6 +1574,7 @@ function groupByDay(slots: Slot[]): [string, Slot[]][] {
  *  The whole row is the button — a small target on a card this size would make
  *  the fold feel like a dead end. */
 function FoldedSection({ title, summary, onOpen }: { title: string; summary: string; onOpen: () => void }) {
+  const t = useT()
   return (
     <button
       type="button"
@@ -1573,12 +1586,13 @@ function FoldedSection({ title, summary, onOpen }: { title: string; summary: str
         <span className="block text-base font-bold text-slate-900 dark:text-slate-100">{title}</span>
         <span className="mt-0.5 block text-sm text-slate-500 dark:text-slate-400">{summary}</span>
       </span>
-      <span className="shrink-0 text-sm font-medium text-[var(--accent-text)]">Show ▾</span>
+      <span className="shrink-0 text-sm font-medium text-[var(--accent-text)]">{t('poll.show')}</span>
     </button>
   )
 }
 
 function FoldButton({ onClick }: { onClick: () => void }) {
+  const t = useT()
   return (
     <button
       type="button"
@@ -1586,7 +1600,7 @@ function FoldButton({ onClick }: { onClick: () => void }) {
       aria-expanded={true}
       className="shrink-0 text-sm font-medium text-[var(--accent-text)] hover:underline underline-offset-2"
     >
-      Hide ▴
+      {t('poll.hide')}
     </button>
   )
 }
@@ -1599,27 +1613,29 @@ function Centered({ children }: { children: React.ReactNode }) {
  *  first navigation right after creation). The load already auto-retries; this
  *  gives a one-click retry so the visitor never has to hard-refresh the page. */
 function LoadError({ message, onRetry }: { message: string | null; onRetry: () => void }) {
+  const t = useT()
   return (
     <div className="mx-auto max-w-md px-4 py-20 text-center">
-      <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Couldn't load this poll</h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-300">{message ?? 'Something went wrong.'}</p>
+      <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('poll.load_error_title')}</h1>
+      <p className="mt-2 text-slate-600 dark:text-slate-300">{message ?? t('poll.load_error_fallback')}</p>
       <button
         type="button"
         onClick={onRetry}
         className="mt-5 inline-flex h-11 items-center rounded-xl bg-orange-700 px-5 font-semibold text-white hover:bg-orange-800"
       >
-        Try again
+        {t('common.retry')}
       </button>
     </div>
   )
 }
 
 function NotFound({ pollBase }: { pollBase: string }) {
+  const t = useT()
   return (
     <div className="mx-auto max-w-md px-4 py-20 text-center">
-      <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Poll not found</h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-300">This poll may have been removed, or the link is wrong.</p>
-      <a href={pollBase} className="mt-4 inline-block text-sm font-medium text-orange-700 dark:text-orange-400 hover:underline">Create a new poll →</a>
+      <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('poll.not_found_title')}</h1>
+      <p className="mt-2 text-slate-600 dark:text-slate-300">{t('poll.not_found_body')}</p>
+      <a href={pollBase} className="mt-4 inline-block text-sm font-medium text-orange-700 dark:text-orange-400 hover:underline">{t('poll.not_found_create')}</a>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Slot } from '../lib/types'
 import { buildConfirmedEmail, type ConfirmedEmailPoll } from '../lib/confirmedEmail'
 import SettingsDialog from './SettingsDialog'
+import { useT } from '../i18n'
 
 /** "Copy email" on a confirmed poll: the confirmation email, previewed, for a
  *  host who would rather send it from their own mailbox than have us send it.
@@ -23,6 +24,7 @@ export default function CopyEmail({ poll, slot, url, displayTz, recipients, reci
   recipients: string[]
   recipientsLoading: boolean
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -31,7 +33,7 @@ export default function CopyEmail({ poll, slot, url, displayTz, recipients, reci
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition"
       >
-        📋 Copy email
+        {t('share.email_button')}
       </button>
       {open && (
         <CopyEmailDialog
@@ -49,7 +51,9 @@ function CopyEmailDialog({ poll, slot, url, displayTz, recipients, recipientsLoa
   recipients: string[]; recipientsLoading: boolean
   onClose: () => void
 }) {
-  const draft = useMemo(() => buildConfirmedEmail(poll, slot, { url, displayTz }), [poll, slot, url, displayTz])
+  const t = useT()
+  // t.lang: the email is written in the app's language (lib/confirmedEmail).
+  const draft = useMemo(() => buildConfirmedEmail(poll, slot, { url, displayTz }), [poll, slot, url, displayTz, t.lang])
   const [subject, setSubject] = useState(draft.subject)
   const [body, setBody] = useState(draft.body)
   const to = recipients.join(', ')
@@ -57,14 +61,14 @@ function CopyEmailDialog({ poll, slot, url, displayTz, recipients, recipientsLoa
   return (
     <SettingsDialog
       phone="sheet"
-      title="Copy the confirmation email"
-      description="Send it from your own email, and change anything you like first."
+      title={t('share.email_title')}
+      description={t('share.email_description')}
       onClose={onClose}
     >
       <div className="space-y-4">
-        <Field label="To" copyText={to} disabled={!to}>
+        <Field label={t('share.email_to')} copyText={to} disabled={!to}>
           {recipientsLoading ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">Loading addresses…</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t('share.email_loading')}</p>
           ) : to ? (
             <input
               readOnly
@@ -74,12 +78,12 @@ function CopyEmailDialog({ poll, slot, url, displayTz, recipients, recipientsLoa
             />
           ) : (
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Nobody left an email address, so add your own recipients in your email app.
+              {t('share.email_no_addresses')}
             </p>
           )}
         </Field>
 
-        <Field label="Subject" copyText={subject}>
+        <Field label={t('share.email_subject')} copyText={subject}>
           <input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
@@ -87,7 +91,7 @@ function CopyEmailDialog({ poll, slot, url, displayTz, recipients, recipientsLoa
           />
         </Field>
 
-        <Field label="Message" copyText={body} primary>
+        <Field label={t('share.email_message')} copyText={body} primary>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -104,11 +108,12 @@ function CopyEmailDialog({ poll, slot, url, displayTz, recipients, recipientsLoa
 function Field({ label, copyText, disabled = false, primary = false, children }: {
   label: string; copyText: string; disabled?: boolean; primary?: boolean; children: React.ReactNode
 }) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
   useEffect(() => {
     if (!copied) return
-    const t = setTimeout(() => setCopied(false), 1800)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => setCopied(false), 1800)
+    return () => clearTimeout(timer)
   }, [copied])
 
   async function copy() {
@@ -132,7 +137,7 @@ function Field({ label, copyText, disabled = false, primary = false, children }:
             ? 'h-9 rounded-lg bg-[var(--accent)] px-3.5 text-sm font-semibold text-white hover:bg-[var(--accent-strong)] disabled:opacity-50'
             : 'h-8 rounded-md px-2.5 text-xs font-medium text-[var(--accent-text)] ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-[var(--accent)] disabled:opacity-50'}
         >
-          {copied ? 'Copied!' : primary ? 'Copy message' : 'Copy'}
+          {copied ? t('share.copied') : primary ? t('share.email_copy_message') : t('share.email_copy')}
         </button>
       </div>
       {children}

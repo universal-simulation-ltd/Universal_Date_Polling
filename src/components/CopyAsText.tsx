@@ -1,5 +1,6 @@
 import { useId, useMemo, useState } from 'react'
 import { buildPollTextList, type TextListPoll } from '../lib/textExport'
+import { useT } from '../i18n'
 
 /** "Copy a list for an email" — the poll's dates as plain text, for hosts whose
  *  invitees would rather read the options in the message than click a link.
@@ -16,6 +17,7 @@ export default function CopyAsText({ poll, url, displayTz, defaultOpen = false }
   displayTz?: string
   defaultOpen?: boolean
 }) {
+  const t = useT()
   const [open, setOpen] = useState(defaultOpen)
   const panelId = useId()
   const [includeLink, setIncludeLink] = useState(true)
@@ -23,7 +25,8 @@ export default function CopyAsText({ poll, url, displayTz, defaultOpen = false }
 
   const text = useMemo(
     () => buildPollTextList(poll, { includeLink, url, displayTz }),
-    [poll, includeLink, url, displayTz],
+    // t.lang: the list is written in the app's language (lib/textExport).
+    [poll, includeLink, url, displayTz, t.lang],
   )
   // Fit the box to the text, within reason — a three-slot poll shouldn't get a
   // half-empty scroller, and a thirty-slot one shouldn't push the page over.
@@ -48,13 +51,13 @@ export default function CopyAsText({ poll, url, displayTz, defaultOpen = false }
         aria-controls={panelId}
         className="text-sm font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] hover:underline underline-offset-2"
       >
-        {open ? 'Hide the email text' : 'Copy a list for an email →'}
+        {open ? t('share.text_hide') : t('share.text_show')}
       </button>
 
       {open && (
         <div id={panelId} className="mt-3">
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Paste this straight into an email for anyone who'd rather reply than click.
+            {t('share.text_intro')}
           </p>
           <textarea
             readOnly
@@ -71,14 +74,14 @@ export default function CopyAsText({ poll, url, displayTz, defaultOpen = false }
                 onChange={(e) => setIncludeLink(e.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[var(--accent)] focus:ring-[var(--accent-soft)]"
               />
-              Include the link to the poll
+              {t('share.text_include_link')}
             </label>
             <button
               type="button"
               onClick={copy}
               className="h-10 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-[var(--accent-strong)]"
             >
-              {copied ? 'Copied!' : 'Copy text'}
+              {copied ? t('share.copied') : t('share.text_copy')}
             </button>
           </div>
         </div>

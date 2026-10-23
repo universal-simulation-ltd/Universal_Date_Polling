@@ -6,6 +6,7 @@
 
 import type { Availability, PollMode, Slot } from './types'
 import { formatCalendarDay, formatLongDate, formatRange, slotDayKey, slotInstant, tzAbbrev } from './time'
+import { getT } from '../i18n/runtime'
 
 /** One address a respondent left, as `get_poll_respondent_emails` returns it. */
 export interface RespondentContact {
@@ -63,6 +64,7 @@ export function buildConfirmedEmail(
   slot: Slot,
   opts: { url?: string; displayTz?: string } = {},
 ): { subject: string; body: string } {
+  const t = getT()
   const title = poll.title.trim()
   const tz = opts.displayTz || poll.timezone
 
@@ -71,24 +73,24 @@ export function buildConfirmedEmail(
     when = formatCalendarDay(slotDayKey(slot))
   } else {
     const inst = slotInstant(slot.start, poll.timezone)
-    when = `${formatLongDate(inst, tz)} at ${formatRange(inst, slot.durationMins, tz)} ${tzAbbrev(tz, inst)}`
+    when = t('lib.email_when_timed', { date: formatLongDate(inst, tz), time: formatRange(inst, slot.durationMins, tz), tz: tzAbbrev(tz, inst) })
   }
 
   const lines = [
-    'Hi all,',
+    t('lib.email_greeting'),
     '',
-    title ? `The time for ${title} is confirmed:` : "We've confirmed a time:",
+    title ? t('lib.email_confirmed_title', { title }) : t('lib.email_confirmed'),
     '',
     when,
   ]
   const location = poll.location?.trim()
-  if (location) lines.push(`Where: ${location}`)
+  if (location) lines.push(t('lib.where', { location }))
   const url = opts.url?.trim()
-  if (url) lines.push('', 'You can add it to your calendar from the poll:', url)
-  lines.push('', 'See you then!')
+  if (url) lines.push('', t('lib.email_add_calendar'), url)
+  lines.push('', t('lib.email_sign_off'))
 
   return {
-    subject: title ? `Time confirmed: ${title}` : 'Time confirmed',
+    subject: title ? t('lib.email_subject_title', { title }) : t('lib.email_subject'),
     body: lines.join('\n'),
   }
 }

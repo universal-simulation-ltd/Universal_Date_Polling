@@ -3,6 +3,7 @@ import { downscaleImage } from '@unisim/sdk'
 import { supabase } from './supabase'
 import { emailReturnUrl } from './appUrl'
 import type { Availability, MyPoll, NewPoll, Poll, PollResponse } from './types'
+import { getT } from '../i18n/runtime'
 
 // ---- Short, URL-safe poll ids (no ambiguous characters) --------------------
 const ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789'
@@ -45,7 +46,7 @@ export async function verifyHostCode(email: string, token: string): Promise<stri
   })
   if (error) throw error
   const uid = data.user?.id
-  if (!uid) throw new Error('Verification failed — please try again.')
+  if (!uid) throw new Error(getT()('lib.err_verify'))
   return uid
 }
 
@@ -56,7 +57,7 @@ export async function startGuestSession(): Promise<string> {
   const { data, error } = await supabase.auth.signInAnonymously()
   if (error) throw error
   const uid = data.user?.id
-  if (!uid) throw new Error('Could not start a session — please try again.')
+  if (!uid) throw new Error(getT()('lib.err_session'))
   return uid
 }
 
@@ -202,13 +203,13 @@ export async function uploadPollLogo(
   hostUserId: string,
   file: File,
 ): Promise<string> {
-  if (!LOGO_EXT[file.type]) throw new Error('Logo must be a PNG, JPG or WebP image.')
+  if (!LOGO_EXT[file.type]) throw new Error(getT()('lib.err_logo_type'))
 
   const upload = await downscaleImage(file, { maxDimension: 1024, maxBytes: 256 * 1024 })
   // `downscaleImage` hands the original back untouched when the browser can't
   // decode it, so re-check the size rather than assuming it shrank.
   if (upload.size > POLL_LOGO_BUCKET_LIMIT) {
-    throw new Error('That image is too large to upload — try a smaller one.')
+    throw new Error(getT()('lib.err_logo_large'))
   }
 
   const ext = LOGO_EXT[upload.type] ?? LOGO_EXT[file.type]
@@ -335,9 +336,9 @@ export async function notifyRespondents(client: SupabaseClient, pollId: string):
       const body = await ctx.json().catch(() => null)
       if (body?.error) throw new Error(body.error)
     }
-    throw new Error('Could not send the emails — please try again.')
+    throw new Error(getT()('lib.err_send_emails_retry'))
   }
-  if (!data?.ok) throw new Error(data?.error ?? 'Could not send the emails.')
+  if (!data?.ok) throw new Error(data?.error ?? getT()('lib.err_send_emails'))
   return data.sent ?? 0
 }
 
@@ -384,8 +385,8 @@ export async function bookSlot(
   const { data, error } = await supabase.functions.invoke('book-poll-slot', {
     body: { action: 'book', pollId, slotId, name: name.trim(), email: email.trim() },
   })
-  if (error) throw await functionError(error, 'Could not book that time — please try again.')
-  if (!data?.ok) throw new BookingError(data?.error ?? 'Could not book that time.', data?.code ?? null)
+  if (error) throw await functionError(error, getT()('lib.err_book_retry'))
+  if (!data?.ok) throw new BookingError(data?.error ?? getT()('lib.err_book'), data?.code ?? null)
   return { viaCalendar: !!data.viaCalendar, invitee: !!data.invitee }
 }
 
@@ -400,8 +401,8 @@ export async function cancelBooking(
   const { data, error } = await client.functions.invoke('book-poll-slot', {
     body: { action: 'cancel', pollId },
   })
-  if (error) throw await functionError(error, 'Could not cancel that booking — please try again.')
-  if (!data?.ok) throw new BookingError(data?.error ?? 'Could not cancel that booking.', data?.code ?? null)
+  if (error) throw await functionError(error, getT()('lib.err_cancel_booking_retry'))
+  if (!data?.ok) throw new BookingError(data?.error ?? getT()('lib.err_cancel_booking'), data?.code ?? null)
   // `notified` is not decoration: cancelling deletes the guest's address, so a
   // cancellation the guest was never told about is one nobody can retry. The
   // host has to hear about it, which is why this is returned rather than logged.

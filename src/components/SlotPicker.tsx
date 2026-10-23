@@ -3,7 +3,9 @@ import { Chip, useDefaultView, type UseDefaultView } from '@unisim/sdk'
 import type { Slot } from '../lib/types'
 import type { DaySegment } from '../lib/hostCalendar'
 import { shortId } from '../lib/api'
-import { formatTime, slotDayKey, slotInstant, tzAbbrev, wallClockExists } from '../lib/time'
+import { formatCalendarDay, formatTime, slotDayKey, slotInstant, tzAbbrev, wallClockExists } from '../lib/time'
+import { useT } from '../i18n'
+import { getT } from '../i18n/runtime'
 import CalendarWeekView from './CalendarWeekView'
 
 const DURATIONS = [15, 30, 45, 60, 90, 120]
@@ -24,7 +26,18 @@ export type SlotView = 'form' | 'calendar' | 'days'
 export type SlotViewDefault = SlotView | 'none'
 export const SLOT_VIEW_DEFAULT_ID = 'slot-view'
 export const SLOT_VIEW_DEFAULTS: readonly SlotViewDefault[] = ['none', 'form', 'calendar', 'days']
-export const SLOT_VIEW_LABELS: Record<SlotView, string> = { form: 'Type in', calendar: 'Calendar', days: 'Whole days' }
+
+/** A view's name on its tab — and on Tune this app's "Availability opens on"
+ *  row. Read at call time, so it follows the app's language. */
+export function slotViewLabel(v: SlotView): string {
+  const t = getT()
+  return v === 'form' ? t('slots.view_form') : v === 'calendar' ? t('slots.view_calendar') : t('slots.view_days')
+}
+
+/** The same, with the app's own default ('none') named too. */
+export function slotViewDefaultLabel(v: SlotViewDefault): string {
+  return v === 'none' ? getT()('slots.view_none') : slotViewLabel(v)
+}
 
 /** The view the create page opens on: the double-tapped default, else null. */
 export function useSlotViewDefault(): UseDefaultView<SlotViewDefault> {
@@ -40,15 +53,26 @@ function localDate(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
+/** "Mon 2 Jun 2026", in the app's language — the same calendar-day format
+ *  (and the same local frame) as lib/time's formatCalendarDay. */
 function fmtDay(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00')
-  return new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(d)
+  return formatCalendarDay(dateStr)
+}
+
+/** A bare wall-clock 'HH:mm' as the language writes a time of day ("09:00",
+ *  "9:00 AM"). Formatted in UTC from its own digits, so no zone can move it. */
+function fmtWallTime(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number)
+  return formatTime(new Date(Date.UTC(2000, 0, 1, h, m)), 'UTC')
 }
 
 function durationLabel(mins: number): string {
-  if (mins < 60) return `${mins}m`
+  const t = getT()
+  if (mins < 60) return t('slots.duration_m', { m: t.num(mins) })
   const h = mins / 60
-  return Number.isInteger(h) ? `${h}h` : `${Math.floor(mins / 60)}h${mins % 60}m`
+  return Number.isInteger(h)
+    ? t('slots.duration_h', { h: t.num(h) })
+    : t('slots.duration_hm', { h: t.num(Math.floor(mins / 60)), m: t.num(mins % 60) })
 }
 
 /** Builds the candidate list for a poll. The segmented selector chooses between
@@ -80,6 +104,8 @@ export default function SlotPicker({
   // Double-tap a tab to make it the one the create page opens on. A single tap
   // still only switches — `onViewChange` is untouched.
   const dv = useSlotViewDefault()
+  // Re-render on a language change: the tab names are read through getT().
+  useT()
   return (
     <div>
       {/* Type in / Calendar both edit timed slots, so they sit in one group;
@@ -117,7 +143,8 @@ function SelectorTab({
   onSelect: (v: SlotView) => void
   dv: UseDefaultView<SlotViewDefault>
 }) {
-  const label = SLOT_VIEW_LABELS[value]
+  useT()
+  const label = slotViewLabel(value)
   return (
     <button
       type="button"
@@ -139,13 +166,20 @@ function SelectorTab({
   )
 }
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const MONTH_YEAR = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' })
+/** The weekday initials over the month grid, Monday first, in `locale`.
+ *  1 January 2024 was a Monday. */
+function weekdayNames(locale: string): string[] {
+  const f = new Intl.DateTimeFormat(locale, { weekday: 'short' })
+  return Array.from({ length: 7 }, (_, i) => f.format(new Date(2024, 0, 1 + i)))
+}
 
 /** Whole-day availability — a month calendar you click to highlight days.
  *  Days are pure calendar dates ('YYYY-MM-DD'), never converted through a
  *  timezone, so they read the same for the host and every responder. */
 function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) => void }) {
+  const t = useT()
+  const weekdays = weekdayNames(t.locale)
+  const monthYear = new Intl.DateTimeFormat(t.locale, { month: 'long', year: 'numeric' })
   const now = new Date()
   const todayStr = localDate(now)
   const [cursor, setCursor] = useState(() => ({ y: now.getFullYear(), m: now.getMonth() }))
@@ -185,16 +219,16 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
           type="button"
           onClick={() => setCursor(({ y, m }) => (m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }))}
           disabled={!canPrev}
-          aria-label="Previous month"
+          aria-label={t('slots.previous_month')}
           className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           ‹
         </button>
-        <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{MONTH_YEAR.format(first)}</span>
+        <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{monthYear.format(first)}</span>
         <button
           type="button"
           onClick={() => setCursor(({ y, m }) => (m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 }))}
-          aria-label="Next month"
+          aria-label={t('slots.next_month')}
           className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
         >
           ›
@@ -203,8 +237,8 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
 
       {/* Day grid — click a day to highlight it */}
       <div className="mt-2 grid grid-cols-7 gap-1 text-center">
-        {WEEKDAYS.map((w) => (
-          <div key={w} className="py-1 text-[11px] font-medium text-slate-400">{w}</div>
+        {weekdays.map((w, i) => (
+          <div key={i} className="py-1 text-[11px] font-medium text-slate-400">{w}</div>
         ))}
         {cells.map((dateStr, i) => {
           if (dateStr === null) return <div key={`b${i}`} />
@@ -234,10 +268,10 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
       </div>
 
       {chosen.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No days yet — click the days you want to propose.</p>
+        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{t('slots.no_days_yet')}</p>
       ) : (
         <div className="mt-3">
-          <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{chosen.length} day{chosen.length > 1 ? 's' : ''} selected</div>
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{t.plural('slots.days_selected', chosen.length)}</div>
           <div className="mt-1.5 flex flex-wrap gap-2">
             {chosen.map((dateStr) => (
               <Chip key={dateStr}>
@@ -245,7 +279,7 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
                 <button
                   type="button"
                   onClick={() => toggle(dateStr)}
-                  aria-label={`Remove ${fmtDay(dateStr)}`}
+                  aria-label={t('slots.remove_day', { day: fmtDay(dateStr) })}
                   className="-mr-1 grid h-4 w-4 place-items-center rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-slate-100"
                 >
                   {/* ⚠️ An SVG, not `✕`: U+2715 has no glyph in iOS's system
@@ -266,6 +300,7 @@ function DayPicker({ slots, onChange }: { slots: Slot[]; onChange: (s: Slot[]) =
 
 /** Timed slots — the original quick date + time + length form. */
 function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s: Slot[]) => void; timezone: string }) {
+  const t = useT()
   const today = localDate(new Date())
   const [date, setDate] = useState('')
   const [time, setTime] = useState('09:00')
@@ -286,7 +321,7 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
       d = new Date(`${today}T${time}`)
       while (d.getTime() <= now.getTime()) d.setDate(d.getDate() + 1)
       start = `${localDate(d)}T${time}`
-      msg = `You can't pick a time in the past — moved it forward to ${fmtDay(localDate(d))}, ${time}.`
+      msg = t('slots.past_moved', { day: fmtDay(localDate(d)), time: fmtWallTime(time) })
     }
 
     // Spring-forward DST gap: on the switch night the clocks jump (e.g. London
@@ -295,7 +330,12 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
     // still want the (shifted) slot, they just shouldn't be surprised by it.
     if (!msg && !wallClockExists(start, timezone)) {
       const inst = slotInstant(start, timezone)
-      msg = `Heads up — ${time} doesn't exist on ${fmtDay(start.slice(0, 10))} in ${tzAbbrev(timezone, inst)}: the clocks skip forward that night, so this slot lands at ${formatTime(inst, timezone)}.`
+      msg = t('slots.dst_gap', {
+        time: fmtWallTime(time),
+        day: fmtDay(start.slice(0, 10)),
+        zone: tzAbbrev(timezone, inst),
+        lands: formatTime(inst, timezone),
+      })
     }
     setWarning(msg)
 
@@ -320,7 +360,7 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
     <>
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex flex-col text-xs font-medium text-slate-600 dark:text-slate-300">
-          Date
+          {t('slots.date')}
           <input
             type="date"
             min={today}
@@ -330,7 +370,7 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
           />
         </label>
         <label className="flex flex-col text-xs font-medium text-slate-600 dark:text-slate-300">
-          Time
+          {t('slots.time')}
           <input
             type="time"
             value={time}
@@ -339,7 +379,7 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
           />
         </label>
         <label className="flex flex-col text-xs font-medium text-slate-600 dark:text-slate-300">
-          Length
+          {t('slots.length')}
           <select
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
@@ -356,7 +396,7 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
           disabled={!date || !time}
           className="h-10 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Add time
+          {t('slots.add_time')}
         </button>
       </div>
 
@@ -366,7 +406,7 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
 
       {slots.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-          No times yet — pick a date and time above and press <span className="font-medium">Add time</span>.
+          {t.rich('slots.no_times_yet', { button: <span className="font-medium">{t('slots.add_time')}</span> })}
         </p>
       ) : (
         <div className="mt-4 space-y-3">
@@ -376,11 +416,11 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
               <div className="mt-1.5 flex flex-wrap gap-2">
                 {list.map((s) => (
                   <Chip key={s.id}>
-                    {s.start.slice(11)} · {durationLabel(s.durationMins)}
+                    {fmtWallTime(s.start.slice(11))} · {durationLabel(s.durationMins)}
                     <button
                       type="button"
                       onClick={() => remove(s.id)}
-                      aria-label={`Remove ${day} ${s.start.slice(11)}`}
+                      aria-label={t('slots.remove_time', { day: fmtDay(day), time: fmtWallTime(s.start.slice(11)) })}
                       className="-mr-1 grid h-4 w-4 place-items-center rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-slate-100"
                     >
                       {/* SVG, not `✕` — see the note on the date chip above. */}

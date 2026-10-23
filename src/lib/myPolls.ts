@@ -8,6 +8,7 @@
 
 import type { MyPoll, Slot } from './types'
 import { formatCalendarDayShort, formatDateHeading, formatRange, slotInstant } from './time'
+import { getT } from '../i18n/runtime'
 
 /** Combine the lists from the sessions a host might have at once — a Universal
  *  ID (suite SSO) session and this app's own email-code session are different
@@ -63,9 +64,10 @@ function dayLabel(poll: MyPoll, slot: Slot): string {
  *  glance, which is the whole job of this line. */
 export function pollSummary(poll: MyPoll): string {
   const slots = [...poll.slots].sort((a, b) => a.start.localeCompare(b.start))
-  const unit = poll.mode === 'days' ? 'date' : 'time'
-  if (slots.length === 0) return `No ${unit}s`
-  const count = `${slots.length} ${unit}${slots.length === 1 ? '' : 's'}`
+  const t = getT()
+  const days = poll.mode === 'days'
+  if (slots.length === 0) return t(days ? 'lib.summary_no_dates' : 'lib.summary_no_times')
+  const count = t.plural(days ? 'lib.summary_dates' : 'lib.summary_times', slots.length)
   const first = dayLabel(poll, slots[0])
   const last = dayLabel(poll, slots[slots.length - 1])
   return first === last ? `${count} · ${first}` : `${count} · ${first} – ${last}`
@@ -77,16 +79,17 @@ export function confirmedLabel(poll: MyPoll): string | null {
   if (!slot) return null
   if (poll.mode === 'days') return formatCalendarDayShort(slot.start)
   const at = slotInstant(slot.start, poll.timezone)
-  return `${formatDateHeading(at, poll.timezone)}, ${formatRange(at, slot.durationMins, poll.timezone)}`
+  return getT()('lib.confirmed_at', { date: formatDateHeading(at, poll.timezone), time: formatRange(at, slot.durationMins, poll.timezone) })
 }
 
 /** How many people have answered — or, on a booking page, whether the one
  *  person it was sent to has booked. A booking page has no "2 responses"
  *  state by design: it is taken or it isn't. */
 export function responsesLabel(poll: MyPoll): string {
-  if (poll.booking_mode) return poll.final_slot_id ? 'Booked' : 'Not booked yet'
-  if (poll.response_count === 0) return 'No responses yet'
-  return `${poll.response_count} response${poll.response_count === 1 ? '' : 's'}`
+  const t = getT()
+  if (poll.booking_mode) return t(poll.final_slot_id ? 'lib.booked' : 'lib.not_booked')
+  if (poll.response_count === 0) return t('lib.no_responses')
+  return t.plural('common.responses', poll.response_count)
 }
 
 /** What the Delete button asks before it does anything.
@@ -99,14 +102,10 @@ export function responsesLabel(poll: MyPoll): string {
  *  cancel anything, so the guest keeps an invitation to a meeting the host has
  *  just thrown away. Cancelling first (on the poll page) is what tells them. */
 export function deletePrompt(poll: MyPoll): string {
-  if (poll.booking_mode) {
-    return poll.final_slot_id
-      ? 'Delete this booking page? The booking is NOT cancelled — the invite stays in both calendars.'
-      : 'Delete this booking page?'
-  }
-  if (poll.response_count === 0) return 'Delete this poll?'
-  const n = poll.response_count
-  return `Delete this poll and its ${n} response${n === 1 ? '' : 's'}?`
+  const t = getT()
+  if (poll.booking_mode) return t(poll.final_slot_id ? 'lib.delete_booking_booked' : 'lib.delete_booking')
+  if (poll.response_count === 0) return t('lib.delete_poll')
+  return t.plural('lib.delete_poll_responses', poll.response_count)
 }
 
 /** The same question for the whole expired batch. Separate from the singular
@@ -114,9 +113,7 @@ export function deletePrompt(poll: MyPoll): string {
  *  poll and their responses?" is what that produces, and a confirmation that
  *  reads like a mail-merge is a confirmation people stop reading. */
 export function deleteAllPrompt(n: number): string {
-  return n === 1
-    ? "Delete this expired poll and its responses? This can't be undone."
-    : `Delete all ${n} expired polls and their responses? This can't be undone.`
+  return getT().plural('lib.delete_expired', n)
 }
 
 /** And for every LIVE poll at once — a heavier question than the expired batch,
@@ -129,16 +126,15 @@ export function deleteAllPrompt(n: number): string {
  *  delete gives — the invite stays in both calendars, so the other person is
  *  still expecting the meeting. */
 export function deleteAllActivePrompt(polls: MyPoll[]): string {
-  if (polls.length === 1) return `${deletePrompt(polls[0])} This can't be undone.`
+  const t = getT()
+  if (polls.length === 1) return `${deletePrompt(polls[0])} ${t('lib.cannot_undo')}`
   const responses = polls.reduce((sum, p) => sum + p.response_count, 0)
-  const answers = responses > 0
-    ? ` and their ${responses} response${responses === 1 ? '' : 's'}`
-    : ''
+  const count = t.num(polls.length)
+  const question = responses > 0
+    ? t.plural('lib.delete_active_responses', responses, { polls: count })
+    : t('lib.delete_active', { polls: count })
   const booked = polls.some((p) => p.booking_mode && p.final_slot_id)
-  const bookings = booked
-    ? ' A booking already taken is NOT cancelled — that invite stays in both calendars.'
-    : ''
-  return `Delete all ${polls.length} active polls${answers}? Their links stop working immediately and this can't be undone.${bookings}`
+  return booked ? `${question} ${t('lib.delete_active_booked')}` : question
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -160,15 +156,16 @@ export const PURGE_GRACE_DAYS = 30
  *  same way, so it can only ever say "sooner" than the daily job actually runs. */
 export function expiryLabel(poll: MyPoll, now: number = Date.now()): string | null {
   if (!poll.expires_at) return null
+  const t = getT()
   const left = Date.parse(poll.expires_at) - now
   if (left <= 0) {
     const days = Math.floor((left + PURGE_GRACE_DAYS * DAY_MS) / DAY_MS)
-    if (days <= 0) return 'Expired · deleted today'
-    if (days === 1) return 'Expired · deleted tomorrow'
-    return `Expired · deleted in ${days} days`
+    if (days <= 0) return t('lib.expired_deleted_today')
+    if (days === 1) return t('lib.expired_deleted_tomorrow')
+    return t.plural('lib.expired_deleted_in', days)
   }
   const days = Math.floor(left / DAY_MS)
-  if (days === 0) return 'Expires today'
-  if (days === 1) return 'Expires tomorrow'
-  return `Expires in ${days} days`
+  if (days === 0) return t('lib.expires_today')
+  if (days === 1) return t('lib.expires_tomorrow')
+  return t.plural('lib.expires_in', days)
 }

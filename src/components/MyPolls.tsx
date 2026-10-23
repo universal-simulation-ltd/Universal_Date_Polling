@@ -8,6 +8,7 @@ import {
   mergeMyPolls, pollSummary, responsesLabel, splitMyPolls,
 } from '../lib/myPolls'
 import type { MyPoll } from '../lib/types'
+import { useT } from '../i18n'
 
 /** From this many active polls the panel folds itself away, and starts folded.
  *  Below it, the list is short enough to just sit there. The point is that this
@@ -52,6 +53,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
    *  button would otherwise still be showing. */
   onDeleted?: () => void
 }) {
+  const t = useT()
   const [data, setData] = useState<Loaded | null>(null)
   const [failed, setFailed] = useState(false)
   // Only consulted when the list is long enough to be collapsible (see
@@ -141,8 +143,8 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
     }
     if (gone.size < ids.length) {
       setDeleteError(ids.length === 1
-        ? "That poll couldn't be deleted — please try again."
-        : `${ids.length - gone.size} of ${ids.length} polls couldn't be deleted — please try again.`)
+        ? t('mypolls.delete_failed_one')
+        : t('mypolls.delete_failed_some', { failed: t.num(ids.length - gone.size), total: t.num(ids.length) }))
     }
     setBusyIds([])
     setConfirmId(null)
@@ -161,14 +163,17 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
     if (!failed) return null
     return (
       <div className="mb-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 px-5 py-4 text-sm text-slate-600 dark:text-slate-300">
-        Couldn't load your polls.{' '}
-        <button
-          type="button"
-          onClick={() => setAttempt((n) => n + 1)}
-          className="font-medium text-orange-700 dark:text-orange-400 underline underline-offset-2 hover:text-orange-800 dark:hover:text-orange-300"
-        >
-          Try again
-        </button>
+        {t.rich('mypolls.load_failed', {
+          retry: (
+            <button
+              type="button"
+              onClick={() => setAttempt((n) => n + 1)}
+              className="font-medium text-orange-700 dark:text-orange-400 underline underline-offset-2 hover:text-orange-800 dark:hover:text-orange-300"
+            >
+              {t('common.retry')}
+            </button>
+          ),
+        })}
       </div>
     )
   }
@@ -194,7 +199,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
           list. Same chevron as the create form's "More options", so the two
           disclosures on this page behave alike. */}
       <Heading
-        title={active.length > 0 ? 'Your active polls' : 'Your polls'}
+        title={active.length > 0 ? t('mypolls.title_active') : t('mypolls.title')}
         count={active.length}
         collapsible={collapsible}
         open={expanded}
@@ -204,7 +209,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
 
       {active.length === 0 && (
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-          Nothing active right now — your {expired.length === 1 ? 'poll has' : 'polls have'} expired.
+          {expired.length === 1 ? t('mypolls.nothing_active_one_poll') : t('mypolls.nothing_active_polls')}
         </p>
       )}
 
@@ -220,7 +225,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
             onClick={() => { setDeleteError(null); setConfirmId(null); setConfirmBatch('active') }}
             className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-red-700 dark:hover:text-red-400 underline underline-offset-2"
           >
-            Delete all {active.length}
+            {t('mypolls.delete_all', { count: t.num(active.length) })}
           </button>
         </div>
       )}
@@ -228,7 +233,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
       {confirmBatch === 'active' && (
         <ConfirmStrip
           question={deleteAllActivePrompt(active)}
-          confirmLabel={`Delete all ${active.length}`}
+          confirmLabel={t('mypolls.delete_all', { count: t.num(active.length) })}
           busy={busyIds.length > 0}
           onConfirm={() => remove(active.map((p) => p.id))}
           onCancel={() => setConfirmBatch(null)}
@@ -251,7 +256,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
               aria-controls={expiredId}
               className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
             >
-              {showExpired ? 'Hide' : 'Show'} {expired.length} expired
+              {showExpired ? t.plural('mypolls.hide_expired', expired.length) : t.plural('mypolls.show_expired', expired.length)}
             </button>
             {/* Only offered while the list is open: a bulk delete of things the
                 host cannot currently see is a button that destroys the unseen. */}
@@ -261,7 +266,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
                 onClick={() => { setDeleteError(null); setConfirmId(null); setConfirmBatch('expired') }}
                 className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-red-700 dark:hover:text-red-400 underline underline-offset-2"
               >
-                {expired.length === 1 ? 'Delete it' : `Delete all ${expired.length}`}
+                {expired.length === 1 ? t('mypolls.delete_it') : t('mypolls.delete_all', { count: t.num(expired.length) })}
               </button>
             )}
           </div>
@@ -269,7 +274,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
           {confirmBatch === 'expired' && (
             <ConfirmStrip
               question={deleteAllPrompt(expired.length)}
-              confirmLabel={expired.length === 1 ? 'Delete' : `Delete all ${expired.length}`}
+              confirmLabel={expired.length === 1 ? t('common.delete') : t('mypolls.delete_all', { count: t.num(expired.length) })}
               busy={busyIds.length > 0}
               onConfirm={() => remove(expired.map((p) => p.id))}
               onCancel={() => setConfirmBatch(null)}
@@ -288,15 +293,17 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
 
       {failed && (
         <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">
-          Some of your polls may be missing from this list —{' '}
-          <button
-            type="button"
-            onClick={() => setAttempt((n) => n + 1)}
-            className="font-medium underline underline-offset-2"
-          >
-            try again
-          </button>
-          .
+          {t.rich('mypolls.some_missing', {
+            retry: (
+              <button
+                type="button"
+                onClick={() => setAttempt((n) => n + 1)}
+                className="font-medium underline underline-offset-2"
+              >
+                {t('mypolls.some_missing_retry')}
+              </button>
+            ),
+          })}
         </p>
       )}
     </section>
@@ -350,6 +357,7 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
   onCancelDelete: () => void
   onDelete: () => void
 }) {
+  const t = useT()
   // The same absolute link the created-poll panel shows, for the same reason:
   // inside the iPhone app the running origin is `capacitor://localhost`, so a
   // BASE-relative href points at nothing shareable. On the web this is a
@@ -383,7 +391,7 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
           wraps to two on a narrow phone, which is the only place it needs to. */}
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          {poll.booking_mode && <span className="font-medium text-slate-600 dark:text-slate-300">Booking page · </span>}
+          {poll.booking_mode && <span className="font-medium text-slate-600 dark:text-slate-300">{t('mypolls.booking_page')} · </span>}
           {pollSummary(poll)}
           {expiry && <> · {expiry}</>}
         </p>
@@ -395,18 +403,18 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
                 onClick={onCopy}
                 className="rounded-md px-2 py-1 font-medium text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60"
               >
-                {copied ? 'Copied!' : 'Copy link'}
+                {copied ? t('mypolls.copied') : t('mypolls.copy_link')}
               </button>
             )}
             <a href={href} className="font-medium text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline underline-offset-2">
-              Open →
+              {t('mypolls.open')}
             </a>
             <button
               type="button"
               onClick={onAskDelete}
               className="font-medium text-slate-400 hover:text-red-700 dark:hover:text-red-400 underline-offset-2 hover:underline"
             >
-              Delete
+              {t('common.delete')}
             </button>
           </div>
         )}
@@ -414,14 +422,14 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
 
       {confirmed && (
         <p className="mt-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-          {poll.booking_mode ? 'Booked' : 'Confirmed'}: {confirmed}
+          {poll.booking_mode ? t('mypolls.booked_on', { when: confirmed }) : t('mypolls.confirmed_on', { when: confirmed })}
         </p>
       )}
 
       {confirming && (
         <ConfirmStrip
           question={deletePrompt(poll)}
-          confirmLabel="Delete"
+          confirmLabel={t('common.delete')}
           busy={busy}
           onConfirm={onDelete}
           onCancel={onCancelDelete}
@@ -440,6 +448,7 @@ function ConfirmStrip({ question, confirmLabel, busy, onConfirm, onCancel }: {
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const t = useT()
   return (
     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-red-50 dark:bg-red-950/40 px-3 py-2 ring-1 ring-red-100 dark:ring-red-900/60">
       <p className="text-xs text-slate-700 dark:text-slate-300">{question}</p>
@@ -449,7 +458,7 @@ function ConfirmStrip({ question, confirmLabel, busy, onConfirm, onCancel }: {
           onClick={onCancel}
           className="px-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
         >
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           type="button"
@@ -457,7 +466,7 @@ function ConfirmStrip({ question, confirmLabel, busy, onConfirm, onCancel }: {
           disabled={busy}
           className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
         >
-          {busy ? 'Deleting…' : confirmLabel}
+          {busy ? t('mypolls.deleting') : confirmLabel}
         </button>
       </div>
     </div>

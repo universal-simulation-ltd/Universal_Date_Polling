@@ -1,6 +1,31 @@
 // Timezone helpers built on the platform Intl API — no date library needed.
 
 import type { Poll, Slot } from './types'
+import { getT } from '../i18n/runtime'
+
+// ⚠️ Two kinds of Intl use live in this file. The DISPLAY formatters below
+// (formatCalendarDay … tzAbbrev) follow the app's language — `getT().locale`,
+// read at call time, so a change in Tune this app ▸ Language reformats every
+// date and time on the next render. The ARITHMETIC (tzOffsetMs,
+// zonedDayAndMinute, wallClockExists, sameCalendarDay) pins 'en-US' / 'en-CA'
+// / 'en-GB' on purpose: it parses the parts back into numbers, and must never
+// change with the language. Under vitest the language is English (en-GB),
+// which is what the tests read.
+
+/** The language's locale for display formatting. */
+function displayLocale(): string {
+  return getT().locale
+}
+
+/** The hour option for a time of day: two digits where the language uses a
+ *  24-hour clock ("09:00"), a bare number where it uses AM/PM ("9:00 AM"). */
+function hourOption(locale: string): 'numeric' | '2-digit' {
+  try {
+    return new Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hour12 ? 'numeric' : '2-digit'
+  } catch {
+    return '2-digit'
+  }
+}
 
 /** The viewer's IANA timezone, or 'UTC' if it can't be resolved. */
 export function localTimezone(): string {
@@ -169,7 +194,7 @@ export function wallClockExists(local: string, tz: string): boolean {
  *  and formatting in the same (local) frame, so the day can never roll over. */
 export function formatCalendarDay(dateStr: string): string {
   const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(displayLocale(), {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
   }).format(new Date(y, m - 1, d))
 }
@@ -180,7 +205,7 @@ export function formatCalendarDay(dateStr: string): string {
  *  guarantee: a whole-day date reads identically in every zone. */
 export function formatCalendarDayShort(dateStr: string): string {
   const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(displayLocale(), {
     weekday: 'short', day: 'numeric', month: 'short',
   }).format(new Date(y, m - 1, d))
 }
@@ -192,22 +217,25 @@ export function formatCalendarDayShort(dateStr: string): string {
  *  with no page around the date to date it; on-page headings keep the shorter
  *  `formatDateHeading`. */
 export function formatLongDate(instant: Date, displayTz: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(displayLocale(), {
     timeZone: displayTz, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
   }).format(instant)
 }
 
 /** "Tue 10 Jun" for the date heading of a slot, in the given display tz. */
 export function formatDateHeading(instant: Date, displayTz: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(displayLocale(), {
     timeZone: displayTz, weekday: 'short', day: 'numeric', month: 'short',
   }).format(instant)
 }
 
-/** "10:00" — the start time of a slot, in the given display tz. */
+/** "10:00" — the start time of a slot, in the given display tz. The clock
+ *  follows the language: 24-hour in en-GB and the other suite languages,
+ *  "10:00 AM" in US English. */
 export function formatTime(instant: Date, displayTz: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone: displayTz, hour: '2-digit', minute: '2-digit', hour12: false,
+  const locale = displayLocale()
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: displayTz, hour: hourOption(locale), minute: '2-digit',
   }).format(instant)
 }
 
@@ -233,7 +261,7 @@ export function sameCalendarDay(instant: Date, tzA: string, tzB: string): boolea
 /** Short tz label, e.g. "GMT+1" appended to the IANA name where useful. */
 export function tzAbbrev(tz: string, at: Date = new Date()): string {
   try {
-    const parts = new Intl.DateTimeFormat('en-GB', { timeZone: tz, timeZoneName: 'short' }).formatToParts(at)
+    const parts = new Intl.DateTimeFormat(displayLocale(), { timeZone: tz, timeZoneName: 'short' }).formatToParts(at)
     return parts.find((p) => p.type === 'timeZoneName')?.value ?? tz
   } catch {
     return tz

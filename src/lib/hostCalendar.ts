@@ -10,6 +10,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { phoneApp } from '../native/shell'
 import { appBase } from './appUrl'
 import { addCalendarDays, zonedDayAndMinute, zonedWallClockToInstant } from './time'
+import { getT } from '../i18n/runtime'
 
 export type CalendarProvider = 'google' | 'microsoft'
 
@@ -72,9 +73,9 @@ async function invokeCalendarOauth(client: SupabaseClient, body: Record<string, 
       const parsed = await ctx.json().catch(() => null)
       if (parsed?.error) throw new Error(parsed.error)
     }
-    throw new Error('Calendar request failed — please try again.')
+    throw new Error(getT()('lib.err_calendar_retry'))
   }
-  if (!data?.ok) throw new Error(data?.error ?? 'Calendar request failed.')
+  if (!data?.ok) throw new Error(data?.error ?? getT()('lib.err_calendar'))
   return data
 }
 
@@ -216,8 +217,8 @@ export async function fetchFreeBusy(
   timeMax: string,
 ): Promise<FreeBusyResult> {
   const { data, error } = await client.functions.invoke('calendar-freebusy', { body: { timeMin, timeMax } })
-  if (error) throw new Error('Could not load your calendar availability.')
-  if (!data?.ok) throw new Error(data?.error ?? 'Could not load your calendar availability.')
+  if (error) throw new Error(getT()('lib.err_busy_load'))
+  if (!data?.ok) throw new Error(data?.error ?? getT()('lib.err_busy_load'))
   return {
     busy: (data.busy ?? []) as BusyInterval[],
     providers: {
@@ -278,7 +279,7 @@ export async function addConfirmedTimeToCalendar(
   return invokeCalendarEvent(
     client,
     { action: 'add', pollId },
-    "Couldn't add this to your calendar.",
+    getT()('lib.err_calendar_add'),
   )
 }
 
@@ -290,7 +291,7 @@ export async function removeConfirmedTimeFromCalendar(
   return invokeCalendarEvent(
     client,
     { action: 'remove', pollId },
-    "Couldn't remove this from your calendar.",
+    getT()('lib.err_calendar_remove'),
   )
 }
 

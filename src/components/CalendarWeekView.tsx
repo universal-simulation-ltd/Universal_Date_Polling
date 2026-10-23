@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import type { Slot } from '../lib/types'
 import type { DaySegment } from '../lib/hostCalendar'
 import { shortId } from '../lib/api'
-import { addLocalDays, slotDayKey } from '../lib/time'
+import { addLocalDays, formatTime, slotDayKey } from '../lib/time'
+import { useT } from '../i18n'
+import { getT } from '../i18n/runtime'
 import { useThemeStore } from '../stores/themeStore'
 
 /* A Google-Calendar-style week view for proposing candidate times. The host
@@ -34,16 +36,32 @@ function minToHHMM(min: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
+/** A minutes-since-midnight wall-clock time as the language writes a time of
+ *  day ("09:30", "9:30 AM"). Formatted in UTC from its own digits, so no zone
+ *  can move it. The stored `start` keeps minToHHMM's fixed 'HH:mm'. */
+function wallTime(min: number): string {
+  return formatTime(new Date(Date.UTC(2000, 0, 1, 0, min)), 'UTC')
+}
+
+/** The hour gutter's label. English keeps the compact "6am" a calendar gutter
+ *  wants; every other suite language writes the hour on its own 24-hour clock
+ *  ("06:00"), which is how a week grid is labelled there. */
 function hourLabel(h: number): string {
-  const ampm = h < 12 ? 'am' : 'pm'
-  const h12 = h % 12 === 0 ? 12 : h % 12
-  return `${h12}${ampm}`
+  if (getT().lang.startsWith('en')) {
+    const ampm = h < 12 ? 'am' : 'pm'
+    const h12 = h % 12 === 0 ? 12 : h % 12
+    return `${h12}${ampm}`
+  }
+  return wallTime(h * 60)
 }
 
 function durationLabel(mins: number): string {
-  if (mins < 60) return `${mins}m`
+  const t = getT()
+  if (mins < 60) return t('slots.duration_m', { m: t.num(mins) })
   const h = mins / 60
-  return Number.isInteger(h) ? `${h}h` : `${Math.floor(mins / 60)}h${mins % 60}m`
+  return Number.isInteger(h)
+    ? t('slots.duration_h', { h: t.num(h) })
+    : t('slots.duration_hm', { h: t.num(Math.floor(mins / 60)), m: t.num(mins % 60) })
 }
 
 function startOfWeek(d: Date): Date {
@@ -97,6 +115,7 @@ export default function CalendarWeekView({
    *  view back to it. */
   focus?: { day: string } | null
 }) {
+  const t = useT()
   const todayStart = startOfWeek(new Date())
   // The hour lines are an inline gradient, so they can't answer `.dark` — slate-200
   // on white, slate-800 on the dark card.
@@ -177,11 +196,11 @@ export default function CalendarWeekView({
     const start = `${localDate(day)}T${minToHHMM(startMin)}`
 
     if (new Date(start).getTime() <= Date.now()) {
-      setWarning("That time has already passed — pick a future slot.")
+      setWarning(t('slots.time_passed'))
       return
     }
     if (slots.some((s) => s.start === start)) {
-      setWarning('You already proposed that time.')
+      setWarning(t('slots.already_proposed'))
       return
     }
     setWarning(null)
@@ -201,11 +220,11 @@ export default function CalendarWeekView({
     const start = `${localDate(days[dayIdx])}T${minToHHMM(startMin)}`
     if (slots.some((s) => s.id === id && s.start === start)) return
     if (new Date(start).getTime() <= Date.now()) {
-      setWarning("That time has already passed — pick a future slot.")
+      setWarning(t('slots.time_passed'))
       return
     }
     if (slots.some((s) => s.id !== id && s.start === start)) {
-      setWarning('You already proposed that time.')
+      setWarning(t('slots.already_proposed'))
       return
     }
     setWarning(null)
@@ -218,15 +237,15 @@ export default function CalendarWeekView({
     <div>
       <div className="flex items-center justify-between gap-2">
         <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-          {new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(days[0])} –{' '}
-          {new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(days[6])}
+          {new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: 'short' }).format(days[0])} –{' '}
+          {new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(days[6])}
         </div>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setWeekStart(addLocalDays(weekStart, -7))}
             disabled={atFirstWeek}
-            aria-label="Previous week"
+            aria-label={t('slots.previous_week')}
             className="grid h-8 w-8 place-items-center rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ‹
@@ -236,12 +255,12 @@ export default function CalendarWeekView({
             onClick={() => setWeekStart(todayStart)}
             className="h-8 px-3 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
           >
-            This week
+            {t('slots.this_week')}
           </button>
           <button
             type="button"
             onClick={() => setWeekStart(addLocalDays(weekStart, 7))}
-            aria-label="Next week"
+            aria-label={t('slots.next_week')}
             className="grid h-8 w-8 place-items-center rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
           >
             ›
@@ -250,7 +269,7 @@ export default function CalendarWeekView({
       </div>
 
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Click a day to drop a 1-hour slot, or drag down a column to set the length. Drag a slot to move it within the day; click it to remove.
+        {t('slots.grid_help')}
         {busyByDay && (
           <>
             {' '}
@@ -260,7 +279,7 @@ export default function CalendarWeekView({
                 className="inline-block h-2.5 w-2.5 rounded-[3px] align-middle"
                 style={{ backgroundImage: 'repeating-linear-gradient(135deg, rgba(100,116,139,0.45) 0 2px, rgba(100,116,139,0.15) 2px 4px)' }}
               />
-              Striped = busy in your connected calendar.
+              {t('slots.busy_legend')}
             </span>
           </>
         )}
@@ -272,7 +291,7 @@ export default function CalendarWeekView({
                 aria-hidden
                 className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-300 dark:border-slate-700 border-t-slate-600 dark:border-t-slate-300 align-middle"
               />
-              Syncing your calendar…
+              {t('slots.syncing')}
             </span>
           </>
         )}
@@ -281,7 +300,7 @@ export default function CalendarWeekView({
           told the grid is still filling in, without the legend being read out
           again every time a week loads. */}
       <span aria-live="polite" className="sr-only">
-        {busySyncing ? 'Syncing your calendar.' : ''}
+        {busySyncing ? t('slots.syncing_sr') : ''}
       </span>
 
       {/* Day headers */}
@@ -292,7 +311,7 @@ export default function CalendarWeekView({
           return (
             <div key={d.toISOString()} className="px-1 pb-1 text-center">
               <div className="text-[11px] uppercase tracking-wide text-slate-400">
-                {new Intl.DateTimeFormat('en-GB', { weekday: 'short' }).format(d)}
+                {new Intl.DateTimeFormat(t.locale, { weekday: 'short' }).format(d)}
               </div>
               <div
                 className={
@@ -468,7 +487,7 @@ export default function CalendarWeekView({
                         if (suppressClickRef.current) { suppressClickRef.current = false; return }
                         remove(s.id)
                       }}
-                      title={`Drag to move · click to remove ${s.start.slice(11)} · ${durationLabel(s.durationMins)}`}
+                      title={t('slots.slot_title', { time: wallTime(storedMin), length: durationLabel(s.durationMins) })}
                       className={
                         'group absolute inset-x-0.5 overflow-hidden rounded-md bg-[var(--accent)] px-1.5 py-0.5 text-left text-[11px] font-medium text-white shadow-sm ring-1 ring-[var(--accent-strong)] hover:bg-[var(--accent-strong)] ' +
                         (isMoving ? 'cursor-grabbing ring-2 z-10' : 'cursor-grab')
@@ -476,7 +495,7 @@ export default function CalendarWeekView({
                       style={{ top, height }}
                     >
                       <span className="flex items-center justify-between gap-1">
-                        <span className="truncate">{minToHHMM(sMin)}</span>
+                        <span className="truncate">{wallTime(sMin)}</span>
                         {/* ⚠️ An SVG, not `✕` — U+2715 has no glyph in iOS's
                             system font and WebKit does not fall back, so it
                             drew as a hollow ▯?▯ box. See the suite landmines. */}

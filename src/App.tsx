@@ -10,12 +10,13 @@ import CreatePoll from './components/CreatePoll'
 import PollPage from './components/PollPage'
 import { CONTAINER_CREATE, CONTAINER_POLL } from './lib/layout'
 import { openAppSettings, resetAppPreferences } from './lib/appSettings'
-import { SLOT_VIEW_DEFAULT_ID, SLOT_VIEW_DEFAULTS, SLOT_VIEW_LABELS, type SlotViewDefault } from './components/SlotPicker'
+import { SLOT_VIEW_DEFAULT_ID, SLOT_VIEW_DEFAULTS, slotViewDefaultLabel, type SlotViewDefault } from './components/SlotPicker'
 import { useThemeStore } from './stores/themeStore'
 import { useSystemBarsStyle } from './lib/systemBars'
 import { KNOWLEDGE_BASE } from './knowledge'
 import { phoneApp } from './native/shell'
 import { ConfirmHost } from './native/parts'
+import { useT } from './i18n'
 
 // The phone app's own top bar and Tune pages, in place of the SDK navbar and
 // its dropdown and dialogs. Never downloaded by the website.
@@ -38,6 +39,7 @@ function route(): Route {
 }
 
 export default function App() {
+  const t = useT()
   const [loc, setLoc] = useState<Route>(() => route())
 
   useEffect(() => {
@@ -139,20 +141,26 @@ export default function App() {
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pb-[env(safe-area-inset-bottom)]">
         <div className={`${container} py-4 flex flex-row items-center gap-3 sm:gap-4 text-xs text-slate-500 dark:text-slate-400`}>
           <span>
-            With{' '}
-            <span aria-hidden="true" className="text-orange-600 dark:text-orange-400">&hearts;</span>
-            <span className="sr-only">love</span>{' '}
-            from{' '}
-            <a href="https://www.unisim.co.uk" target="_blank" rel="noreferrer" className="text-slate-700 dark:text-slate-300 hover:text-orange-700 dark:hover:text-orange-400 underline-offset-2 hover:underline">
-              UNISIM.co.uk
-            </a>
+            {t.rich('app.footer_credit', {
+              heart: (
+                <>
+                  <span aria-hidden="true" className="text-orange-600 dark:text-orange-400">&hearts;</span>
+                  <span className="sr-only">{t('app.footer_love')}</span>
+                </>
+              ),
+              link: (
+                <a href="https://www.unisim.co.uk" target="_blank" rel="noreferrer" className="text-slate-700 dark:text-slate-300 hover:text-orange-700 dark:hover:text-orange-400 underline-offset-2 hover:underline">
+                  UNISIM.co.uk
+                </a>
+              ),
+            })}
           </span>
           <a
             href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            aria-label="Universal Date Polling on GitHub"
-            title="View source on GitHub"
+            aria-label={t('app.github_label')}
+            title={t('app.github_title')}
             className="ml-auto shrink-0 inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5" aria-hidden="true">
@@ -176,24 +184,26 @@ export default function App() {
 /** Tune this app ▸ the slot picker's double-tapped default, as a row — for
  *  anybody who cannot double-tap (James, 2026-09-30). */
 function SlotViewPreference() {
+  const t = useT()
   return (
     <DefaultViewSelect<SlotViewDefault>
       id={SLOT_VIEW_DEFAULT_ID}
-      label="Availability opens on"
+      label={t('app.slot_view_label')}
       fallback="none"
-      views={SLOT_VIEW_DEFAULTS.map((v) => ({ value: v, label: v === 'none' ? 'Nothing picked' : SLOT_VIEW_LABELS[v] }))}
+      views={SLOT_VIEW_DEFAULTS.map((v) => ({ value: v, label: slotViewDefaultLabel(v) }))}
     />
   )
 }
 
 function AppSettingsRow() {
+  const t = useT()
   const closeMenu = useCloseAppMenu()
   const theme = useThemeStore((s) => s.effective)
   return (
     <AdvancedMenuItem
       theme={theme}
-      label="This poll's options"
-      info="Booking page, link expiry, response alerts, calendar and timezone"
+      label={t('app.poll_options')}
+      info={t('app.poll_options_info')}
       icon={
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3" />

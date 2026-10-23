@@ -12,6 +12,7 @@
     "typecheck": "tsc -b --noEmit",
     "credits": "node ../scripts/gen-credits.mjs . --repo https://github.com/universal-simulation-ltd/Universal_Date_Polling",
     "test": "vitest run",
+    "i18n:check": "node scripts/i18n-check.mjs",
     "test:booking": "node e2e/booking.e2e.mjs",
     "test:confirmed": "node e2e/confirmed.e2e.mjs",
     "test:editing": "node e2e/editing.e2e.mjs",

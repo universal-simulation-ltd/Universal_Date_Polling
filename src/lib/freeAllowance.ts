@@ -6,6 +6,8 @@
 // Counted from live rows, so a poll that expires or is deleted frees its place
 // with nothing to go stale — unlike the `app_free_tokens` flag, which is only
 // recomputed when something is created or released.
+import { getT } from '../i18n/runtime'
+
 export interface FreeAllowanceStatus {
   unlimited: boolean
   used: number
@@ -36,7 +38,8 @@ export function isAtLimit(s: FreeAllowanceStatus | null): s is FreeAllowanceStat
 }
 
 export function nearLimitCopy(s: FreeAllowanceStatus): string {
-  return `You've used ${s.used} of your ${s.limit} free active polls.`
+  const t = getT()
+  return t.plural('lib.near_limit', s.limit, { used: t.num(s.used) })
 }
 
 /** Nothing is for sale for the everyday apps (2026-10-03). Under the at-limit
@@ -47,6 +50,6 @@ export const NEED_MORE_URL = 'https://www.unisim.co.uk/support'
 /** The at-limit banner. Names the limit when the backend gave one; the make-room
  *  advice is the one the create errors give too. */
 export function atLimitCopy(s: FreeAllowanceStatus): string {
-  const what = s.limit > 0 ? `all ${s.limit} of your free active polls` : 'your free active polls'
-  return `You've used ${what}. Delete a poll or wait for one to finish to make room.`
+  const t = getT()
+  return s.limit > 0 ? t.plural('lib.at_limit', s.limit) : t('lib.at_limit_unknown')
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { filterTimezones, listTimezones, tzAbbrev } from '../lib/time'
 import { phoneApp } from '../native/shell'
 import { PhonePage } from '../native/parts'
+import { useT } from '../i18n'
 
 /** A compact searchable timezone dropdown. Shows the currently selected zone
  *  (with its short abbreviation) as a button; opening it reveals a search box
@@ -14,14 +15,17 @@ export default function TimezonePicker({
   value,
   onChange,
   at = new Date(),
-  label = 'Show times in',
+  label: labelProp,
 }: {
   value: string
   onChange: (tz: string) => void
   /** Instant used to label each zone's abbreviation (BST vs GMT etc.). */
   at?: Date
+  /** The control's name; "Show times in" when not given. */
   label?: string
 }) {
+  const t = useT()
+  const label = labelProp ?? t('slots.show_times_in')
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
@@ -78,18 +82,18 @@ export default function TimezonePicker({
       </button>
 
       {open && phone && (
-        <PhonePage title={label} back="Back" onBack={() => { setOpen(false); setQuery('') }}>
+        <PhonePage title={label} back={t('common.back')} onBack={() => { setOpen(false); setQuery('') }}>
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search time zones…"
-            aria-label="Search time zones"
+            placeholder={t('slots.search_zones_placeholder')}
+            aria-label={t('slots.search_zones')}
             className="h-11 w-full rounded-xl bg-white dark:bg-slate-900 px-3.5 text-[16px] text-slate-900 dark:text-slate-100 ring-1 ring-slate-200 dark:ring-slate-800 outline-none focus:ring-[var(--accent,#cf4b00)]"
           />
           <ul role="listbox" aria-label={label} className="mt-4 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200/80 dark:ring-slate-800">
             {matches.length === 0 ? (
-              <li className="px-4 py-3 text-[15px] text-slate-400">No matching time zones.</li>
+              <li className="px-4 py-3 text-[15px] text-slate-400">{t('slots.no_matching_zones')}</li>
             ) : (
               matches.map((z) => {
                 const selected = z === value
@@ -121,13 +125,13 @@ export default function TimezonePicker({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search time zones…"
+              placeholder={t('slots.search_zones_placeholder')}
               className="w-full h-9 rounded-md border border-slate-300 dark:border-slate-700 px-2.5 text-sm text-slate-900 dark:text-slate-100 dark:bg-slate-900 focus:border-[var(--accent)] outline-none"
             />
           </div>
           <ul role="listbox" className="max-h-64 overflow-y-auto py-1">
             {matches.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-slate-400">No matching time zones.</li>
+              <li className="px-3 py-2 text-sm text-slate-400">{t('slots.no_matching_zones')}</li>
             ) : (
               matches.map((z) => {
                 const selected = z === value

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { phoneApp } from '../native/shell'
+import { useT, getT } from '../i18n'
 import { Chip, SignInDialog, useFileDrop, useRevealOnOpen, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
@@ -32,14 +33,15 @@ import {
   calendarPromptHidden, onAppPreferencesReset, onOpenAppSettings, setCalendarPromptHidden, type SettingsSection,
 } from '../lib/appSettings'
 
+// Labels are read at render (common.days), so they follow the language.
 const VALIDITY = [
-  { label: '7 days', days: 7 },
-  { label: '30 days', days: 30 },
-  { label: '90 days', days: 90 },
+  { days: 7 },
+  { days: 30 },
+  { days: 90 },
   // No "never expires": polls are public, link-shared, and we don't want
   // respondent data living on the server forever. 180 days is the long option.
   // An expired poll is deleted PURGE_GRACE_DAYS later by a daily job (0191).
-  { label: '180 days', days: 180 },
+  { days: 180 },
 ]
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -60,6 +62,7 @@ const SUGGEST_DEFAULT_MINS = 60
 type Phase = 'edit' | 'sending' | 'code' | 'creating' | 'done'
 
 export default function CreatePoll({ pollBase }: { pollBase: string }) {
+  const t = useT()
   const [title, setTitle] = useState('')
   // The app's light/dark mode — a custom-hex accent renders differently in each.
   const colorMode = useThemeStore((s) => s.effective)
@@ -360,7 +363,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
   async function calSendCode() {
     setCalError(null)
-    if (!EMAIL_RE.test(email)) { setCalError('Enter a valid email address first.'); return }
+    if (!EMAIL_RE.test(email)) { setCalError(t('create.err_email_first')); return }
     setCalAuthPhase('sending')
     try {
       await sendHostCode(email)
@@ -373,7 +376,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
   async function calVerifyCode() {
     setCalError(null)
-    if (!calCode.trim()) { setCalError('Enter the code from your email.'); return }
+    if (!calCode.trim()) { setCalError(t('create.err_code')); return }
     setCalAuthPhase('verifying')
     try {
       await verifyHostCode(email, calCode)
@@ -397,15 +400,15 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       .then(({ busy, providers }) => {
         setCalBusy((prev) => [...prev, ...busy])
         // A failed provider read must not look like an empty calendar — say so.
-        const failed: string[] = []
-        if (providers.google === 'error') failed.push('Google')
-        if (providers.microsoft === 'error') failed.push('Outlook')
-        if (failed.length) {
-          setCalError(`Couldn't read your ${failed.join(' and ')} calendar — the connection works, but the availability lookup failed. Try again shortly, or disconnect and reconnect.`)
+        // getT(), not the render's `t`: this callback keeps one identity.
+        const gFailed = providers.google === 'error'
+        const mFailed = providers.microsoft === 'error'
+        if (gFailed || mFailed) {
+          setCalError(getT()(gFailed && mFailed ? 'create.cal_read_failed_both' : gFailed ? 'create.cal_read_failed_google' : 'create.cal_read_failed_outlook'))
         }
         if (providers.google === 'reconnect' || providers.microsoft === 'reconnect') {
           // The server dropped the dead grant; refresh so the row shows it.
-          setCalError('A calendar connection has expired — please connect it again.')
+          setCalError(getT()('create.cal_expired'))
           calendarStatus(calClientRef.current).then(setCalStatus).catch(() => {})
         }
       })
@@ -477,7 +480,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         }
         calendarStatus(calClientRef.current).then(setCalStatus).catch(() => {})
       } else {
-        setCalError('Calendar connection was cancelled or failed.')
+        setCalError(getT()('create.cal_cancelled'))
       }
     }
     window.addEventListener('message', onMsg)
@@ -489,7 +492,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     try {
       const url = await startCalendarConnect(calClient, provider)
       const popup = window.open(url, 'unisim-calendar', 'width=540,height=680')
-      if (!popup) setCalError('Your browser blocked the pop-up — allow pop-ups for this site and try again.')
+      if (!popup) setCalError(t('create.popup_blocked'))
       else watchPopup(popup)
     } catch (e) {
       setCalError(messageOf(e))
@@ -545,10 +548,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       const failed = (s: ProviderFetchStatus) => s === 'error' || s === 'reconnect'
       if (failed(providers.google) || failed(providers.microsoft)) {
         if (providers.google === 'reconnect' || providers.microsoft === 'reconnect') {
-          setCalError('A calendar connection has expired — please connect it again, then suggest times.')
+          setCalError(t('create.cal_expired_suggest'))
           calendarStatus(calClientRef.current).then(setCalStatus).catch(() => {})
         } else {
-          setCalError("Couldn't read your calendar just now, so nothing was suggested — try again shortly.")
+          setCalError(t('create.cal_read_failed_suggest'))
         }
         return
       }
@@ -567,7 +570,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         existing: slots,
       })
       if (!found.length) {
-        setSuggestNote(`No free time between 10:00 and 16:00 on a weekday in the next ${SUGGEST_SCAN_DAYS} days — add times by hand, or free some space up and try again.`)
+        setSuggestNote(t.plural('create.suggest_none', SUGGEST_SCAN_DAYS, { from: clockAt(10), to: clockAt(16) }))
         return
       }
       const next = [...slots, ...found.map((s) => ({ id: shortId(6), ...s }))]
@@ -576,8 +579,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
       setCalFocus({ day: found[0].start.slice(0, 10) })
       setSuggestNote(
         found.length < SUGGEST_COUNT
-          ? `Added ${found.length} of ${SUGGEST_COUNT} — that was all the free time there was. Drag to move one, click to remove it.`
-          : `Added ${found.length} times from your free space. Drag to move one, click to remove it.`,
+          ? t('create.suggest_some', { found: t.num(found.length), total: t.num(SUGGEST_COUNT) })
+          : t.plural('create.suggest_added', found.length),
       )
     } catch (e) {
       setCalError(messageOf(e))
@@ -623,8 +626,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   function onPickLogo(file: File | null) {
     setLogoErr(null)
     if (!file) { setLogoFile(null); return }
-    if (!LOGO_TYPES.includes(file.type)) { setLogoErr('Logo must be a PNG, JPG or WebP image.'); return }
-    if (file.size > MAX_LOGO_BYTES) { setLogoErr('Logo must be 10 MB or smaller.'); return }
+    if (!LOGO_TYPES.includes(file.type)) { setLogoErr(t('create.logo_type')); return }
+    if (file.size > MAX_LOGO_BYTES) { setLogoErr(t('create.logo_size')); return }
     setLogoFile(file)
   }
 
@@ -670,15 +673,15 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   }
 
   function validateDraft(): string | null {
-    if (!title.trim()) return 'Give your poll a title.'
-    if (slots.length === 0) return mode === 'days' ? 'Add at least one day.' : 'Add at least one date and time.'
+    if (!title.trim()) return t('create.err_title')
+    if (slots.length === 0) return mode === 'days' ? t('create.err_add_day') : t('create.err_add_time')
     if (!suiteLoggedIn && !verified) {
       if (!emailOptional || email.trim()) {
-        if (!EMAIL_RE.test(email)) return 'Enter a valid email address.'
+        if (!EMAIL_RE.test(email)) return t('create.err_email')
       } else if (bookingMode) {
-        return 'A booking page emails you each booking, so it needs your email address.'
+        return t('create.err_booking_email')
       } else if (notifyOnResponse) {
-        return 'Add your email address to get response alerts, or turn the alerts off in This poll\'s options.'
+        return t('create.err_alerts_email')
       }
     }
     return null
@@ -739,8 +742,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   useEffect(() => {
     const client = createdClientRef.current
     if (!editingId || !client) return
-    const t = setInterval(() => { void setPollEditing(client, editingId, true).catch(() => {}) }, EDIT_HEARTBEAT_MS)
-    return () => clearInterval(t)
+    const timer = setInterval(() => { void setPollEditing(client, editingId, true).catch(() => {}) }, EDIT_HEARTBEAT_MS)
+    return () => clearInterval(timer)
   }, [editingId])
 
   async function startEditing() {
@@ -865,7 +868,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
     }
 
     if (!SUPABASE_CONFIGURED) {
-      setError('Polling needs its Supabase backend configured to create polls.')
+      setError(t('create.err_backend'))
       return
     }
     // Returning guest with a live session → create straight away.
@@ -902,7 +905,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
   async function onVerify() {
     setError(null)
-    if (!code.trim()) { setError('Enter the code from your email.'); return }
+    if (!code.trim()) { setError(t('create.err_code')); return }
     setPhase('creating')
     try {
       const uid = await verifyHostCode(email, code)
@@ -968,17 +971,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
       {editingId && (
         <div role="status" className="mb-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 px-5 py-4 text-sm text-amber-900 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900">
-          <p className="font-semibold">You're changing the times on your live poll.</p>
+          <p className="font-semibold">{t('create.editing_title')}</p>
           <p className="mt-1">
-            Until you save, anyone who opens the link is told you're changing the times and to check
-            back shortly. Nobody has answered yet, so nothing is lost. Your branding stays as it was.
+            {t('create.editing_body')}
           </p>
           <button
             type="button"
             onClick={cancelEditing}
             className="mt-2 font-medium underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-100"
           >
-            Cancel — keep it as it was
+            {t('create.editing_cancel')}
           </button>
         </div>
       )}
@@ -1009,15 +1011,15 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 <span aria-hidden="true" className="h-5 w-px bg-slate-200 dark:bg-slate-700" />
                 <img
                   src={mastheadMark}
-                  alt={`${brandName || org?.name || 'Your'} logo`}
+                  alt={brandName || org?.name ? t('create.logo_alt', { name: brandName || org?.name || '' }) : t('create.logo_alt_yours')}
                   className="h-6 max-w-[120px] rounded-md object-contain"
                 />
               </>
             )}
           </div>
           <h1 className="mt-2 text-2xl font-extrabold leading-tight text-slate-900 dark:text-slate-100">
-            Find a time that<br />
-            <span className="text-orange-600 dark:text-orange-400">works for everyone</span>
+            {t('create.headline_line1')}<br />
+            <span className="text-orange-600 dark:text-orange-400">{t('create.headline_line2')}</span>
           </h1>
           {/* The whole idea in one line, for someone who has never used a
               date poll — and the answer to "do I have to sign up?" before
@@ -1026,7 +1028,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               account. Hidden while editing a live poll: that host knows. */}
           {!editingId && (
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-              Offer a few times, share the link, and everyone ticks the ones they can make. No account needed — for you or them.
+              {t('create.intro')}
             </p>
           )}
         </div>
@@ -1035,13 +1037,13 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         <div>
         {/* Title */}
         <label className="block">
-          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Poll title</span>
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t('create.title_label')}</span>
           <input
             type="text"
             value={title}
             maxLength={200}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Team catch-up — week of the 9th"
+            placeholder={t('create.title_placeholder')}
             className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </label>
@@ -1053,17 +1055,17 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         {title.trim() !== '' && (
         <div className="mt-6 pop-in">
           <label className="block">
-            <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Location or meeting link <span className="font-normal text-slate-400">(optional)</span></span>
+            <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t('create.location_label')} <span className="font-normal text-slate-400">{t('create.optional')}</span></span>
             <input
               type="text"
               value={location}
               maxLength={500}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Meeting room 5, or a Teams / Zoom / Meet link"
+              placeholder={t('create.location_placeholder')}
               className="mt-1.5 w-full h-11 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
             />
           </label>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Shown to everyone on the poll and added to the calendar invite.</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('create.location_hint')}</p>
         </div>
         )}
         </div>
@@ -1072,12 +1074,12 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
         <div ref={availabilityRef} className="mt-6">
           {/* "Times to offer", not "Availability": a newcomer couldn't tell
               whether that meant their own diary or their guests'. */}
-          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">Times to offer</span>
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t('create.times_heading')}</span>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {view === null ? (
-              <>How would you like to add them? Type them in, drag them on a calendar, or offer whole days.</>
+              <>{t('create.times_hint_none')}</>
             ) : mode === 'days' ? (
-              <>Respondents tick whole days they're free — good for trips and multi-day plans.</>
+              <>{t('create.times_hint_days')}</>
             ) : (
               /* The whole of what a host needs to know about the timezone: what
                  the clock says where the poll's times will land, and a way to
@@ -1108,7 +1110,8 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           {view === 'calendar' && anyConnected && (
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 ring-1 ring-slate-200 dark:ring-slate-700 px-3 py-2.5">
               <span className="flex-1 min-w-[16rem] text-xs text-slate-600 dark:text-slate-300">
-                <span className="font-medium text-slate-700 dark:text-slate-300">Not sure what to propose?</span> We'll pick {SUGGEST_COUNT} times you're free — weekdays, 10:00–16:00 {tzAbbrev(timezone)}, at most one morning and one afternoon a day.
+                <span className="font-medium text-slate-700 dark:text-slate-300">{t('create.suggest_question')}</span>{' '}
+                {t.plural('create.suggest_intro', SUGGEST_COUNT, { from: clockAt(10), to: clockAt(16), zone: tzAbbrev(timezone) })}
               </span>
               <button
                 type="button"
@@ -1116,7 +1119,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 disabled={suggesting}
                 className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-60"
               >
-                {suggesting ? 'Finding free time…' : `Suggest ${SUGGEST_COUNT} times`}
+                {suggesting ? t('create.suggest_finding') : t.plural('create.suggest_button', SUGGEST_COUNT)}
               </button>
               {suggestNote && (
                 <span className="basis-full text-[11px] text-slate-500 dark:text-slate-400">{suggestNote}</span>
@@ -1127,7 +1130,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               mounted, since text appearing inside a freshly-inserted node isn't
               reliably announced. */}
           <span aria-live="polite" className="sr-only">
-            {suggesting ? 'Finding free time in your calendar.' : suggestNote ?? ''}
+            {suggesting ? t('create.suggest_finding_sr') : suggestNote ?? ''}
           </span>
 
           {/* Where a calendar is connected in passing — beside the grid the
@@ -1140,9 +1143,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 ring-1 ring-slate-200 dark:ring-slate-700 px-3 py-2.5">
               <span className="text-xs text-slate-600 dark:text-slate-300">
                 {anyConnected ? (
-                  <><span className="font-medium text-slate-700 dark:text-slate-300">Busy somewhere else too?</span> Connect your other calendar and it shades the grid as well.</>
+                  <>{t.rich('create.cal_prompt_other', { lead: <span className="font-medium text-slate-700 dark:text-slate-300">{t('create.cal_other_lead')}</span> })}</>
                 ) : (
-                  <><span className="font-medium text-slate-700 dark:text-slate-300">See when you're already busy</span> — connect a calendar and your busy times shade the grid. Only you see them.</>
+                  <>{t.rich('create.cal_prompt_connect', { lead: <span className="font-medium text-slate-700 dark:text-slate-300">{t('create.cal_busy_lead')}</span> })}</>
                 )}
               </span>
               <span className="flex flex-wrap items-center gap-2">
@@ -1152,7 +1155,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     onClick={() => connectCalendar('google')}
                     className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
-                    Connect Google Calendar
+                    {t('create.connect_google')}
                   </button>
                 )}
                 {connectable.microsoft && (
@@ -1161,7 +1164,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     onClick={() => connectCalendar('microsoft')}
                     className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
-                    Connect Outlook
+                    {t('create.connect_outlook')}
                   </button>
                 )}
                 {/* Beside the Connect buttons, and quieter than them: "no"
@@ -1171,11 +1174,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   onClick={hideCalPrompt}
                   className="px-1 text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
                 >
-                  Don't show again
+                  {t('create.dont_show_again')}
                 </button>
               </span>
               <span className="basis-full text-[11px] text-slate-400">
-                You can still connect one any time from {phoneApp() ? 'Tune (top right)' : 'your profile menu (top right) → Tune this app'} → This poll's options.
+                {phoneApp() ? t('create.cal_later_phone') : t('create.cal_later_web')}
               </span>
             </div>
           )}
@@ -1185,7 +1188,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           {view === 'calendar' && !hasSession && !calPromptHidden && (calProviders?.google || calProviders?.microsoft) && (
             <div className="mt-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 ring-1 ring-slate-200 dark:ring-slate-700 px-3 py-2.5">
               <span className="block text-xs text-slate-600 dark:text-slate-300">
-                <span className="font-medium text-slate-700 dark:text-slate-300">See when you're already busy</span> — verify your email (the same one that saves your poll), then connect your calendar. Only you see the shading.
+                {t.rich('create.cal_prompt_guest', { lead: <span className="font-medium text-slate-700 dark:text-slate-300">{t('create.cal_busy_lead')}</span> })}
               </span>
               {calAuthPhase === 'code' || calAuthPhase === 'verifying' ? (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1204,16 +1207,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     disabled={calAuthPhase === 'verifying'}
                     className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--accent-strong)] disabled:opacity-60"
                   >
-                    {calAuthPhase === 'verifying' ? 'Verifying…' : 'Verify'}
+                    {calAuthPhase === 'verifying' ? t('create.verifying') : t('create.verify')}
                   </button>
                   <button
                     type="button"
                     onClick={() => { setCalAuthPhase('idle'); setCalCode('') }}
                     className="text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
                   >
-                    Different email
+                    {t('create.different_email')}
                   </button>
-                  <span className="basis-full text-[11px] text-slate-500 dark:text-slate-400">We emailed a 6-digit code to {email}.</span>
+                  <span className="basis-full text-[11px] text-slate-500 dark:text-slate-400">{t('create.code_sent', { email })}</span>
                 </div>
               ) : (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1231,7 +1234,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     disabled={calAuthPhase === 'sending'}
                     className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-60"
                   >
-                    {calAuthPhase === 'sending' ? 'Sending…' : 'Email me a code'}
+                    {calAuthPhase === 'sending' ? t('create.sending') : t('create.email_me_code')}
                   </button>
                   {/* Same offer, same way out — a guest who does not want their
                       calendar read should not have to verify an email to say
@@ -1241,7 +1244,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     onClick={hideCalPrompt}
                     className="px-1 text-xs text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
                   >
-                    Don't show again
+                    {t('create.dont_show_again')}
                   </button>
                 </div>
               )}
@@ -1261,14 +1264,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             what the link does, so it cannot be silent. */}
         <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 dark:border-slate-800 pt-4 text-xs text-slate-500 dark:text-slate-400">
           {bookingMode && (
-            <Chip size="sm">Booking page</Chip>
+            <Chip size="sm">{t('create.booking_chip')}</Chip>
           )}
           <span>
-            Link valid for {VALIDITY.find((v) => v.days === validityDays)?.label ?? 'a while'}
-            {!bookingMode && <> · {notifyOnResponse ? 'response alerts on' : 'no response alerts'}</>}
+            {VALIDITY.some((v) => v.days === validityDays) && validityDays != null
+              ? t('create.link_valid', { period: t.plural('common.days', validityDays) })
+              : t('create.link_valid_while')}
+            {!bookingMode && <> · {notifyOnResponse ? t('create.alerts_on') : t('create.alerts_off')}</>}
             {mode === 'times' && <> · {timezone}</>}
           </span>
-          <span className="text-slate-400">— change these in {phoneApp() ? 'Tune (top right)' : 'your profile menu (top right) → Tune this app'} → This poll's options.</span>
+          <span className="text-slate-400">{phoneApp() ? t('create.change_these_phone') : t('create.change_these_web')}</span>
         </div>
 
         {/* The options themselves. Until 2026-09-11 this was a "More options"
@@ -1278,9 +1283,9 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             (inheriting the theme variables) without occupying the layout. */}
         {settingsSection !== null && (
           <SettingsDialog
-            back="New poll"
-            title="This poll's options"
-            description="These apply to the poll you're creating now."
+            back={t('settings.back_new_poll')}
+            title={t('settings.title')}
+            description={t('settings.description')}
             onClose={() => setSettingsSection(null)}
           >
             <div className="grid gap-5 sm:grid-cols-2">
@@ -1299,11 +1304,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[var(--accent)] focus:ring-[var(--accent)]"
                   />
                   <span className="text-sm text-slate-700 dark:text-slate-300">
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">Just the two of us</span> — make this an instant booking page
+                    {t.rich('settings.booking_label', { lead: <span className="font-semibold text-slate-900 dark:text-slate-100">{t('settings.booking_lead')}</span> })}
                     <span className="block text-xs text-slate-500 dark:text-slate-400">
                       {bookingMode
-                        ? "Whoever you send the link to picks one time and it's booked on the spot — no votes, and nothing for you to confirm. You'll both get a calendar invite by email."
-                        : 'For a one-to-one. They pick a time, it books itself, and you both get a calendar invite — instead of collecting availability and confirming a time yourself.'}
+                        ? t('settings.booking_on')
+                        : t('settings.booking_off')}
                     </span>
                   </span>
                 </label>
@@ -1311,18 +1316,18 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
               {/* Validity */}
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Link stays valid for</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('settings.validity_label')}</span>
                 <select
                   value={String(validityDays)}
                   onChange={(e) => setValidityDays(e.target.value === 'null' ? null : Number(e.target.value))}
                   className="mt-2 w-full h-10 rounded-lg border border-slate-300 dark:border-slate-700 px-2 text-sm text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] outline-none"
                 >
                   {VALIDITY.map((v) => (
-                    <option key={v.label} value={String(v.days)}>{v.label}</option>
+                    <option key={v.days} value={String(v.days)}>{t.plural('common.days', v.days)}</option>
                   ))}
                 </select>
                 <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                  Then it's read-only for {PURGE_GRACE_DAYS} days, and deleted with its answers.
+                  {t.plural('settings.validity_hint', PURGE_GRACE_DAYS)}
                 </span>
               </div>
 
@@ -1339,19 +1344,19 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[var(--accent)] focus:ring-[var(--accent)]"
                   />
                   <span className="text-sm text-slate-700 dark:text-slate-300">
-                    Want to be emailed when your guests respond?
+                    {t('settings.alerts_label')}
                     {(() => {
                       const to = suiteLoggedIn ? (suiteUser?.email ?? '') : email.trim()
                       if (suiteLoggedIn) {
-                        return <span className="block text-xs text-slate-500 dark:text-slate-400">We'll email <span className="font-medium">{to}</span> each time a new person responds.</span>
+                        return <span className="block text-xs text-slate-500 dark:text-slate-400">{t.rich('settings.alerts_signed_in', { email: <span className="font-medium">{to}</span> })}</span>
                       }
                       if (to && verified) {
-                        return <span className="block text-xs text-slate-500 dark:text-slate-400">We'll email <span className="font-medium">{to}</span> (confirmed) each time a new person responds.</span>
+                        return <span className="block text-xs text-slate-500 dark:text-slate-400">{t.rich('settings.alerts_verified', { email: <span className="font-medium">{to}</span> })}</span>
                       }
                       if (emailOptional) {
-                        return <span className="block text-xs text-slate-500 dark:text-slate-400">Add your email below (we'll send a code to confirm it) and we'll alert you there each time someone responds.</span>
+                        return <span className="block text-xs text-slate-500 dark:text-slate-400">{t('settings.alerts_optional')}</span>
                       }
-                      return <span className="block text-xs text-slate-500 dark:text-slate-400">You'll confirm your email below to create your poll — check this and we'll also alert you there each time someone responds.</span>
+                      return <span className="block text-xs text-slate-500 dark:text-slate-400">{t('settings.alerts_confirm')}</span>
                     })()}
                   </span>
                 </label>
@@ -1363,9 +1368,13 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   least one provider OAuth app is configured server-side. */}
               {hasSession && anyConfigured && calStatus && (
                 <div className="sm:col-span-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Your calendar</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('settings.calendar_label')}</span>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    Connect a calendar and the <span className="font-medium">Calendar</span> view shades the times you're already busy. Only you ever see the shading — nothing is shown to the people you send the poll to. <span className="font-medium">Outlook / Microsoft 365</span> also labels each block with the event's name; <span className="font-medium">Google Calendar</span> shades busy times only, and we never read your event names, guests, locations or descriptions there.
+                    {t.rich('settings.calendar_body', {
+                      calendar: <span className="font-medium">{t('settings.calendar_view')}</span>,
+                      outlook: <span className="font-medium">Outlook / Microsoft 365</span>,
+                      google: <span className="font-medium">Google Calendar</span>,
+                    })}
                   </p>
                   {/* What is connected, how to undo it — and, since the prompt
                       beside the grid can be dismissed for good, how to connect
@@ -1393,14 +1402,14 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     )}
                     {anyConnectable && (
                       <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                        {anyConnected ? 'Add another:' : 'Nothing connected yet.'}
+                        {anyConnected ? t('settings.add_another') : t('settings.nothing_connected')}
                         {connectable.google && (
                           <button
                             type="button"
                             onClick={() => connectCalendar('google')}
                             className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
-                            Connect Google Calendar
+                            {t('create.connect_google')}
                           </button>
                         )}
                         {connectable.microsoft && (
@@ -1409,7 +1418,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                             onClick={() => connectCalendar('microsoft')}
                             className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
-                            Connect Outlook
+                            {t('create.connect_outlook')}
                           </button>
                         )}
                       </span>
@@ -1418,13 +1427,13 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                         cannot undo is a setting the host has lost. */}
                     {calPromptHidden && anyConnectable && (
                       <span className="text-xs text-slate-500 dark:text-slate-400">
-                        The connect prompt beside the calendar is hidden.{' '}
+                        {t('settings.prompt_hidden')}{' '}
                         <button
                           type="button"
                           onClick={restoreCalPrompt}
                           className="font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] underline underline-offset-2 hover:no-underline"
                         >
-                          Show it again
+                          {t('settings.show_again')}
                         </button>
                       </span>
                     )}
@@ -1436,7 +1445,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               {/* Timezone (timed polls only) */}
               {mode === 'times' && (
                 <div className="sm:col-span-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Timezone</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('settings.timezone_label')}</span>
                   <select
                     ref={tzSelectRef}
                     value={timezone}
@@ -1448,8 +1457,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     ))}
                   </select>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    Every time on this poll is written in this zone; each guest sees it converted to theirs. It's{' '}
-                    <span className="font-medium text-slate-600 dark:text-slate-300">{formatTime(new Date(), timezone)}</span> there now.
+                    {t.rich('settings.timezone_hint', { time: <span className="font-medium text-slate-600 dark:text-slate-300">{formatTime(new Date(), timezone)}</span> })}
                   </p>
                 </div>
               )}
@@ -1470,7 +1478,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             <div data-testid="free-allowance-limit" className="mb-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
               <p>{atLimitCopy(pollAllowance)}</p>
               <a href={NEED_MORE_URL} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-50">
-                Need more? Tell us
+                {t('create.need_more')}
               </a>
             </div>
           )}
@@ -1481,34 +1489,36 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           )}
           {freeGated && subscription && subscription.credits > 0 && (
             <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-              {subscription.credits} purchased token{subscription.credits !== 1 ? 's' : ''}
+              {t.plural('create.purchased_tokens', subscription.credits)}
             </p>
           )}
 
           {enterprise ? (
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              Creating as <span className="font-medium text-slate-900 dark:text-slate-100">{org?.name ?? suiteUser?.email}</span>
-              {org?.name && suiteUser?.email && <span className="text-slate-500 dark:text-slate-400"> ({suiteUser.email})</span>} — no email verification needed.
+              {t.rich('create.creating_as_org', {
+                name: <span className="font-medium text-slate-900 dark:text-slate-100">{org?.name ?? suiteUser?.email}</span>,
+                email: org?.name && suiteUser?.email ? <span className="text-slate-500 dark:text-slate-400"> ({suiteUser.email})</span> : null,
+              })}
             </p>
           ) : suiteLoggedIn ? (
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              Creating as <span className="font-medium text-slate-900 dark:text-slate-100">{suiteUser?.email}</span> — no email verification needed.
+              {t.rich('create.creating_as', { name: <span className="font-medium text-slate-900 dark:text-slate-100">{suiteUser?.email}</span> })}
             </p>
           ) : verified ? (
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              Signed in as <span className="font-medium text-slate-900 dark:text-slate-100">{email}</span> (verified).{' '}
+              {t.rich('create.signed_in_as', { email: <span className="font-medium text-slate-900 dark:text-slate-100">{email}</span> })}{' '}
               <button
                 type="button"
                 onClick={async () => { await signOut(); setVerified(false); setEmail('') }}
                 className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
               >
-                Not you? Sign out
+                {t('create.not_you')}
               </button>
             </p>
           ) : (
             <label className="block">
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                Your email{emailOptional && <span className="font-normal text-slate-500 dark:text-slate-400"> (optional)</span>}
+                {t('create.your_email')}{emailOptional && <span className="font-normal text-slate-500 dark:text-slate-400"> {t('create.optional')}</span>}
               </span>
               <input
                 type="email"
@@ -1522,17 +1532,16 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               {emailOptional ? (
                 <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                   {bookingMode
-                    ? <>Needed for a booking page: it's where we email you each booking. We'll send a quick code to confirm it's you.</>
+                    ? t('create.email_hint_booking')
                     : notifyOnResponse
-                      ? <>Where we'll send your response alerts. We'll send a quick code to confirm it's you.</>
-                      : <>Only if you want response alerts or to find your polls from another device — we'll send a quick code to confirm it. Leave it blank and you'll get a private admin link to manage the poll instead.</>}
+                      ? t('create.email_hint_alerts')
+                      : t('create.email_hint_optional')}
                 </p>
               ) : (
                 <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                  We'll send a quick code to confirm it's you — that's how you'll manage this poll later
                   {notifyOnResponse
-                    ? <> and where we'll send your response alerts.</>
-                    : <>. Want an email each time a guest responds? Turn that on in {phoneApp() ? 'Tune (top right)' : 'your profile menu (top right) → Tune this app'} → This poll's options.</>}
+                    ? t('create.email_note_alerts')
+                    : phoneApp() ? t('create.email_note_phone') : t('create.email_note_web')}
                 </p>
               )}
             </label>
@@ -1541,7 +1550,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           {phase === 'code' && (
             <div className="mt-4 rounded-lg bg-[var(--accent-softer)] p-4">
               <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">
-                Enter the 6-digit code we emailed to {email}
+                {t('create.code_label', { email })}
                 <input
                   type="text"
                   inputMode="numeric"
@@ -1554,15 +1563,15 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               </label>
               <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
                 {notifyOnResponse
-                  ? "Confirming creates your poll and turns on response alerts to this address."
-                  : 'Confirming creates your poll and lets you manage it later from this address.'}
+                  ? t('create.code_note_alerts')
+                  : t('create.code_note')}
               </p>
               <button
                 type="button"
                 onClick={() => { setPhase('edit'); setCode('') }}
                 className="mt-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
               >
-                Use a different email
+                {t('create.use_different_email')}
               </button>
             </div>
           )}
@@ -1575,10 +1584,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             disabled={phase === 'sending' || phase === 'creating'}
             className="mt-4 w-full h-12 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
           >
-            {phase === 'sending' && 'Sending code…'}
-            {phase === 'creating' && (editingId ? 'Saving changes…' : 'Creating poll…')}
-            {phase === 'code' && 'Verify & create poll'}
-            {phase === 'edit' && (editingId ? 'Save changes' : 'Create poll')}
+            {phase === 'sending' && t('create.btn_sending')}
+            {phase === 'creating' && (editingId ? t('create.btn_saving') : t('create.btn_creating'))}
+            {phase === 'code' && t('create.btn_verify_create')}
+            {phase === 'edit' && (editingId ? t('create.btn_save') : t('create.btn_create'))}
           </button>
         </div>
         </div>
@@ -1601,11 +1610,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <span>
-                <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[var(--accent-strong)] dark:group-hover:text-[var(--accent-text)]">Branding</span>
+                <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[var(--accent-strong)] dark:group-hover:text-[var(--accent-text)]">{t('create.branding')}</span>
                 <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   {suiteLoggedIn
-                    ? 'Imported from your account — override it for this poll if you like.'
-                    : "Add your colour and logo to the poll's create and share pages."}
+                    ? t('create.branding_imported')
+                    : t('create.branding_guest')}
                 </span>
               </span>
             </button>
@@ -1614,7 +1623,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             {!suiteLoggedIn && !phoneApp() && (
               <>
                 <button type="button" onClick={() => setSignInOpen(true)} className="text-xs font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] hover:underline whitespace-nowrap">
-                  Sign in to import your branding →
+                  {t('create.sign_in_branding')}
                 </button>
                 <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
               </>
@@ -1627,19 +1636,19 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               {(orgBranding.logo_url || orgBranding.icon_url) && (
                 <img
                   src={orgBranding.logo_url ?? orgBranding.icon_url ?? ''}
-                  alt={org?.name ?? 'Account logo'}
+                  alt={org?.name ?? t('create.account_logo')}
                   className="h-10 max-w-[160px] rounded object-contain ring-1 ring-slate-200 dark:ring-slate-700 bg-white dark:bg-slate-900"
                 />
               )}
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{org?.name ?? 'Your account'}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{org?.name ?? t('create.your_account')}</p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                   <span
                     className="inline-block h-3 w-3 rounded-full ring-1 ring-slate-300 dark:ring-slate-600"
                     style={{ backgroundColor: hexOfTheme(theme) ?? undefined }}
                     aria-hidden="true"
                   />
-                  {orgBranding.brand_color ? 'Account colour' : 'Default colour'}
+                  {orgBranding.brand_color ? t('create.account_colour') : t('create.default_colour')}
                 </p>
               </div>
               <button
@@ -1647,7 +1656,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 onClick={startBrandOverride}
                 className="ml-auto rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
               >
-                Customise for this poll
+                {t('create.customise')}
               </button>
             </div>
           )}
@@ -1656,27 +1665,27 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           <div id={brandingId} ref={brandEditorRevealRef} className="mt-4 grid gap-5 sm:grid-cols-2">
             {/* Booking-page colour */}
             <div className="sm:col-span-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Booking-page colour</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('create.booking_colour')}</span>
               <div className="mt-2 flex items-center gap-2">
-                {THEMES.map((t) => (
+                {THEMES.map((th) => (
                   <button
-                    key={t.name}
+                    key={th.name}
                     type="button"
-                    onClick={() => setTheme(t.name)}
-                    aria-label={t.label}
-                    aria-pressed={theme === t.name}
-                    title={t.label}
-                    className={`h-8 w-8 rounded-full ring-2 ring-offset-2 dark:ring-offset-slate-900 transition ${theme === t.name ? 'ring-slate-900 dark:ring-slate-100' : 'ring-transparent hover:ring-slate-300 dark:hover:ring-slate-600'}`}
-                    style={{ backgroundColor: t.swatch }}
+                    onClick={() => setTheme(th.name)}
+                    aria-label={t(`create.colour_${th.name}`)}
+                    aria-pressed={theme === th.name}
+                    title={t(`create.colour_${th.name}`)}
+                    className={`h-8 w-8 rounded-full ring-2 ring-offset-2 dark:ring-offset-slate-900 transition ${theme === th.name ? 'ring-slate-900 dark:ring-slate-100' : 'ring-transparent hover:ring-slate-300 dark:hover:ring-slate-600'}`}
+                    style={{ backgroundColor: th.swatch }}
                   />
                 ))}
                 {/* Custom colour: shows the chosen hex when active, else a + */}
                 <button
                   type="button"
                   onClick={() => colorRef.current?.click()}
-                  aria-label="Custom colour"
+                  aria-label={t('create.custom_colour')}
                   aria-pressed={isHexTheme(theme)}
-                  title="Custom colour"
+                  title={t('create.custom_colour')}
                   className={`grid h-8 w-8 place-items-center rounded-full transition ${isHexTheme(theme) ? 'ring-2 ring-offset-2 dark:ring-offset-slate-900 ring-slate-900 dark:ring-slate-100 text-white' : 'border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-400 hover:border-slate-400 dark:hover:border-slate-500'}`}
                   style={isHexTheme(theme) ? { backgroundColor: theme } : undefined}
                 >
@@ -1700,30 +1709,30 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
 
             {/* Brand name */}
             <label className="block">
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Brand name</span>
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t('create.brand_name')}</span>
               <input
                 type="text"
                 value={brandName}
                 maxLength={80}
                 onChange={(e) => setBrandName(e.target.value)}
-                placeholder="e.g. Acme Adventures"
+                placeholder={t('create.brand_placeholder')}
                 className="mt-1 w-full h-10 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-sm text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] outline-none"
               />
             </label>
 
             {/* Logo */}
             <div>
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Logo</span>
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t('create.logo')}</span>
               <div className="mt-1 flex items-center gap-3">
                 {shownLogo && (
-                  <img src={shownLogo} alt="Logo preview" className="h-10 w-10 rounded object-contain ring-1 ring-slate-200 dark:ring-slate-700 bg-white dark:bg-slate-900" />
+                  <img src={shownLogo} alt={t('create.logo_preview')} className="h-10 w-10 rounded object-contain ring-1 ring-slate-200 dark:ring-slate-700 bg-white dark:bg-slate-900" />
                 )}
                 <button
                   type="button"
                   onClick={logoPicker.open}
                   className="cursor-pointer rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
                 >
-                  {shownLogo ? 'Change…' : 'Upload…'}
+                  {shownLogo ? t('create.logo_change') : t('create.logo_upload')}
                 </button>
                 {/* `hidden`, not `sr-only`: out of the label it had no
                     accessible name, and the button above is the control. */}
@@ -1734,11 +1743,11 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     onClick={() => { onPickLogo(null); setDropOrgLogo(true) }}
                     className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
                   >
-                    Remove
+                    {t('common.remove')}
                   </button>
                 )}
               </div>
-              <p className="mt-1 text-[11px] text-slate-400">PNG, JPG or WebP · large images are resized for you.</p>
+              <p className="mt-1 text-[11px] text-slate-400">{t('create.logo_hint')}</p>
               {logoErr && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{logoErr}</p>}
             </div>
 
@@ -1757,7 +1766,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   }}
                   className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
                 >
-                  Use my account branding instead
+                  {t('create.use_account_branding')}
                 </button>
               </div>
             )}
@@ -1788,17 +1797,18 @@ function CalendarProviderRow({
   onReconnect: () => void
   onDisconnect: () => void
 }) {
+  const t = useT()
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-700 dark:text-slate-300">
         <span className="font-medium">{label}</span>
-        <span className="text-slate-500 dark:text-slate-400">connected{email ? ` as ${email}` : ''}</span>
+        <span className="text-slate-500 dark:text-slate-400">{email ? t('settings.connected_as', { email }) : t('settings.connected')}</span>
         <button
           type="button"
           onClick={onDisconnect}
           className="text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-300"
         >
-          Disconnect
+          {t('settings.disconnect')}
         </button>
       </div>
       {/* ⚠️ An OFFER, not a warning. This connection works — it shades the right
@@ -1808,13 +1818,13 @@ function CalendarProviderRow({
           pattern for a grant that is narrower than the current one. */}
       {titlesOffer && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Busy times only — this connection predates event names.{' '}
+          {t('settings.titles_offer')}{' '}
           <button
             type="button"
             onClick={onReconnect}
             className="font-medium text-slate-600 dark:text-slate-300 underline underline-offset-2 hover:text-slate-800 dark:hover:text-slate-200"
           >
-            Reconnect to show them
+            {t('settings.reconnect_titles')}
           </button>
         </p>
       )}
@@ -1841,6 +1851,7 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError, admin
    *  is the wrong instruction for a page that can only be booked once. */
   poll: TextListPoll
 }) {
+  const t = useT()
   const booking = !!poll.booking_mode
   const colorMode = useThemeStore((s) => s.effective)
   // Not the running origin: inside the iPhone app that is
@@ -1869,12 +1880,12 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError, admin
           </svg>
         </div>
         <h2 className="mt-4 text-xl font-extrabold text-slate-900 dark:text-slate-100">
-          {booking ? 'Your booking page is live' : 'Your poll is live'}
+          {booking ? t('create.live_booking') : t('create.live_poll')}
         </h2>
         <p className="mt-1 text-slate-600 dark:text-slate-300">
           {booking
-            ? 'Send this link to the one person you want to meet. The first time they pick is booked, and you\u2019ll both get a calendar invite.'
-            : 'Share this link with everyone you want to invite.'}
+            ? t('create.live_booking_body')
+            : t('create.live_poll_body')}
         </p>
         <div className="mt-5 flex items-stretch gap-2">
           <input
@@ -1888,14 +1899,14 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError, admin
             onClick={copy}
             className="h-11 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-[var(--accent-strong)]"
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? t('create.copied') : t('common.copy')}
           </button>
         </div>
         <a
           href={url}
           className="mt-4 inline-block text-sm font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] hover:underline underline-offset-2"
         >
-          Open your poll →
+          {t('create.open_poll')}
         </a>
 
         {onEditTimes && (
@@ -1905,10 +1916,10 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError, admin
               onClick={onEditTimes}
               className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 underline underline-offset-2"
             >
-              ← Change the times
+              {t('create.change_times')}
             </button>
             <p className={`mt-1 text-xs ${editError ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>
-              {editError ?? 'You can go back and change them until someone answers.'}
+              {editError ?? t('create.change_times_hint')}
             </p>
           </div>
         )}
@@ -1935,6 +1946,7 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError, admin
  *  shortcut into settings from the page, because this line raises the question
  *  and a line that raises a question should answer it. */
 function TimezoneLine({ timezone, onChange }: { timezone: string; onChange: () => void }) {
+  const t = useT()
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 15_000)
@@ -1942,14 +1954,16 @@ function TimezoneLine({ timezone, onChange }: { timezone: string; onChange: () =
   }, [])
   return (
     <>
-      It's <span className="font-medium text-slate-700 dark:text-slate-300">{formatTime(now, timezone)}</span>. You are in{' '}
-      <span className="font-medium text-slate-700 dark:text-slate-300">{timezone}</span>.{' '}
+      {t.rich('create.tz_line', {
+        time: <span className="font-medium text-slate-700 dark:text-slate-300">{formatTime(now, timezone)}</span>,
+        zone: <span className="font-medium text-slate-700 dark:text-slate-300">{timezone}</span>,
+      })}{' '}
       <button
         type="button"
         onClick={onChange}
         className="font-medium text-[var(--accent-strong)] dark:text-[var(--accent-text)] underline underline-offset-2 hover:no-underline"
       >
-        Change timezone?
+        {t('create.tz_change')}
       </button>
     </>
   )
@@ -1976,18 +1990,25 @@ function stickyBarHeight(): number {
   return 0
 }
 
+/** A clock time of day ("10:00", or "10:00 AM" in US English) in the app's
+ *  language, for the fixed 10–4 window "Suggest times" searches. */
+function clockAt(hour: number): string {
+  return formatTime(new Date(Date.UTC(2000, 0, 3, hour)), 'UTC')
+}
+
 function messageOf(e: unknown): string {
+  const t = getT()
   if (e && typeof e === 'object' && 'message' in e) {
     const msg = String((e as { message: unknown }).message)
     if (msg.includes('free_poll_limit'))
-      return "You've reached your free limit of active polls. Delete a poll or wait for one to finish to make room."
+      return t('create.err_free_limit')
     if (msg.includes('token_in_use:')) {
       const what = msg.split('token_in_use:')[1]?.trim()
-      return `You've reached your free limit of active polls${what ? ` (held by ${what})` : ''}. Delete a poll or wait for one to finish to make room.`
+      return what ? t('create.err_free_limit_held', { what }) : t('create.err_free_limit')
     }
     if (msg.includes('no_credits'))
-      return "You've reached your free limit of active polls. Delete a poll or wait for one to finish to make room."
+      return t('create.err_free_limit')
     return msg
   }
-  return 'Something went wrong. Please try again.'
+  return t('create.err_generic')
 }

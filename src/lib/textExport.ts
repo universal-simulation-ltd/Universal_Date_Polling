@@ -8,6 +8,7 @@
 
 import type { PollMode, Slot } from './types'
 import { formatCalendarDay, formatLongDate, formatRange, slotDayKey, slotInstant, tzAbbrev } from './time'
+import { getT } from '../i18n/runtime'
 
 /** The subset of a poll the text list needs. Both a live `Poll` and the
  *  `NewPoll` draft the create screen has just posted satisfy this structurally,
@@ -44,6 +45,7 @@ export interface TextListOptions {
  *  line carries its own full date, so nothing depends on indentation surviving
  *  a mail client, and a reply can just say "2 and 4 work for me". */
 export function buildPollTextList(poll: TextListPoll, opts: TextListOptions = {}): string {
+  const t = getT()
   const dayMode = poll.mode === 'days'
   const tz = opts.displayTz || poll.timezone
   const slots = [...poll.slots].sort((a, b) => a.start.localeCompare(b.start))
@@ -57,13 +59,11 @@ export function buildPollTextList(poll: TextListPoll, opts: TextListOptions = {}
     // Anchor the tz abbreviation to the first slot, not to "now" — a poll for
     // January copied in June would otherwise be labelled BST.
     const anchor = slotInstant(slots[0].start, poll.timezone)
-    const timesNote = dayMode ? '' : ` All times ${tzAbbrev(tz, anchor)}.`
-    lines.push(
-      poll.booking_mode
-        ? `Pick whichever ${dayMode ? 'day' : 'time'} suits you — it's booked as soon as you choose.${timesNote}`
-        : `Which of these ${dayMode ? 'days' : 'times'} work for you?${timesNote}`,
-      '',
-    )
+    const timesNote = dayMode ? '' : ` ${t('lib.list_all_times', { tz: tzAbbrev(tz, anchor) })}`
+    const ask = poll.booking_mode
+      ? t(dayMode ? 'lib.list_book_day' : 'lib.list_book_time')
+      : t(dayMode ? 'lib.list_ask_days' : 'lib.list_ask_times')
+    lines.push(`${ask}${timesNote}`, '')
     slots.forEach((slot, i) => {
       const n = `${i + 1}.`
       if (dayMode) {
@@ -73,21 +73,19 @@ export function buildPollTextList(poll: TextListPoll, opts: TextListOptions = {}
         // " at ", not another comma — the long date already carries one after
         // the weekday ("Wed, 10 Jun 2026"), and three commas in a line reads
         // like a list of three things rather than one date and one time.
-        lines.push(`${n} ${formatLongDate(inst, tz)} at ${formatRange(inst, slot.durationMins, tz)}`)
+        lines.push(`${n} ${t('lib.list_line_timed', { date: formatLongDate(inst, tz), time: formatRange(inst, slot.durationMins, tz) })}`)
       }
     })
   }
 
   const location = poll.location?.trim()
-  if (location) lines.push('', `Where: ${location}`)
+  if (location) lines.push('', t('lib.where', { location }))
 
   const url = opts.url?.trim()
   if (opts.includeLink && url) {
     lines.push(
       '',
-      poll.booking_mode
-        ? 'Book your slot here:'
-        : 'Feel free to email back, or to leave your preferences here:',
+      t(poll.booking_mode ? 'lib.list_link_booking' : 'lib.list_link_poll'),
       url,
     )
   }

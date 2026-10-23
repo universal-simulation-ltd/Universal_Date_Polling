@@ -13,11 +13,12 @@ import {
 import credits from '../generated/credits.json'
 import ProductLogo from '../components/ProductLogo'
 import { openAppSettings, resetAppPreferences } from '../lib/appSettings'
-import { SLOT_VIEW_DEFAULT_ID, SLOT_VIEW_DEFAULTS, SLOT_VIEW_LABELS, type SlotViewDefault } from '../components/SlotPicker'
+import { SLOT_VIEW_DEFAULT_ID, SLOT_VIEW_DEFAULTS, slotViewDefaultLabel, type SlotViewDefault } from '../components/SlotPicker'
 import { useThemeStore } from '../stores/themeStore'
 import { loadArticles } from '../knowledge'
 import type { Article } from '../knowledge/types'
 import { PhonePage } from './parts'
+import { useT } from '../i18n'
 
 // The phone app's own chrome, in place of the SDK's UniversalAppsNavBar and the
 // dialogs it opens (Actions ▸ Tune this app, About this app, Knowledge base,
@@ -39,6 +40,7 @@ type Layer = 'tune' | 'kb' | 'about'
 
 export function PhoneBar({ view, pollBase }: { view: 'create' | 'poll'; pollBase: string }) {
   const { language } = useLanguage()
+  const t = useT()
   const sdk = (key: string) => translateNav(language, key)
   const [layers, setLayers] = useState<Layer[]>([])
   const push = (l: Layer) => setLayers((s) => [...s, l])
@@ -61,12 +63,12 @@ export function PhoneBar({ view, pollBase }: { view: 'create' | 'poll'; pollBase
               <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M15 5l-7 7 7 7" />
               </svg>
-              Back
+              {t('common.back')}
             </button>
           ) : (
             <span className="flex items-center gap-2 px-2">
               <ProductLogo />
-              <span className="text-[17px] font-bold tracking-tight text-slate-900 dark:text-slate-100">Date Polling</span>
+              <span className="text-[17px] font-bold tracking-tight text-slate-900 dark:text-slate-100">{t('common.product_short')}</span>
             </span>
           )}
           <button
@@ -151,6 +153,7 @@ function PickerRow<T extends string>({ label, value, options, onChange }: {
 
 function TunePage({ z, view, onBack, onOpen }: { z: number; view: 'create' | 'poll'; onBack: () => void; onOpen: (l: Layer) => void }) {
   const { language, appLanguage, globalLanguage, setAppLanguage } = useLanguage()
+  const t = useT()
   const sdk = (key: string) => translateNav(language, key)
   const override = useThemeStore((s) => s.override)
   const global = useThemeStore((s) => s.global)
@@ -161,13 +164,13 @@ function TunePage({ z, view, onBack, onOpen }: { z: number; view: 'create' | 'po
   const follow = (value: string) => sdk('prefs.follow_global').replace('{value}', value)
 
   return (
-    <PhonePage z={z} title={sdk('prefs.app_preferences')} back={view === 'poll' ? 'Poll' : 'New poll'} onBack={onBack}>
+    <PhonePage z={z} title={sdk('prefs.app_preferences')} back={view === 'poll' ? t('native.back_poll') : t('native.back_new_poll')} onBack={onBack}>
       <div className="flex flex-col gap-5">
         {view === 'create' && (
           <Group>
             <LinkRow
-              label="This poll's options"
-              note="Booking page, link expiry, response alerts, calendar and timezone"
+              label={t('native.poll_options')}
+              note={t('native.poll_options_note')}
               onClick={() => {
                 onBack()
                 openAppSettings()
@@ -231,11 +234,12 @@ function TunePage({ z, view, onBack, onOpen }: { z: number; view: 'create' | 'po
 
 function SlotViewRow() {
   const view = useDefaultView<SlotViewDefault>(SLOT_VIEW_DEFAULT_ID, 'none', { views: SLOT_VIEW_DEFAULTS })
+  const t = useT()
   return (
     <PickerRow<SlotViewDefault>
-      label="Availability opens on"
+      label={t('native.availability_opens_on')}
       value={view.defaultView}
-      options={SLOT_VIEW_DEFAULTS.map((v) => ({ value: v, label: v === 'none' ? 'Nothing picked' : SLOT_VIEW_LABELS[v] }))}
+      options={SLOT_VIEW_DEFAULTS.map((v) => ({ value: v, label: slotViewDefaultLabel(v) }))}
       onChange={(v) => view.setDefaultView(v === 'none' ? null : v)}
     />
   )
@@ -265,12 +269,13 @@ function Credit({ language }: { language: string }) {
 function AboutPage({ z, back, onBack }: { z: number; back: string; onBack: () => void }) {
   const { language } = useLanguage()
   const sdk = (key: string) => translateNav(language, key)
+  const t = useT()
   const ships = credits.ships as { name: string; title: string; licence: string; repo?: string; description?: string }[]
   return (
-    <PhonePage z={z} title="Universal Date Polling" back={back} onBack={onBack}>
+    <PhonePage z={z} title={t('common.product_name')} back={back} onBack={onBack}>
       <div className="flex flex-col gap-5">
         <p className="text-[15px] leading-relaxed text-slate-700 dark:text-slate-300">
-          Propose some times, share one link, and see when everyone is free. Nobody needs an account to answer.
+          {t('native.about_blurb')}
         </p>
         <Group>
           <div className="flex min-h-[52px] items-center px-4">
@@ -312,6 +317,7 @@ function fold(text: string): string {
 
 function KnowledgePage({ z, back, onBack }: { z: number; back: string; onBack: () => void }) {
   const { language } = useLanguage()
+  const t = useT()
   const sdk = (key: string) => translateNav(language, key)
   const [list, setList] = useState<Article[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -347,8 +353,8 @@ function KnowledgePage({ z, back, onBack }: { z: number; back: string; onBack: (
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search"
-          aria-label="Search"
+          placeholder={t('native.search')}
+          aria-label={t('native.search')}
           className="h-11 w-full rounded-xl bg-white dark:bg-slate-900 px-3.5 text-[16px] text-slate-900 dark:text-slate-100 ring-1 ring-slate-200 dark:ring-slate-800 outline-none focus:ring-orange-500"
         />
         {failed && <p className="mt-4 text-sm text-slate-500">{sdk('kb.load_failed')}</p>}

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
 import { phoneApp } from '../native/shell'
 import { PhonePage, PhoneSheet } from '../native/parts'
+import { useT } from '../i18n'
 
 /**
  * The modal the Profile → Tune this app ▸ "This poll's options" row opens.
@@ -15,7 +16,7 @@ import { PhonePage, PhoneSheet } from '../native/parts'
  * heading). What goes inside is the caller's, because the settings are the
  * caller's state.
  */
-export default function SettingsDialog({ phone = 'page', back = 'Back', ...props }: {
+export default function SettingsDialog({ phone = 'page', back, ...props }: {
   title: string
   description?: string
   onClose: () => void
@@ -23,9 +24,10 @@ export default function SettingsDialog({ phone = 'page', back = 'Back', ...props
   /** In the phone app: a full page with a back link (this poll's options), or
    *  a bottom sheet (Copy email). The website always gets the dialog. */
   phone?: 'page' | 'sheet'
-  /** The phone page's back link: where it goes. */
+  /** The phone page's back link: where it goes. Defaults to "Back". */
   back?: string
 }) {
+  const t = useT()
   if (phoneApp()) {
     return phone === 'sheet' ? (
       <PhoneSheet label={props.title} onClose={props.onClose} title={props.title}>
@@ -33,7 +35,7 @@ export default function SettingsDialog({ phone = 'page', back = 'Back', ...props
         {props.children}
       </PhoneSheet>
     ) : (
-      <PhonePage title={props.title} description={props.description} back={back} onBack={props.onClose}>
+      <PhonePage title={props.title} description={props.description} back={back ?? t('common.back')} onBack={props.onClose}>
         {props.children}
       </PhonePage>
     )
@@ -47,6 +49,7 @@ function WebDialog({ title, description, onClose, children }: {
   onClose: () => void
   children: React.ReactNode
 }) {
+  const t = useT()
   const headingId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -101,7 +104,7 @@ function WebDialog({ title, description, onClose, children }: {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
             className="-mr-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300"
           >
             <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -125,7 +128,7 @@ function WebDialog({ title, description, onClose, children }: {
             onClick={onClose}
             className="w-full rounded-lg bg-slate-900 dark:bg-slate-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white sm:w-auto"
           >
-            Done
+            {t('common.done')}
           </button>
         </div>
       </div>

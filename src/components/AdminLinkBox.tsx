@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useT } from '../i18n'
 
 /** A poll's private admin link with a Copy button: on the "live" panel right
  *  after creating a poll, and on the poll page for its host on this device. */
 export default function AdminLinkBox({ url, hasEmail }: { url: string; hasEmail: boolean }) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
   async function copy() {
     try {
@@ -15,17 +17,15 @@ export default function AdminLinkBox({ url, hasEmail }: { url: string; hasEmail:
   }
   return (
     <div className="mt-6 rounded-xl bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-200 dark:ring-amber-900 p-4 text-left">
-      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Your private admin link</p>
+      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">{t('links.admin_title')}</p>
       <p className="mt-1 text-xs text-amber-900 dark:text-amber-200">
-        {hasEmail
-          ? "Keep this one to yourself. It opens the poll's admin page on any device where you've confirmed the same email address, so you can confirm a time, change the poll or delete it there."
-          : "Keep this one to yourself — anyone who has it can manage the poll: confirm a time, change it or delete it. Save it somewhere safe: it's the only way to manage the poll from another device, or here if this browser's data is cleared."}
+        {hasEmail ? t('links.admin_body_email') : t('links.admin_body_no_email')}
       </p>
       <div className="mt-3 flex items-stretch gap-2">
         <input
           readOnly
           value={url}
-          aria-label="Private admin link"
+          aria-label={t('links.admin_field')}
           onFocus={(e) => e.currentTarget.select()}
           className="flex-1 min-w-0 h-10 rounded-lg border border-amber-300 dark:border-amber-800 px-3 text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900"
         />
@@ -34,7 +34,7 @@ export default function AdminLinkBox({ url, hasEmail }: { url: string; hasEmail:
           onClick={copy}
           className="h-10 px-3 rounded-lg ring-1 ring-amber-300 dark:ring-amber-800 bg-white dark:bg-slate-900 text-sm font-semibold text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40"
         >
-          {copied ? 'Copied!' : 'Copy'}
+          {copied ? t('links.copied') : t('common.copy')}
         </button>
       </div>
     </div>

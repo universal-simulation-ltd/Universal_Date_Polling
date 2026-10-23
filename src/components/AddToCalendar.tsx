@@ -4,6 +4,7 @@ import type { Poll, Slot } from '../lib/types'
 import { downloadIcs, googleCalendarUrl, outlookCalendarUrl } from '../lib/calendar'
 import { phoneApp } from '../native/shell'
 import { PhoneSheet, SheetRow } from '../native/parts'
+import { useT } from '../i18n'
 
 const MENU_WIDTH = 208 // matches w-52
 
@@ -23,6 +24,7 @@ const MENU_WIDTH = 208 // matches w-52
 export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
   poll: Poll; slot: Slot; pollUrl: string; guests?: string[]
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -81,7 +83,7 @@ export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
         className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-[var(--accent-text)] ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-[var(--accent)] hover:bg-[var(--accent-soft)] transition"
       >
         <CalendarIcon />
-        Add to calendar
+        {t('share.calendar_button')}
       </button>
 
       {/* z-[1100], not z-50: the SDK navbar sets an inline `zIndex: 1000`, which
@@ -89,15 +91,15 @@ export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
           wins regardless. The menu is portalled to document.body, so it shares
           the root stacking context with the bar and the comparison is real. */}
       {open && phone && (
-        <PhoneSheet label="Add to calendar" title="Add to calendar" onClose={() => setOpen(false)}>
+        <PhoneSheet label={t('share.calendar_button')} title={t('share.calendar_button')} onClose={() => setOpen(false)}>
           {guests.length > 0 && (
             <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
-              Invites the {guests.length === 1 ? 'person' : `${guests.length} people`} free then — they're in the guests box, and nothing is sent until you save.
+              {t.plural('share.calendar_guests', guests.length)}
             </p>
           )}
           <SheetRow onClick={() => openExternal(googleCalendarUrl(poll, slot, pollUrl, guests))}>Google Calendar</SheetRow>
           <SheetRow onClick={() => openExternal(outlookCalendarUrl(poll, slot, pollUrl, guests))}>Outlook</SheetRow>
-          <SheetRow onClick={() => { downloadIcs(poll, slot, pollUrl); setOpen(false) }}>Apple / other (.ics)</SheetRow>
+          <SheetRow onClick={() => { downloadIcs(poll, slot, pollUrl); setOpen(false) }}>{t('share.calendar_ics')}</SheetRow>
         </PhoneSheet>
       )}
 
@@ -110,7 +112,7 @@ export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
         >
           {guests.length > 0 && (
             <p className="border-b border-slate-100 dark:border-slate-700 px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
-              Invites the {guests.length === 1 ? 'person' : `${guests.length} people`} free then — they're in the guests box, and nothing is sent until you save.
+              {t.plural('share.calendar_guests', guests.length)}
             </p>
           )}
           <MenuItem onClick={() => openExternal(googleCalendarUrl(poll, slot, pollUrl, guests))}>
@@ -120,7 +122,7 @@ export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
             Outlook
           </MenuItem>
           <MenuItem onClick={() => { downloadIcs(poll, slot, pollUrl); setOpen(false) }}>
-            Apple / other (.ics)
+            {t('share.calendar_ics')}
           </MenuItem>
         </div>,
         document.body,

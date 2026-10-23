@@ -4,6 +4,7 @@ import { UniversalProvider } from '@unisim/sdk'
 import { Capacitor } from '@capacitor/core'
 import type { ProductCode } from '@unisim/sdk'
 import App from './App'
+import { I18nRoot } from './i18n'
 import { UsageTracker } from '@unisim/sdk'
 import { SUITE_SUPABASE_URL, SUITE_SUPABASE_ANON } from './lib/supabase'
 import { useGuestSessionFollowsSuiteSignOut } from './lib/otpSession'
@@ -64,9 +65,11 @@ function GuestSessionSync() {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <UniversalProvider config={universalConfig}>
-      <UsageTracker />
-      <GuestSessionSync />
-      <App />
+      <I18nRoot>
+        <UsageTracker />
+        <GuestSessionSync />
+        <App />
+      </I18nRoot>
     </UniversalProvider>
   </React.StrictMode>
 )
