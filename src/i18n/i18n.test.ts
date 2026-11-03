@@ -110,3 +110,14 @@ describe('runtime', () => {
     expect(makeBasicTranslator('fr-x-test').plural('common.responses', 1204)).toBe('1\u202f204 réponses')
   })
 })
+
+describe('a possessive written {name}’s', () => {
+  it('takes the apostrophe alone after a name ending in s', async () => {
+    const { fill } = await import('./runtime.ts')
+    expect(fill('{name}’s photo', { name: 'James' })).toBe('James’ photo')
+    expect(fill('{name}’s photo', { name: 'CHRIS' })).toBe('CHRIS’ photo')
+    expect(fill('{name}’s photo', { name: 'Bradley' })).toBe('Bradley’s photo')
+    expect(fill('{other} and {name}', { other: 'James', name: 'Bradley' })).toBe('James and Bradley')
+    expect(fill('{name}’s photo', {})).toBe('{name}’s photo')
+  })
+})

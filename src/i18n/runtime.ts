@@ -57,7 +57,15 @@ function find(lang: string, key: string): string | undefined {
 
 export function fill(s: string, vars?: Vars): string {
   if (!vars) return s
-  return s.replace(/\{(\w+)\}/g, (m, name: string) => (name in vars ? String(vars[name]) : m))
+  // An English possessive written "{name}’s" takes the apostrophe alone after
+  // a value ending in s: "James’ photo", "Bradley’s photo" (James, 2026-11-03,
+  // suite-wide). Only the English strings put ’s straight after a placeholder.
+  return s.replace(/\{(\w+)\}(’s\b)?/g, (m, name: string, apostrophe?: string) => {
+    if (!(name in vars)) return m
+    const value = String(vars[name])
+    if (!apostrophe) return value
+    return /s$/i.test(value.trim()) ? `${value}’` : `${value}’s`
+  })
 }
 
 /**
