@@ -110,12 +110,12 @@ export default function SlotPicker({
     <div>
       {/* Type in / Calendar both edit timed slots, so they sit in one group;
           Whole days is a separate mode, set apart with a gap. */}
-      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium">
-        <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-700 p-0.5">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="u-tabs">
           <SelectorTab view={view} value="form" onSelect={onViewChange} dv={dv} />
           <SelectorTab view={view} value="calendar" onSelect={onViewChange} dv={dv} />
         </div>
-        <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-700 p-0.5">
+        <div className="u-tabs">
           <SelectorTab view={view} value="days" onSelect={onViewChange} dv={dv} />
         </div>
       </div>
@@ -151,15 +151,10 @@ function SelectorTab({
       {...dv.buttonProps(value, label)}
       onClick={() => { dv.tap(value); onSelect(value) }}
       aria-pressed={view === value}
-      // The default is orange whatever the poll's accent: filled while it is
-      // the picker showing, an orange ring while it is not (Jukebox's look —
-      // SDK README ▸ Default views).
-      className={
-        'rounded-md px-3 py-1.5 transition-colors ' +
-        (view === value
-          ? 'bg-[var(--accent)] text-white data-[default-view=true]:bg-gradient-to-br data-[default-view=true]:from-[#FE8C01] data-[default-view=true]:to-[#E05504]'
-          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 data-[default-view=true]:text-orange-700 dark:data-[default-view=true]:text-orange-400 data-[default-view=true]:ring-1 data-[default-view=true]:ring-inset data-[default-view=true]:ring-orange-400/70')
-      }
+      // The suite's tray tab (SDK 0.216, BRANDING.md → Tabs): aria-pressed
+      // selects it, and buttonProps' data-default-view draws the opens-here
+      // dot (it replaced the orange ring / gradient fill).
+      className="u-tab"
     >
       {label}
     </button>
@@ -394,8 +389,9 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
           type="button"
           onClick={add}
           disabled={!date || !time}
-          className="h-10 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="u-btn"
         >
+          <span className="u-btn__key" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></span>
           {t('slots.add_time')}
         </button>
       </div>

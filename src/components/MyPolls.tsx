@@ -401,7 +401,7 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
               <button
                 type="button"
                 onClick={onCopy}
-                className="rounded-md px-2 py-1 font-medium text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                className="u-btn u-btn--sm"
               >
                 {copied ? t('mypolls.copied') : t('mypolls.copy_link')}
               </button>
@@ -456,7 +456,7 @@ function ConfirmStrip({ question, confirmLabel, busy, onConfirm, onCancel }: {
         <button
           type="button"
           onClick={onCancel}
-          className="px-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+          className="u-btn u-btn--quiet u-btn--sm"
         >
           {t('common.cancel')}
         </button>
@@ -464,7 +464,7 @@ function ConfirmStrip({ question, confirmLabel, busy, onConfirm, onCancel }: {
           type="button"
           onClick={onConfirm}
           disabled={busy}
-          className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+          className="u-btn u-btn--danger u-btn--sm"
         >
           {busy ? t('mypolls.deleting') : confirmLabel}
         </button>

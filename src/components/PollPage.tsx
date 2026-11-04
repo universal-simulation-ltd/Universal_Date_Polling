@@ -927,7 +927,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
               type="button"
               onClick={save}
               disabled={saving || removing || status === 'claimed'}
-              className="h-11 px-5 rounded-xl whitespace-nowrap bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
+              className="u-btn u-btn--primary"
             >
               {saving ? t('poll.saving') : nameClash ? t('poll.replace_answers', { name: name.trim() }) : t('poll.save_availability')}
             </button>
@@ -1078,7 +1078,7 @@ function BookingPanel({ poll, slots, dayMode, activeTz, viewerTz, tzNote, name, 
           type="button"
           onClick={() => picked && onBook(picked)}
           disabled={busy || !picked}
-          className="h-11 px-5 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
+          className="u-btn u-btn--primary"
         >
           {busy
             ? t('poll.booking')
@@ -1239,7 +1239,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                             type="button"
                             onClick={() => onConfirm(s.id)}
                             disabled={confirming}
-                            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition disabled:opacity-60"
+                            className="u-btn u-btn--sm"
                           >
                             {t('poll.confirm_this_time')}
                           </button>
@@ -1249,7 +1249,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                             type="button"
                             onClick={() => onConfirm(null)}
                             disabled={confirming}
-                            className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-300 transition disabled:opacity-60"
+                            className="u-btn u-btn--sm"
                           >
                             {t('poll.unconfirm')}
                           </button>
@@ -1280,7 +1280,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                   onClick={() => onRemove(r.name)}
                   disabled={removing}
                   aria-label={t('poll.remove_name_aria', { name: r.name })}
-                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700 hover:text-rose-700 dark:hover:text-rose-400 hover:ring-rose-300 dark:hover:ring-rose-800 transition disabled:opacity-60"
+                  className="u-btn u-btn--danger u-btn--sm"
                 >
                   {r.name} <span aria-hidden="true">✕</span>
                 </button>
@@ -1372,7 +1372,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
                 onUnconfirm()
               }}
               disabled={confirming}
-              className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700 hover:bg-white dark:hover:bg-slate-900 hover:text-slate-700 dark:hover:text-slate-300 transition disabled:opacity-60"
+              className="u-btn u-btn--sm"
             >
               {confirming ? t('poll.working') : t('poll.change')}
             </button>
@@ -1386,7 +1386,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
             type="button"
             onClick={onNotify}
             disabled={sending}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition disabled:opacity-60"
+            className="u-btn u-btn--sm"
           >
             ✉️ {sending
               ? t('poll.sending')
@@ -1433,7 +1433,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
               type="button"
               onClick={onAddToMyCalendar}
               disabled={calWrite.status === 'working'}
-              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition disabled:opacity-60"
+              className="u-btn u-btn--sm"
             >
               📅 {calWrite.status === 'working'
                 ? t('poll.adding')
@@ -1445,7 +1445,7 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
             <button
               type="button"
               onClick={() => onReconnectCalendar(upgradable[0])}
-              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition"
+              className="u-btn u-btn--sm"
             >
               📅 {t('poll.reconnect_to_add', { provider: PROVIDER_LABEL[upgradable[0]] })}
             </button>
@@ -1627,7 +1627,7 @@ function LoadError({ message, onRetry }: { message: string | null; onRetry: () =
       <button
         type="button"
         onClick={onRetry}
-        className="mt-5 inline-flex h-11 items-center rounded-xl bg-orange-700 px-5 font-semibold text-white hover:bg-orange-800"
+        className="u-btn u-btn--primary mt-5"
       >
         {t('common.retry')}
       </button>

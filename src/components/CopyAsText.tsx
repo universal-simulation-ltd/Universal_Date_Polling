@@ -79,7 +79,7 @@ export default function CopyAsText({ poll, url, displayTz, defaultOpen = false }
             <button
               type="button"
               onClick={copy}
-              className="h-10 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-[var(--accent-strong)]"
+              className="u-btn"
             >
               {copied ? t('share.copied') : t('share.text_copy')}
             </button>

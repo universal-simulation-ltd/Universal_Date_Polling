@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { UniversalProvider } from '@unisim/sdk'
+import { UniversalProvider, installButtonStyles, installTabStyles } from '@unisim/sdk'
 import { Capacitor } from '@capacitor/core'
 import type { ProductCode } from '@unisim/sdk'
 import App from './App'
@@ -61,6 +61,12 @@ function GuestSessionSync() {
   useGuestSessionFollowsSuiteSignOut()
   return null
 }
+
+// The suite's key buttons and tray tabs (SDK 0.216, BRANDING.md → Buttons,
+// Tabs), used as `u-btn` / `u-tabs` class strings; index.css gives them a
+// poll's own accent.
+installButtonStyles()
+installTabStyles()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

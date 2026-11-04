@@ -31,7 +31,7 @@ export default function CopyEmail({ poll, slot, url, displayTz, recipients, reci
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800 hover:bg-white dark:hover:bg-slate-900 hover:ring-emerald-400 dark:hover:ring-emerald-600 transition"
+        className="u-btn u-btn--sm"
       >
         {t('share.email_button')}
       </button>
@@ -133,9 +133,7 @@ function Field({ label, copyText, disabled = false, primary = false, children }:
           type="button"
           onClick={copy}
           disabled={disabled}
-          className={primary
-            ? 'h-9 rounded-lg bg-[var(--accent)] px-3.5 text-sm font-semibold text-white hover:bg-[var(--accent-strong)] disabled:opacity-50'
-            : 'h-8 rounded-md px-2.5 text-xs font-medium text-[var(--accent-text)] ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-[var(--accent)] disabled:opacity-50'}
+          className={primary ? 'u-btn u-btn--primary u-btn--sm' : 'u-btn u-btn--sm'}
         >
           {copied ? t('share.copied') : primary ? t('share.email_copy_message') : t('share.email_copy')}
         </button>

@@ -32,7 +32,7 @@ export default function EditLinkBox({ url }: { url: string }) {
         <button
           type="button"
           onClick={copy}
-          className="h-10 px-3 rounded-lg ring-1 ring-slate-300 dark:ring-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="u-btn"
         >
           {copied ? t('links.copied') : t('common.copy')}
         </button>

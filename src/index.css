@@ -94,6 +94,17 @@ body {
   --accent-text: #4ade80;
 }
 
+/* The suite's key buttons and tray tabs (SDK 0.216) take a poll's own accent,
+   as the hand-rolled buttons did: the outline, key and tab arc are --accent
+   (4.5:1 on white, above), and on a dark ground the lighter --accent-text.
+   The orange theme keeps the SDK's brand oranges. */
+[data-theme]:not([data-theme="orange"]) {
+  --u-btn-accent: var(--accent); --u-btn-key: var(--accent);
+  --u-btn-accent-dark: var(--accent-text); --u-btn-key-dark: var(--accent-text);
+  --u-tab-accent: var(--accent); --u-tab-accent-text: var(--accent-text);
+  --u-tab-accent-dark: var(--accent-text); --u-tab-accent-text-dark: var(--accent-text);
+}
+
 /* Availability heat — how strongly a results cell is shaded by how many people
    are free. Driven by an inline --heat (0..1) and the theme accent. */
 .heat-cell {

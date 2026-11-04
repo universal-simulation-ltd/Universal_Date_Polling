@@ -1124,7 +1124,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 type="button"
                 onClick={suggestTimes}
                 disabled={suggesting}
-                className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-60"
+                className="u-btn u-btn--sm"
               >
                 {suggesting ? t('create.suggest_finding') : t.plural('create.suggest_button', SUGGEST_COUNT)}
               </button>
@@ -1160,7 +1160,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   <button
                     type="button"
                     onClick={() => connectCalendar('google')}
-                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="u-btn u-btn--sm"
                   >
                     {t('create.connect_google')}
                   </button>
@@ -1169,7 +1169,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                   <button
                     type="button"
                     onClick={() => connectCalendar('microsoft')}
-                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="u-btn u-btn--sm"
                   >
                     {t('create.connect_outlook')}
                   </button>
@@ -1212,7 +1212,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     type="button"
                     onClick={calVerifyCode}
                     disabled={calAuthPhase === 'verifying'}
-                    className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--accent-strong)] disabled:opacity-60"
+                    className="u-btn u-btn--sm"
                   >
                     {calAuthPhase === 'verifying' ? t('create.verifying') : t('create.verify')}
                   </button>
@@ -1239,7 +1239,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                     type="button"
                     onClick={calSendCode}
                     disabled={calAuthPhase === 'sending'}
-                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-60"
+                    className="u-btn u-btn--sm"
                   >
                     {calAuthPhase === 'sending' ? t('create.sending') : t('create.email_me_code')}
                   </button>
@@ -1414,7 +1414,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                           <button
                             type="button"
                             onClick={() => connectCalendar('google')}
-                            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="u-btn u-btn--sm"
                           >
                             {t('create.connect_google')}
                           </button>
@@ -1423,7 +1423,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                           <button
                             type="button"
                             onClick={() => connectCalendar('microsoft')}
-                            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="u-btn u-btn--sm"
                           >
                             {t('create.connect_outlook')}
                           </button>
@@ -1589,7 +1589,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
             type="button"
             onClick={phase === 'code' ? onVerify : onPrimary}
             disabled={phase === 'sending' || phase === 'creating'}
-            className="mt-4 w-full h-12 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-strong)] disabled:opacity-60"
+            className="u-btn u-btn--primary mt-4 w-full"
           >
             {phase === 'sending' && t('create.btn_sending')}
             {phase === 'creating' && (editingId ? t('create.btn_saving') : t('create.btn_creating'))}
@@ -1661,7 +1661,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
               <button
                 type="button"
                 onClick={startBrandOverride}
-                className="ml-auto rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                className="u-btn u-btn--sm ml-auto"
               >
                 {t('create.customise')}
               </button>
@@ -1737,7 +1737,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
                 <button
                   type="button"
                   onClick={logoPicker.open}
-                  className="cursor-pointer rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                  className="u-btn u-btn--sm"
                 >
                   {shownLogo ? t('create.logo_change') : t('create.logo_upload')}
                 </button>
@@ -1904,7 +1904,7 @@ function CreatedPanel({ pollBase, id, theme, poll, onEditTimes, editError, admin
           <button
             type="button"
             onClick={copy}
-            className="h-11 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-[var(--accent-strong)]"
+            className="u-btn u-btn--primary"
           >
             {copied ? t('create.copied') : t('common.copy')}
           </button>

@@ -32,7 +32,7 @@ export default function AdminLinkBox({ url, hasEmail }: { url: string; hasEmail:
         <button
           type="button"
           onClick={copy}
-          className="h-10 px-3 rounded-lg ring-1 ring-amber-300 dark:ring-amber-800 bg-white dark:bg-slate-900 text-sm font-semibold text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+          className="u-btn"
         >
           {copied ? t('links.copied') : t('common.copy')}
         </button>

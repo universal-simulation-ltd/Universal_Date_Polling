@@ -80,7 +80,7 @@ export default function AddToCalendar({ poll, slot, pollUrl, guests = [] }: {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-[var(--accent-text)] ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-[var(--accent)] hover:bg-[var(--accent-soft)] transition"
+        className="u-btn u-btn--sm"
       >
         <CalendarIcon />
         {t('share.calendar_button')}
