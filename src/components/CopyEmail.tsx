@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { GrowingTextarea } from '@unisim/sdk'
 import type { Slot } from '../lib/types'
 import { buildConfirmedEmail, type ConfirmedEmailPoll } from '../lib/confirmedEmail'
 import SettingsDialog from './SettingsDialog'
@@ -92,10 +93,10 @@ function CopyEmailDialog({ poll, slot, url, displayTz, recipients, recipientsLoa
         </Field>
 
         <Field label={t('share.email_message')} copyText={body} primary>
-          <textarea
+          <GrowingTextarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            rows={Math.min(16, Math.max(8, body.split('\n').length + 1))}
+            rows={8}
             className="w-full resize-y rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm leading-relaxed text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
           />
         </Field>
