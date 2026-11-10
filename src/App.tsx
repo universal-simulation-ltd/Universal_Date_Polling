@@ -86,6 +86,9 @@ export default function App() {
     // Images all carry the same line.
     <div className="flex flex-col min-h-screen bg-slate-100 dark:bg-slate-950 pt-[env(safe-area-inset-top)]">
       <UniversalAppsNavBar
+        // Signed in, the bar says whose it is: "Bradley’s Polls" ("James’ Polls",
+        // "My Polls" with no name), and Tune this app gets the account area (James, 2026-11-10 rollout).
+        personalTitle={(name) => (name ? `${/s$/i.test(name.trim()) ? `${name}’` : `${name}’s`} Polls` : 'My Polls')}
         product="polling"
         theme={theme}
         productLogo={<ProductLogo />}
