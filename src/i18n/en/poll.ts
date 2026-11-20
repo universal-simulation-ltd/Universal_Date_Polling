@@ -42,6 +42,20 @@ export default {
   'admin_failed': "That admin link didn't work for this poll, so you're seeing it as a guest. Check you copied the whole link.",
   'admin_unsupported': "Admin links aren't available just yet, so you're seeing this poll as a guest. Please try the link again later.",
   'admin_link_summary': 'Your private admin link', // a small fold-out link
+  // Email me a link to manage this poll (platform function poll-manage-link)
+  'manage_summary': 'Is this your poll? Manage it on this device', // a small fold-out link under the poll, for a host on a device that does not know them yet
+  'manage_body': "Gave your email when you made this poll? We'll email that address a link. Open it here and this browser can manage the poll: no password, nothing to sign up for.",
+  'manage_email_label': 'The email you made the poll with', // field label
+  'manage_send': 'Email me a link', // button
+  'manage_sending': 'Sending…', // the button while it works
+  'manage_sent': "If that's the address this poll was made with, a link to manage it is on its way. It works once, within the next hour. Check your spam folder if it doesn't arrive.", // shown after any request: it must never say whether the address was right
+  'manage_rate_limited': "That's a lot of requests. Please wait an hour and try again.",
+  'manage_error': "We couldn't send that just now. Please try again.",
+  'manage_err_email': "That email doesn't look right.",
+  'manage_checking': 'Checking your link…',
+  'manage_done': 'You can manage this poll from this browser now.',
+  'manage_failed': 'That link has expired or has already been used. Ask for a new one below.',
+  'admin_failed_email': 'Gave your email when you made the poll? Ask for a link to it below.', // under admin_failed; "below" is the manage_summary fold-out
   'signed_in_as': 'Signed in as {email} — {signout}', // {signout} is the "Sign out" button
   'sign_out': 'Sign out',
 

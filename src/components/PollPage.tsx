@@ -4,9 +4,10 @@ import { phoneApp } from '../native/shell'
 import { openConsentWindow } from '../native/calendarReturn'
 import { Chip, useRevealOnOpen, useUser, useUniversal, ValueChip } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
-import { bookSlot, BookingError, cancelBooking, claimPoll, currentUser, deleteResponse, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, responseNameForToken, saveResponseEmail, setFinalSlot, signOut, startGuestSession, submitResponse } from '../lib/api'
+import { bookSlot, BookingError, cancelBooking, claimPoll, currentUser, deleteResponse, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, redeemManageLink, requestManageLink, responseNameForToken, saveResponseEmail, setFinalSlot, signOut, startGuestSession, submitResponse } from '../lib/api'
 import { editTokenFromHash, forgetResponseToken, hashWithoutEditToken, nameStatus, rememberResponseToken, responseTokens } from '../lib/responseToken'
 import { adminTokenFromHash, hashWithoutAdminToken, rememberAdminToken, storedAdminToken } from '../lib/adminLink'
+import { hashWithoutManageToken, looksLikeEmail, manageTokenFromHash } from '../lib/manageLink'
 import { useOtpUser } from '../lib/otpSession'
 import { supabase } from '../lib/supabase'
 import { themeAttr, themeVars } from '../lib/theme'
@@ -15,7 +16,7 @@ import {
   formatCalendarDay, formatDateHeading, formatRange, formatTime, localTimezone, sameCalendarDay, slotDayKey, slotInstant, tzAbbrev,
 } from '../lib/time'
 import { CONTAINER_POLL } from '../lib/layout'
-import { adminLink, editLink, pollLink } from '../lib/appUrl'
+import { adminLink, appBase, editLink, pollLink } from '../lib/appUrl'
 import {
   addConfirmedTimeToCalendar, calendarMessage, calendarMessageOriginOk, calendarStatus, claimCalendar, removeConfirmedTimeFromCalendar, startCalendarConnect,
   type CalendarProvider, type CalendarStatus,
@@ -195,6 +196,38 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     // hostClientFor reads suiteUser/otpUser; claimStarted guards re-entry.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adminToken, poll?.id, otpUser, suiteUser?.id])
+
+  // ---- An emailed manage link (lib/manageLink.ts) ---------------------------
+  // Opened as /p/<id>#manage=<token>: out of the address bar at once, then
+  // redeemed, which signs this app's client in as the poll's host (the email
+  // account the poll was made with). Single use, so it is redeemed once.
+  const [manageToken] = useState(() => manageTokenFromHash(window.location.hash))
+  const [manageState, setManageState] = useState<'idle' | 'checking' | 'done' | 'failed'>('idle')
+  const manageStarted = useRef(false)
+  useEffect(() => {
+    if (!manageToken) return
+    const { pathname, search, hash } = window.location
+    window.history.replaceState(window.history.state, '', pathname + search + hashWithoutManageToken(hash))
+  }, [manageToken])
+  useEffect(() => {
+    if (!manageToken || !poll || otpUser === undefined || manageStarted.current) return
+    manageStarted.current = true
+    // Already the host here: nothing to redeem (and the link stays unspent).
+    if (hostClientFor(poll)) { setManageState('done'); return }
+    setManageState('checking')
+    void (async () => {
+      try {
+        const uid = await redeemManageLink(manageToken)
+        const fresh = await getPollResilient(poll.id)
+        if (fresh) setPoll(fresh)
+        setManageState(uid === (fresh ?? poll).host_user_id ? 'done' : 'failed')
+      } catch {
+        setManageState('failed')
+      }
+    })()
+    // hostClientFor reads suiteUser/otpUser; manageStarted guards re-entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manageToken, poll?.id, otpUser, suiteUser?.id])
 
   // ---- A respondent's own edit link (lib/responseToken.ts) ------------------
   // Opened as /p/<id>#edit=<token>: same handling as the admin link — read
@@ -746,6 +779,20 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
       {(adminClaim === 'failed' || adminClaim === 'unsupported') && (
         <div role="status" className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm">
           {adminClaim === 'failed' ? t('poll.admin_failed') : t('poll.admin_unsupported')}
+          {adminClaim === 'failed' && <span className="block mt-1">{t('poll.admin_failed_email')}</span>}
+        </div>
+      )}
+      {manageState === 'checking' && (
+        <p role="status" className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">{t('poll.manage_checking')}</p>
+      )}
+      {manageState === 'done' && isHost && (
+        <div role="status" className="mt-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 ring-1 ring-emerald-200 dark:ring-emerald-900 px-4 py-3 text-sm">
+          {t('poll.manage_done')}
+        </div>
+      )}
+      {manageState === 'failed' && !isHost && (
+        <div role="status" className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 ring-1 ring-amber-200 dark:ring-amber-900 px-4 py-3 text-sm">
+          {t('poll.manage_failed')}
         </div>
       )}
 
@@ -756,6 +803,16 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
           </summary>
           <AdminLinkBox url={adminLink(pollBase, poll.id, myAdminToken)} hasEmail={isOtpHost && !!otpUser?.email} />
         </details>
+      )}
+
+      {!isHost && manageState !== 'checking' && adminClaim !== 'claiming' && (
+        <ManageByEmail
+          pollId={poll.id}
+          base={appBase(pollBase)}
+          // Open from the start when the visitor plainly is the host on a new
+          // device: an admin link that didn't work, or a spent manage link.
+          startOpen={adminClaim === 'failed' || manageState === 'failed'}
+        />
       )}
 
       {isOtpHost && otpUser?.email && (
@@ -974,6 +1031,65 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
 
 /** A slot as one selectable row on a booking page. Shared by the guest's picker
  *  and the host's read-only preview so the two can't drift apart in wording. */
+/** "Is this your poll? Manage it on this device": emails the address the poll
+ *  was made with a one-time link (lib/manageLink.ts). Whatever the server makes
+ *  of the address, the page says the same thing afterwards. */
+function ManageByEmail({ pollId, base, startOpen }: { pollId: string; base: string; startOpen: boolean }) {
+  const t = useT()
+  const [open, setOpen] = useState(startOpen)
+  const [addr, setAddr] = useState('')
+  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'rate_limited' | 'error' | 'bad_email'>('idle')
+  useEffect(() => { if (startOpen) setOpen(true) }, [startOpen])
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault()
+    if (!looksLikeEmail(addr)) { setState('bad_email'); return }
+    setState('sending')
+    setState(await requestManageLink(pollId, addr, base))
+  }
+
+  return (
+    <details
+      open={open}
+      onToggle={(e) => setOpen(e.currentTarget.open)}
+      className="mt-3 text-center"
+    >
+      <summary className="cursor-pointer text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2">
+        {t('poll.manage_summary')}
+      </summary>
+      <form onSubmit={send} noValidate className="mt-3 rounded-xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 p-4 text-left">
+        <p className="text-xs text-slate-600 dark:text-slate-400">{t('poll.manage_body')}</p>
+        {state === 'sent' ? (
+          <p role="status" className="mt-3 text-sm text-slate-700 dark:text-slate-300">{t('poll.manage_sent')}</p>
+        ) : (
+          <>
+            <label htmlFor="manage-email" className="mt-3 block text-xs font-medium text-slate-700 dark:text-slate-300">{t('poll.manage_email_label')}</label>
+            <div className="mt-1 flex items-stretch gap-2">
+              <input
+                id="manage-email"
+                type="email"
+                value={addr}
+                onChange={(e) => { setAddr(e.target.value); if (state !== 'sending') setState('idle') }}
+                autoComplete="email"
+                placeholder={t('poll.email_placeholder')}
+                className="flex-1 min-w-0 h-10 rounded-lg border border-slate-300 dark:border-slate-700 px-3 text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900"
+              />
+              <button type="submit" disabled={state === 'sending'} className="u-btn">
+                {state === 'sending' ? t('poll.manage_sending') : t('poll.manage_send')}
+              </button>
+            </div>
+            {(state === 'bad_email' || state === 'rate_limited' || state === 'error') && (
+              <p role="alert" className="mt-2 text-xs text-red-700 dark:text-red-400">
+                {state === 'bad_email' ? t('poll.manage_err_email') : state === 'rate_limited' ? t('poll.manage_rate_limited') : t('poll.manage_error')}
+              </p>
+            )}
+          </>
+        )}
+      </form>
+    </details>
+  )
+}
+
 function SlotLine({ poll, slot, dayMode, activeTz, viewerTz, tzNote }: {
   poll: Poll; slot: Slot; dayMode: boolean; activeTz: string; viewerTz: string; tzNote: boolean
 }) {

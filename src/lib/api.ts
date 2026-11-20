@@ -112,6 +112,37 @@ export async function claimPoll(client: SupabaseClient, pollId: string, token: s
   return data === true
 }
 
+// ---- Email me a link to manage this poll (see manageLink.ts) ----------------
+
+export type ManageLinkRequest = 'sent' | 'rate_limited' | 'error'
+
+/** Ask the server to email the poll's host a link to manage it. 'sent' means
+ *  only that the server took the request: it answers the same whether or not
+ *  the address is the poll's (platform function poll-manage-link). */
+export async function requestManageLink(pollId: string, email: string, base: string): Promise<ManageLinkRequest> {
+  try {
+    const { error } = await supabase.functions.invoke('poll-manage-link', {
+      body: { pollId, email: email.trim(), lang: languageTag(), appBase: base },
+    })
+    if (!error) return 'sent'
+    const status = (error as { context?: Response }).context?.status
+    return status === 429 ? 'rate_limited' : 'error'
+  } catch {
+    return 'error'
+  }
+}
+
+/** Redeem an emailed manage link: signs THIS app's client in as the poll's
+ *  host (the same session the device that made the poll has). Returns the
+ *  host's uid; throws when the link has expired or was used already. */
+export async function redeemManageLink(tokenHash: string): Promise<string> {
+  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'magiclink' })
+  if (error) throw error
+  const uid = data.user?.id
+  if (!uid) throw new Error(getT()('lib.err_verify'))
+  return uid
+}
+
 export async function currentUser(): Promise<{ id: string; email: string | null } | null> {
   const { data } = await supabase.auth.getUser()
   return data.user ? { id: data.user.id, email: data.user.email ?? null } : null
