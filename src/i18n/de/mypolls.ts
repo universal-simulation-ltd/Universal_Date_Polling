@@ -33,6 +33,10 @@ const mypolls: Draft['mypolls'] = {
   'select_poll': '{title} auswählen',
   'delete_failed_one': 'Diese Umfrage konnte nicht gelöscht werden – bitte versuche es erneut.',
   'delete_failed_some': '{failed} von {total} Umfragen konnten nicht gelöscht werden – bitte versuche es erneut.',
+  'select': 'Auswählen',
+  'delete_poll': '{title} löschen',
+  'deleted': '„{title}“ gelöscht.',
+  'undo': 'Rückgängig',
 }
 
 export default mypolls

@@ -33,6 +33,10 @@ const mypolls: Draft['mypolls'] = {
   'select_poll': 'Seç: {title}',
   'delete_failed_one': 'Bu anket silinemedi — lütfen tekrar deneyin.',
   'delete_failed_some': '{total} anketten {failed} tanesi silinemedi — lütfen tekrar deneyin.',
+  'select': 'Seç',
+  'delete_poll': 'Sil: {title}',
+  'deleted': '“{title}” silindi.',
+  'undo': 'Geri al',
 }
 
 export default mypolls

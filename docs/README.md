@@ -132,6 +132,17 @@ Three things are worth knowing about it:
   the old "Delete all N" for the live polls; `e2e/selection.e2e.mjs` drives it. `onDeleted`
   tells the create page to re-read the free-token gate, or its "1 token per
   poll" banner keeps claiming the token you just got back is in use.
+- **In the phone app the rows swipe** (BRANDING.md ▸ "A deletable row swipes",
+  `@unisim/sdk` ≥ 0.230.2 phone kit: `SwipeRow` / `SwipeGroup`, `useHold`,
+  `useLeaveSelection`). Swipe LEFT uncovers Delete: the row leaves at once, an
+  Undo toast stays six seconds, and only then does `remove()` run
+  (`src/native/deferredDelete.ts` — a poll cannot be put back once deleted, so
+  the delete waits rather than restoring; a second delete, the app going to the
+  background or the list unmounting sends the waiting one at once). Swipe RIGHT
+  uncovers Select, and a hold ticks the row too; while anything is ticked each
+  row is one tick box (a tap ticks, never opens) and Clear, Android's back or a
+  swipe in from the left edge leaves. The website is unchanged (tick boxes and
+  the inline Delete). `e2e/swipe.e2e.mjs` drives it with real touches at 390px.
 - **It renders nothing when there's nothing to say.** No polls, or still
   loading, means no card at all — a permanent empty "you have no polls" box
   above the create form would be the first thing every new host saw. **From

@@ -35,4 +35,9 @@ export default {
   'select_poll': 'Select {title}', // a row's tick box (screen readers); {title} = the poll's title
   'delete_failed_one': "That poll couldn't be deleted — please try again.",
   'delete_failed_some': "{failed} of {total} polls couldn't be deleted — please try again.",
+  // The phone app's swipes and Undo
+  'select': 'Select', // a row's swipe action: puts the poll in the selection
+  'delete_poll': 'Delete {title}', // the swipe's Delete, for screen readers
+  'deleted': 'Deleted “{title}”.', // the Undo toast after a swipe deletes a poll
+  'undo': 'Undo', // the toast's button
 }

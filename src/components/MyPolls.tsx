@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useId, useState } from 'react'
-import { SelectCheckbox, SelectionBar, ValueChip, phoneConfirm, useSelection } from '@unisim/sdk'
+import { useCallback, useEffect, useId, useState, type ReactNode, type TouchEvent } from 'react'
+import {
+  SelectCheckbox, SelectionBar, SwipeGroup, SwipeRow, ValueChip, phoneConfirm, useHold, useLeaveSelection, useSelection,
+  type ListSelection,
+} from '@unisim/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { deletePolls, listMyPolls } from '../lib/api'
 import { pollLink } from '../lib/appUrl'
@@ -8,6 +11,8 @@ import {
   mergeMyPolls, pollSummary, responsesLabel, splitMyPolls,
 } from '../lib/myPolls'
 import type { MyPoll } from '../lib/types'
+import { phoneApp } from '../native/shell'
+import { useDeferredDelete } from '../native/deferredDelete'
 import { useT } from '../i18n'
 
 /** From this many active polls the panel folds itself away, and starts folded.
@@ -150,7 +155,14 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
     setConfirmBatch(null)
   }
 
-  const { active, expired } = splitMyPolls(data?.polls ?? [])
+  // The phone app's swipes (BRANDING.md ▸ "A deletable row swipes"): swipe
+  // LEFT to delete, with Undo — the poll leaves the list at once and is
+  // deleted six seconds later unless Undo brings it back (useDeferredDelete);
+  // swipe RIGHT, or hold a row, to select it into the bar below. The website
+  // keeps its Delete link and tick boxes.
+  const phone = phoneApp()
+  const pending = useDeferredDelete<MyPoll>((p) => remove([p.id]))
+  const { active, expired } = splitMyPolls((data?.polls ?? []).filter((p) => p.id !== pending.item?.id))
   const collapsible = active.length >= COLLAPSE_FROM
   const expanded = !collapsible || open
 
@@ -161,6 +173,11 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
   const sel = useSelection(expanded
     ? [...active, ...(showExpired ? expired : [])].map((p) => p.id)
     : [])
+  // Selection mode on the phone is "something is ticked": a hold ticks the
+  // row; Clear, Android's back or a swipe in from the left edge leaves.
+  const selecting = phone && sel.count > 0
+  const holdStart = useHold((id) => sel.setMany([id], true))
+  useLeaveSelection(selecting, sel.clear, { enabled: phone })
 
   // Nothing loaded yet, and nothing to report: stay out of the way entirely.
   if (!data) return null
@@ -201,6 +218,21 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
     onDelete: () => remove([p.id]),
   })
 
+  const row = (p: MyPoll) => (phone
+    ? (
+      <PhoneRow
+        key={p.id}
+        poll={p}
+        sel={sel}
+        selecting={selecting}
+        onHoldStart={holdStart(p.id)}
+        onDelete={() => { setDeleteError(null); setConfirmId(null); pending.remove(p) }}
+      >
+        <PollRow as="div" {...rowProps(p)} />
+      </PhoneRow>
+    )
+    : <PollRow key={p.id} {...rowProps(p)} />)
+
   return (
     <section className="mb-4 rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-5 sm:p-6 pop-in">
       {/* The heading is the toggle when there is a toggle, and a plain heading
@@ -216,7 +248,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
         panelId={listId}
       />
 
-      {active.length === 0 && (
+      {active.length === 0 && expired.length > 0 && (
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {expired.length === 1 ? t('mypolls.nothing_active_one_poll') : t('mypolls.nothing_active_polls')}
         </p>
@@ -238,7 +270,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
 
       {expanded && (
         <ul id={listId} className="mt-3 space-y-2">
-          {active.map((p) => <PollRow key={p.id} {...rowProps(p)} />)}
+          <SwipeGroup>{active.map(row)}</SwipeGroup>
         </ul>
       )}
 
@@ -279,13 +311,17 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
 
           {showExpired && (
             <ul id={expiredId} className="mt-3 space-y-2">
-              {expired.map((p) => <PollRow key={p.id} {...rowProps(p)} />)}
+              <SwipeGroup>{expired.map(row)}</SwipeGroup>
             </ul>
           )}
         </div>
       )}
 
       {deleteError && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{deleteError}</p>}
+
+      {pending.item && (
+        <UndoToast text={t('mypolls.deleted', { title: pending.item.title })} onUndo={pending.undo} />
+      )}
 
       {failed && (
         <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">
@@ -342,7 +378,9 @@ function Heading({ title, count, collapsible, open, onToggle, panelId }: {
   )
 }
 
-function PollRow({ poll, pollBase, selected, onToggleSelect, copied, confirming, busy, onCopy, onAskDelete, onCancelDelete, onDelete }: {
+function PollRow({ as: Tag = 'li', poll, pollBase, selected, onToggleSelect, copied, confirming, busy, onCopy, onAskDelete, onCancelDelete, onDelete }: {
+  /** `div` inside the phone app's swipe row, which is the list item there. */
+  as?: 'li' | 'div'
   poll: MyPoll
   pollBase: string
   selected: boolean
@@ -371,7 +409,7 @@ function PollRow({ poll, pollBase, selected, onToggleSelect, copied, confirming,
     // A poll is a row you open: the suite's Orbit corner (BRANDING.md → Boxes,
     // A). It stays a plain list item rather than one big link, because its tick
     // box, Copy link and Delete are controls of their own.
-    <li className="u-box u-box--orbit u-box--row flex items-start gap-3 bg-white dark:bg-slate-900 px-3 py-3">
+    <Tag className="u-box u-box--orbit u-box--row flex items-start gap-3 bg-white dark:bg-slate-900 px-3 py-3">
       <SelectCheckbox
         checked={selected}
         onChange={onToggleSelect}
@@ -444,7 +482,7 @@ function PollRow({ poll, pollBase, selected, onToggleSelect, copied, confirming,
           />
         )}
       </div>
-    </li>
+    </Tag>
   )
 }
 
@@ -478,6 +516,96 @@ function ConfirmStrip({ question, confirmLabel, busy, onConfirm, onCancel }: {
           {busy ? t('mypolls.deleting') : confirmLabel}
         </button>
       </div>
+    </div>
+  )
+}
+
+const BIN_ICON = (
+  <svg viewBox="0 0 16 16" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+    <path d="M6.5 1a1 1 0 0 0-1 1v.5H2.75a.75.75 0 0 0 0 1.5h10.5a.75.75 0 0 0 0-1.5H10.5V2a1 1 0 0 0-1-1h-3ZM4.5 5.5h7l-.6 8.1a1.5 1.5 0 0 1-1.5 1.4H6.6a1.5 1.5 0 0 1-1.5-1.4L4.5 5.5Z" />
+  </svg>
+)
+const TICK_ICON = (
+  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="4" y="4" width="16" height="16" rx="4" />
+    <path d="m8.5 12.5 2.5 2.5 4.5-5.5" />
+  </svg>
+)
+
+/**
+ * A poll row in the phone app: the SDK's swipe row (LEFT uncovers Delete,
+ * RIGHT uncovers Select), and a hold that selects. While anything is ticked
+ * the whole row is one tick box, so a tap ticks rather than opening the poll;
+ * the row's own tick box stays drawn underneath as the sign of which are.
+ */
+function PhoneRow({ poll, sel, selecting, onHoldStart, onDelete, children }: {
+  poll: MyPoll
+  sel: ListSelection
+  selecting: boolean
+  onHoldStart: (e: TouchEvent) => void
+  onDelete: () => void
+  children: ReactNode
+}) {
+  const t = useT()
+  if (selecting) {
+    const on = sel.has(poll.id)
+    return (
+      <li className="relative">
+        <div aria-hidden="true" className="pointer-events-none" ref={(el) => el?.setAttribute('inert', '')}>
+          {children}
+        </div>
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={on}
+          aria-label={t('mypolls.select_poll', { title: poll.title })}
+          onClick={() => sel.toggle(poll.id)}
+          className={`absolute inset-0 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${on ? 'bg-orange-500/10 ring-2 ring-orange-500' : ''}`}
+        />
+      </li>
+    )
+  }
+  return (
+    <li onTouchStart={onHoldStart}>
+      <SwipeRow
+        id={poll.id}
+        left={{
+          text: t('mypolls.select'),
+          label: t('mypolls.select_poll', { title: poll.title }),
+          icon: TICK_ICON,
+          tone: 'accent',
+          onAction: () => sel.setMany([poll.id], true),
+        }}
+        right={{
+          text: t('common.delete'),
+          label: t('mypolls.delete_poll', { title: poll.title }),
+          icon: BIN_ICON,
+          tone: 'danger',
+          onAction: onDelete,
+        }}
+        // The row's own tick box and Delete link already do both jobs for
+        // VoiceOver, TalkBack and a keyboard.
+        focusActions={false}
+        className="rounded-xl"
+      >
+        {children}
+      </SwipeRow>
+    </li>
+  )
+}
+
+/** "Deleted “Team lunch”. Undo" — at the foot of the screen for six seconds. */
+function UndoToast({ text, onUndo }: { text: string; onUndo: () => void }) {
+  const t = useT()
+  return (
+    <div
+      role="status"
+      className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-[1100] flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-4 rounded-2xl bg-slate-900 px-4 py-3 text-sm text-white shadow-xl dark:bg-slate-100 dark:text-slate-900"
+    >
+      <span className="min-w-0 truncate">{text}</span>
+      <button type="button" onClick={onUndo} className="shrink-0 font-semibold text-orange-300 dark:text-orange-700">
+        {t('mypolls.undo')}
+      </button>
     </div>
   )
 }
