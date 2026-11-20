@@ -58,9 +58,9 @@ const lib: Draft['lib'] = {
   'delete_expired_one': '¿Eliminar esta encuesta caducada y sus respuestas? No se puede deshacer.',
   'delete_expired_other': '¿Eliminar las {count} encuestas caducadas y sus respuestas? No se puede deshacer.',
   'cannot_undo': 'No se puede deshacer.',
-  'delete_active': '¿Eliminar las {polls} encuestas activas? Sus enlaces dejarán de funcionar al instante y no se puede deshacer.',
-  'delete_active_responses_one': '¿Eliminar las {polls} encuestas activas y su {count} respuesta? Sus enlaces dejarán de funcionar al instante y no se puede deshacer.',
-  'delete_active_responses_other': '¿Eliminar las {polls} encuestas activas y sus {count} respuestas? Sus enlaces dejarán de funcionar al instante y no se puede deshacer.',
+  'delete_selected': '¿Eliminar estas {polls} encuestas para todos? Sus enlaces dejarán de funcionar al instante y no se puede deshacer.',
+  'delete_selected_responses_one': '¿Eliminar estas {polls} encuestas y su {count} respuesta para todos? Sus enlaces dejarán de funcionar al instante y no se puede deshacer.',
+  'delete_selected_responses_other': '¿Eliminar estas {polls} encuestas y sus {count} respuestas para todos? Sus enlaces dejarán de funcionar al instante y no se puede deshacer.',
   'delete_active_booked': 'Una reserva ya hecha NO se cancela: esa invitación sigue en los dos calendarios.',
 
   // The free allowance banner (lib/freeAllowance.ts)

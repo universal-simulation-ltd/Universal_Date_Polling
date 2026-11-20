@@ -23,6 +23,7 @@ const mypolls: Draft['mypolls'] = {
   'hide_expired_one': 'Masquer {count} expiré',
   'hide_expired_other': 'Masquer {count} expirés',
   'deleting': 'Suppression…',
+  'select_poll': 'Sélectionner {title}',
   'delete_failed_one': 'Ce sondage n’a pas pu être supprimé — veuillez réessayer.',
   'delete_failed_some': 'Impossible de supprimer {failed} des {total} sondages — veuillez réessayer.',
 }

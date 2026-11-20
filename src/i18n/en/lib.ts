@@ -65,10 +65,10 @@ export default {
   'delete_expired_one': "Delete this expired poll and its responses? This can't be undone.", // one expired poll
   'delete_expired_other': "Delete all {count} expired polls and their responses? This can't be undone.",
   'cannot_undo': "This can't be undone.", // added after a single poll's question
-  // Deleting every live poll at once; {polls} is 2 or more
-  'delete_active': "Delete all {polls} active polls? Their links stop working immediately and this can't be undone.",
-  'delete_active_responses_one': "Delete all {polls} active polls and their {count} response? Their links stop working immediately and this can't be undone.",
-  'delete_active_responses_other': "Delete all {polls} active polls and their {count} responses? Their links stop working immediately and this can't be undone.",
+  // Deleting the ticked polls at once (Select all / Delete selected); {polls} is 2 or more
+  'delete_selected': "Delete these {polls} polls for everyone? Their links stop working immediately and this can't be undone.",
+  'delete_selected_responses_one': "Delete these {polls} polls and their {count} response for everyone? Their links stop working immediately and this can't be undone.",
+  'delete_selected_responses_other': "Delete these {polls} polls and their {count} responses for everyone? Their links stop working immediately and this can't be undone.",
   'delete_active_booked': 'A booking already taken is NOT cancelled — that invite stays in both calendars.', // added after the question above
 
   // The free allowance banner on the create screen (lib/freeAllowance.ts);

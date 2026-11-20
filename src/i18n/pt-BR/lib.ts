@@ -59,9 +59,9 @@ const lib: Draft['lib'] = {
   'delete_expired_other': 'Excluir todas as {count} enquetes expiradas e suas respostas? Isso não pode ser desfeito.',
   'cannot_undo': 'Isso não pode ser desfeito.',
   // Deleting every live poll at once
-  'delete_active': 'Excluir todas as {polls} enquetes ativas? Os links param de funcionar na hora, e isso não pode ser desfeito.',
-  'delete_active_responses_one': 'Excluir todas as {polls} enquetes ativas e sua {count} resposta? Os links param de funcionar na hora, e isso não pode ser desfeito.',
-  'delete_active_responses_other': 'Excluir todas as {polls} enquetes ativas e suas {count} respostas? Os links param de funcionar na hora, e isso não pode ser desfeito.',
+  'delete_selected': 'Excluir estas {polls} enquetes para todos? Os links param de funcionar na hora, e isso não pode ser desfeito.',
+  'delete_selected_responses_one': 'Excluir estas {polls} enquetes e sua {count} resposta para todos? Os links param de funcionar na hora, e isso não pode ser desfeito.',
+  'delete_selected_responses_other': 'Excluir estas {polls} enquetes e suas {count} respostas para todos? Os links param de funcionar na hora, e isso não pode ser desfeito.',
   'delete_active_booked': 'Um agendamento já feito NÃO é cancelado: o convite continua nas duas agendas.',
 
   // The free allowance banner on the create screen

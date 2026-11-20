@@ -58,9 +58,9 @@ const lib: Draft['lib'] = {
   'delete_expired_one': 'Diese abgelaufene Umfrage und ihre Antworten löschen? Das lässt sich nicht rückgängig machen.',
   'delete_expired_other': 'Alle {count} abgelaufenen Umfragen und ihre Antworten löschen? Das lässt sich nicht rückgängig machen.',
   'cannot_undo': 'Das lässt sich nicht rückgängig machen.',
-  'delete_active': 'Alle {polls} aktiven Umfragen löschen? Ihre Links funktionieren sofort nicht mehr, und das lässt sich nicht rückgängig machen.',
-  'delete_active_responses_one': 'Alle {polls} aktiven Umfragen und ihre {count} Antwort löschen? Ihre Links funktionieren sofort nicht mehr, und das lässt sich nicht rückgängig machen.',
-  'delete_active_responses_other': 'Alle {polls} aktiven Umfragen und ihre {count} Antworten löschen? Ihre Links funktionieren sofort nicht mehr, und das lässt sich nicht rückgängig machen.',
+  'delete_selected': 'Diese {polls} Umfragen für alle löschen? Ihre Links funktionieren sofort nicht mehr, und das lässt sich nicht rückgängig machen.',
+  'delete_selected_responses_one': 'Diese {polls} Umfragen und ihre {count} Antwort für alle löschen? Ihre Links funktionieren sofort nicht mehr, und das lässt sich nicht rückgängig machen.',
+  'delete_selected_responses_other': 'Diese {polls} Umfragen und ihre {count} Antworten für alle löschen? Ihre Links funktionieren sofort nicht mehr, und das lässt sich nicht rückgängig machen.',
   'delete_active_booked': 'Bereits gebuchte Termine werden NICHT storniert – deren Einladungen bleiben in beiden Kalendern.',
 
   // The free allowance banner on the create screen

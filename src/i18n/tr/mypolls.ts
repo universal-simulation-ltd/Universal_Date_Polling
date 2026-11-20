@@ -30,6 +30,7 @@ const mypolls: Draft['mypolls'] = {
   'hide_expired_one': 'Süresi dolan {count} anketi gizle',
   'hide_expired_other': 'Süresi dolan {count} anketi gizle',
   'deleting': 'Siliniyor…',
+  'select_poll': 'Seç: {title}',
   'delete_failed_one': 'Bu anket silinemedi — lütfen tekrar deneyin.',
   'delete_failed_some': '{total} anketten {failed} tanesi silinemedi — lütfen tekrar deneyin.',
 }

@@ -30,6 +30,7 @@ const mypolls: Draft['mypolls'] = {
   'hide_expired_one': '{count} abgelaufene ausblenden',
   'hide_expired_other': '{count} abgelaufene ausblenden',
   'deleting': 'Wird gelöscht…',
+  'select_poll': '{title} auswählen',
   'delete_failed_one': 'Diese Umfrage konnte nicht gelöscht werden – bitte versuche es erneut.',
   'delete_failed_some': '{failed} von {total} Umfragen konnten nicht gelöscht werden – bitte versuche es erneut.',
 }

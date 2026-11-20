@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MyPoll, Slot } from './types'
 import {
-  confirmedLabel, deleteAllActivePrompt, deleteAllPrompt, deletePrompt, expiryLabel, isExpired, mergeMyPolls,
+  confirmedLabel, deleteSelectedPrompt, deleteAllPrompt, deletePrompt, expiryLabel, isExpired, mergeMyPolls,
   pollSummary, responsesLabel, splitMyPolls,
 } from './myPolls'
 
@@ -152,31 +152,41 @@ describe('deleteAllPrompt', () => {
   })
 })
 
-describe('deleteAllActivePrompt', () => {
+describe('deleteSelectedPrompt', () => {
   it('falls back to the single-poll question for a list of one', () => {
-    expect(deleteAllActivePrompt([poll({ response_count: 2 })]))
+    expect(deleteSelectedPrompt([poll({ response_count: 2 })]))
       .toBe("Delete this poll and its 2 responses? This can't be undone.")
   })
 
   it('counts the responses across every poll about to go', () => {
-    expect(deleteAllActivePrompt([poll({ id: 'a', response_count: 2 }), poll({ id: 'b', response_count: 5 })]))
-      .toBe("Delete all 2 active polls and their 7 responses? Their links stop working immediately and this can't be undone.")
+    expect(deleteSelectedPrompt([poll({ id: 'a', response_count: 2 }), poll({ id: 'b', response_count: 5 })]))
+      .toBe("Delete these 2 polls and their 7 responses for everyone? Their links stop working immediately and this can't be undone.")
   })
 
   it('says nothing about responses when there are none to lose', () => {
-    expect(deleteAllActivePrompt([poll({ id: 'a' }), poll({ id: 'b' })]))
-      .toBe("Delete all 2 active polls? Their links stop working immediately and this can't be undone.")
+    expect(deleteSelectedPrompt([poll({ id: 'a' }), poll({ id: 'b' })]))
+      .toBe("Delete these 2 polls for everyone? Their links stop working immediately and this can't be undone.")
   })
 
   it('warns that a booking already taken is not cancelled', () => {
     const booked = poll({ id: 'b', booking_mode: true, final_slot_id: 's1' })
-    expect(deleteAllActivePrompt([poll({ id: 'a' }), booked]))
+    expect(deleteSelectedPrompt([poll({ id: 'a' }), booked]))
       .toContain('A booking already taken is NOT cancelled')
   })
 
   it('leaves the booking warning out when nothing has been booked', () => {
     const openBooking = poll({ id: 'b', booking_mode: true })
-    expect(deleteAllActivePrompt([poll({ id: 'a' }), openBooking]))
+    expect(deleteSelectedPrompt([poll({ id: 'a' }), openBooking]))
       .not.toContain('NOT cancelled')
+  })
+
+  it('never calls a mixed selection "active"', () => {
+    const gone = poll({ id: 'b', expires_at: '2000-01-01T00:00:00Z' })
+    expect(deleteSelectedPrompt([poll({ id: 'a' }), gone])).not.toMatch(/active/i)
+  })
+
+  it('counts a single response in the singular', () => {
+    expect(deleteSelectedPrompt([poll({ id: 'a', response_count: 1 }), poll({ id: 'b' })]))
+      .toBe("Delete these 2 polls and their 1 response for everyone? Their links stop working immediately and this can't be undone.")
   })
 })

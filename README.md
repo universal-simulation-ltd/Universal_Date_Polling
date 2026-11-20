@@ -53,7 +53,8 @@ Part of the [Universal Apps](https://opensource.unisim.co.uk) suite by
   from three polls up), each with how many people have replied, the
   confirmed time if you've picked one, when the link expires, and a copy-link
   button — and a **Delete**, with "delete all" for the expired ones in a single
-  step. A poll id is ten random characters, so before this the only route back
+  step. Every row has a tick box: **Select all**, then **Delete selected**
+  (asks first, counting the responses that go with them) or **Clear**. A poll id is ten random characters, so before this the only route back
   to a poll was the link you kept.
 - **Your logo, up front** — a signed-in host's square company mark (or a logo
   picked in the Branding box) sits beside the app mark at the top of the create

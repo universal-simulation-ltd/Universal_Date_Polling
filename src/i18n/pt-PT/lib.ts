@@ -58,9 +58,9 @@ const lib: Draft['lib'] = {
   'delete_expired_one': 'Eliminar esta sondagem expirada e as respetivas respostas? Não é possível anular.',
   'delete_expired_other': 'Eliminar as {count} sondagens expiradas e as respetivas respostas? Não é possível anular.',
   'cannot_undo': 'Não é possível anular.',
-  'delete_active': 'Eliminar as {polls} sondagens ativas? As ligações deixam de funcionar de imediato e não é possível anular.',
-  'delete_active_responses_one': 'Eliminar as {polls} sondagens ativas e a sua {count} resposta? As ligações deixam de funcionar de imediato e não é possível anular.',
-  'delete_active_responses_other': 'Eliminar as {polls} sondagens ativas e as suas {count} respostas? As ligações deixam de funcionar de imediato e não é possível anular.',
+  'delete_selected': 'Eliminar estas {polls} sondagens para todos? As ligações deixam de funcionar de imediato e não é possível anular.',
+  'delete_selected_responses_one': 'Eliminar estas {polls} sondagens e a sua {count} resposta para todos? As ligações deixam de funcionar de imediato e não é possível anular.',
+  'delete_selected_responses_other': 'Eliminar estas {polls} sondagens e as suas {count} respostas para todos? As ligações deixam de funcionar de imediato e não é possível anular.',
   'delete_active_booked': 'Uma marcação já feita NÃO é cancelada — esse convite mantém-se nos dois calendários.',
 
   // The free allowance banner on the create screen

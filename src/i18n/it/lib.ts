@@ -58,9 +58,9 @@ const lib: Draft['lib'] = {
   'delete_expired_one': 'Eliminare questo sondaggio scaduto e le sue risposte? L’operazione non si può annullare.',
   'delete_expired_other': 'Eliminare tutti i {count} sondaggi scaduti e le loro risposte? L’operazione non si può annullare.',
   'cannot_undo': 'L’operazione non si può annullare.',
-  'delete_active': 'Eliminare tutti i {polls} sondaggi attivi? I loro link smetteranno subito di funzionare e l’operazione non si può annullare.',
-  'delete_active_responses_one': 'Eliminare tutti i {polls} sondaggi attivi e la loro {count} risposta? I loro link smetteranno subito di funzionare e l’operazione non si può annullare.',
-  'delete_active_responses_other': 'Eliminare tutti i {polls} sondaggi attivi e le loro {count} risposte? I loro link smetteranno subito di funzionare e l’operazione non si può annullare.',
+  'delete_selected': 'Eliminare questi {polls} sondaggi per tutti? I loro link smetteranno subito di funzionare e l’operazione non si può annullare.',
+  'delete_selected_responses_one': 'Eliminare questi {polls} sondaggi e la loro {count} risposta per tutti? I loro link smetteranno subito di funzionare e l’operazione non si può annullare.',
+  'delete_selected_responses_other': 'Eliminare questi {polls} sondaggi e le loro {count} risposte per tutti? I loro link smetteranno subito di funzionare e l’operazione non si può annullare.',
   'delete_active_booked': 'Una prenotazione già fatta NON viene annullata: quell’invito resta in entrambi i calendari.',
 
   // The free allowance banner on the create screen

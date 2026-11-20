@@ -58,9 +58,9 @@ const lib: Draft['lib'] = {
   'delete_expired_one': 'Süresi dolan bu anket ve yanıtları silinsin mi? Bu işlem geri alınamaz.',
   'delete_expired_other': 'Süresi dolan {count} anketin tümü ve yanıtları silinsin mi? Bu işlem geri alınamaz.',
   'cannot_undo': 'Bu işlem geri alınamaz.',
-  'delete_active': 'Etkin {polls} anketin tümü silinsin mi? Bağlantıları hemen çalışmayı durdurur ve bu işlem geri alınamaz.',
-  'delete_active_responses_one': 'Etkin {polls} anketin tümü ve {count} yanıtı silinsin mi? Bağlantıları hemen çalışmayı durdurur ve bu işlem geri alınamaz.',
-  'delete_active_responses_other': 'Etkin {polls} anketin tümü ve {count} yanıtı silinsin mi? Bağlantıları hemen çalışmayı durdurur ve bu işlem geri alınamaz.',
+  'delete_selected': 'Bu {polls} anket herkes için silinsin mi? Bağlantıları hemen çalışmayı durdurur ve bu işlem geri alınamaz.',
+  'delete_selected_responses_one': 'Bu {polls} anket ve {count} yanıtı herkes için silinsin mi? Bağlantıları hemen çalışmayı durdurur ve bu işlem geri alınamaz.',
+  'delete_selected_responses_other': 'Bu {polls} anket ve {count} yanıtı herkes için silinsin mi? Bağlantıları hemen çalışmayı durdurur ve bu işlem geri alınamaz.',
   'delete_active_booked': 'Önceden alınmış bir randevu iptal EDİLMEZ — o davet iki takvimde de kalır.',
 
   // The free allowance banner on the create screen

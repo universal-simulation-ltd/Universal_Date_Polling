@@ -32,6 +32,7 @@ export default {
   'hide_expired_one': 'Hide {count} expired',
   'hide_expired_other': 'Hide {count} expired',
   'deleting': 'Deleting…',
+  'select_poll': 'Select {title}', // a row's tick box (screen readers); {title} = the poll's title
   'delete_failed_one': "That poll couldn't be deleted — please try again.",
   'delete_failed_some': "{failed} of {total} polls couldn't be deleted — please try again.",
 }

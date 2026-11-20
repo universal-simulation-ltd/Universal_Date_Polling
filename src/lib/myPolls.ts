@@ -116,23 +116,26 @@ export function deleteAllPrompt(n: number): string {
   return getT().plural('lib.delete_expired', n)
 }
 
-/** And for every LIVE poll at once — a heavier question than the expired batch,
- *  so it is asked with more of the detail it turns on.
+/** And for the polls the host has TICKED (Select all / Delete selected) — a
+ *  heavier question than one row's, so it is asked with more of the detail it
+ *  turns on.
  *
- *  These links are out in the world: deleting them breaks a page other people
- *  still have open, and takes the answers they have already given with it. So
- *  the count of responses about to go is named (it is the part that cannot be
- *  undone), and a booking that has been taken gets the warning the single
- *  delete gives — the invite stays in both calendars, so the other person is
- *  still expecting the meeting. */
-export function deleteAllActivePrompt(polls: MyPoll[]): string {
+ *  Deleting a poll removes it for everyone, not just from this list: its link
+ *  stops working for the people who still have it open, and the answers they
+ *  have already given go with it. So the question says "for everyone", names
+ *  the count of responses about to go (the part that cannot be undone), and a
+ *  booking that has been taken gets the warning the single delete gives — the
+ *  invite stays in both calendars, so the other person is still expecting the
+ *  meeting. The ticked set can mix live and expired polls; nothing here says
+ *  "active", because it may not be. */
+export function deleteSelectedPrompt(polls: MyPoll[]): string {
   const t = getT()
   if (polls.length === 1) return `${deletePrompt(polls[0])} ${t('lib.cannot_undo')}`
   const responses = polls.reduce((sum, p) => sum + p.response_count, 0)
   const count = t.num(polls.length)
   const question = responses > 0
-    ? t.plural('lib.delete_active_responses', responses, { polls: count })
-    : t('lib.delete_active', { polls: count })
+    ? t.plural('lib.delete_selected_responses', responses, { polls: count })
+    : t('lib.delete_selected', { polls: count })
   const booked = polls.some((p) => p.booking_mode && p.final_slot_id)
   return booked ? `${question} ${t('lib.delete_active_booked')}` : question
 }

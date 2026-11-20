@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useId, useState } from 'react'
-import { ValueChip } from '@unisim/sdk'
+import { SelectCheckbox, SelectionBar, ValueChip, phoneConfirm, useSelection } from '@unisim/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { deletePolls, listMyPolls } from '../lib/api'
 import { pollLink } from '../lib/appUrl'
 import {
-  confirmedLabel, deleteAllActivePrompt, deleteAllPrompt, deletePrompt, expiryLabel, isExpired,
+  confirmedLabel, deleteAllPrompt, deletePrompt, deleteSelectedPrompt, expiryLabel, isExpired,
   mergeMyPolls, pollSummary, responsesLabel, splitMyPolls,
 } from '../lib/myPolls'
 import type { MyPoll } from '../lib/types'
@@ -67,11 +67,10 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
   // mid-delete. Two-step in the page rather than `window.confirm`, which reads
   // as a browser error and cannot be styled.
   const [confirmId, setConfirmId] = useState<string | null>(null)
-  // Which batch is asking, if any. Two batches now (every live poll, every
-  // expired one) and they must not be one boolean: the two confirmations ask
-  // different questions about different polls, and the wrong one appearing is
-  // the worst possible bug in a delete.
-  const [confirmBatch, setConfirmBatch] = useState<'active' | 'expired' | null>(null)
+  // Whether the expired batch is asking. Several live polls at once go through
+  // the tick boxes and the selection bar instead (Select all, Delete selected),
+  // which asks its own question.
+  const [confirmBatch, setConfirmBatch] = useState<'expired' | null>(null)
   const [busyIds, setBusyIds] = useState<string[]>([])
   const [deleteError, setDeleteError] = useState<string | null>(null)
   // Bumped by Retry; the effect keys off it so a retry is one state change
@@ -151,10 +150,20 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
     setConfirmBatch(null)
   }
 
+  const { active, expired } = splitMyPolls(data?.polls ?? [])
+  const collapsible = active.length >= COLLAPSE_FROM
+  const expanded = !collapsible || open
+
+  // Tick boxes cover exactly the rows on screen: the live list while it is
+  // open, plus the expired ones while they are shown. Folding a list away
+  // drops its rows out of the selection, so Delete selected can never take a
+  // poll the host cannot currently see.
+  const sel = useSelection(expanded
+    ? [...active, ...(showExpired ? expired : [])].map((p) => p.id)
+    : [])
+
   // Nothing loaded yet, and nothing to report: stay out of the way entirely.
   if (!data) return null
-
-  const { active, expired } = splitMyPolls(data.polls)
 
   if (data.polls.length === 0) {
     // A failure and a genuinely empty account look identical from here, so the
@@ -178,11 +187,11 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
     )
   }
 
-  const collapsible = active.length >= COLLAPSE_FROM
-  const expanded = !collapsible || open
   const rowProps = (p: MyPoll) => ({
     poll: p,
     pollBase,
+    selected: sel.has(p.id),
+    onToggleSelect: () => sel.toggle(p.id),
     copied: copiedId === p.id,
     confirming: confirmId === p.id,
     busy: busyIds.includes(p.id),
@@ -213,32 +222,19 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
         </p>
       )}
 
-      {/* Delete every live poll at once. Only while the list is OPEN and only
-          from two polls up: a bulk delete of things the host cannot currently
-          see destroys the unseen, and on a one-poll list it is just the row's
-          own Delete a second time. It asks before it does anything — these
-          links are out with other people, unlike the expired batch. */}
-      {expanded && active.length > 1 && confirmBatch !== 'active' && (
-        <div className="mt-1 flex justify-end">
-          <button
-            type="button"
-            onClick={() => { setDeleteError(null); setConfirmId(null); setConfirmBatch('active') }}
-            className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-red-700 dark:hover:text-red-400 underline underline-offset-2"
-          >
-            {t('mypolls.delete_all', { count: t.num(active.length) })}
-          </button>
-        </div>
-      )}
-
-      {confirmBatch === 'active' && (
-        <ConfirmStrip
-          question={deleteAllActivePrompt(active)}
-          confirmLabel={t('mypolls.delete_all', { count: t.num(active.length) })}
-          busy={busyIds.length > 0}
-          onConfirm={() => remove(active.map((p) => p.id))}
-          onCancel={() => setConfirmBatch(null)}
-        />
-      )}
+      {/* Select several, then act — the same Delete as a row's (the poll goes
+          for everyone, through the session that owns it), with a question
+          that counts the responses and warns about taken bookings. */}
+      <SelectionBar
+        sel={sel}
+        className="mt-2"
+        onDelete={(ids) => remove(ids)}
+        confirm={() => phoneConfirm({
+          message: deleteSelectedPrompt(data.polls.filter((p) => sel.has(p.id))),
+          confirmLabel: t('common.delete'),
+          danger: true,
+        })}
+      />
 
       {expanded && (
         <ul id={listId} className="mt-1">
@@ -346,9 +342,11 @@ function Heading({ title, count, collapsible, open, onToggle, panelId }: {
   )
 }
 
-function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete, onCancelDelete, onDelete }: {
+function PollRow({ poll, pollBase, selected, onToggleSelect, copied, confirming, busy, onCopy, onAskDelete, onCancelDelete, onDelete }: {
   poll: MyPoll
   pollBase: string
+  selected: boolean
+  onToggleSelect: () => void
   copied: boolean
   confirming: boolean
   busy: boolean
@@ -370,71 +368,79 @@ function PollRow({ poll, pollBase, copied, confirming, busy, onCopy, onAskDelete
   // answer any more.
   const dead = isExpired(poll)
   return (
-    <li className="border-t border-slate-100 dark:border-slate-800 py-3 first:border-t-0 last:pb-0">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        {/* A plain href, not a router push: App reads the route from the URL on
-            load and on popstate, so a normal navigation is the whole story. */}
-        <a href={href} className="min-w-0 font-semibold text-slate-900 dark:text-slate-100 hover:text-orange-700 dark:hover:text-orange-400 underline-offset-2 hover:underline">
-          {poll.title}
-        </a>
-        <ValueChip
-          size="sm"
-          className="shrink-0"
-          tone={poll.response_count > 0 || (poll.booking_mode && poll.final_slot_id) ? 'good' : undefined}
-        >
-          {responsesLabel(poll)}
-        </ValueChip>
-      </div>
+    <li className="flex items-start gap-3 border-t border-slate-100 dark:border-slate-800 py-3 first:border-t-0 last:pb-0">
+      <SelectCheckbox
+        checked={selected}
+        onChange={onToggleSelect}
+        label={t('mypolls.select_poll', { title: poll.title })}
+        className="mt-0.5 shrink-0"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          {/* A plain href, not a router push: App reads the route from the URL on
+              load and on popstate, so a normal navigation is the whole story. */}
+          <a href={href} className="min-w-0 font-semibold text-slate-900 dark:text-slate-100 hover:text-orange-700 dark:hover:text-orange-400 underline-offset-2 hover:underline">
+            {poll.title}
+          </a>
+          <ValueChip
+            size="sm"
+            className="shrink-0"
+            tone={poll.response_count > 0 || (poll.booking_mode && poll.final_slot_id) ? 'good' : undefined}
+          >
+            {responsesLabel(poll)}
+          </ValueChip>
+        </div>
 
-      {/* Summary and actions share a line — this panel sits ABOVE the create
-          form, so every line it spends is one the form is pushed down by. It
-          wraps to two on a narrow phone, which is the only place it needs to. */}
-      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {poll.booking_mode && <span className="font-medium text-slate-600 dark:text-slate-300">{t('mypolls.booking_page')} · </span>}
-          {pollSummary(poll)}
-          {expiry && <> · {expiry}</>}
-        </p>
-        {!confirming && (
-          <div className="flex items-center gap-3 text-xs">
-            {!dead && (
+        {/* Summary and actions share a line — this panel sits ABOVE the create
+            form, so every line it spends is one the form is pushed down by. It
+            wraps to two on a narrow phone, which is the only place it needs to. */}
+        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {poll.booking_mode && <span className="font-medium text-slate-600 dark:text-slate-300">{t('mypolls.booking_page')} · </span>}
+            {pollSummary(poll)}
+            {expiry && <> · {expiry}</>}
+          </p>
+          {!confirming && (
+            <div className="flex items-center gap-3 text-xs">
+              {!dead && (
+                <button
+                  type="button"
+                  onClick={onCopy}
+                  className="u-btn u-btn--sm"
+                >
+                  {copied ? t('mypolls.copied') : t('mypolls.copy_link')}
+                </button>
+              )}
+              <a href={href} className="font-medium text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline underline-offset-2">
+                {t('mypolls.open')}
+              </a>
               <button
                 type="button"
-                onClick={onCopy}
-                className="u-btn u-btn--sm"
+                onClick={onAskDelete}
+                className="font-medium text-slate-400 hover:text-red-700 dark:hover:text-red-400 underline-offset-2 hover:underline"
               >
-                {copied ? t('mypolls.copied') : t('mypolls.copy_link')}
+                {t('common.delete')}
               </button>
-            )}
-            <a href={href} className="font-medium text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline underline-offset-2">
-              {t('mypolls.open')}
-            </a>
-            <button
-              type="button"
-              onClick={onAskDelete}
-              className="font-medium text-slate-400 hover:text-red-700 dark:hover:text-red-400 underline-offset-2 hover:underline"
-            >
-              {t('common.delete')}
-            </button>
-          </div>
+            </div>
+          )}
+        </div>
+
+        {confirmed && (
+          <p className="mt-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+            {poll.booking_mode ? t('mypolls.booked_on', { when: confirmed }) : t('mypolls.confirmed_on', { when: confirmed })}
+          </p>
+        )}
+
+        {confirming && (
+          <ConfirmStrip
+            question={deletePrompt(poll)}
+            confirmLabel={t('common.delete')}
+            busy={busy}
+            onConfirm={onDelete}
+            onCancel={onCancelDelete}
+          />
         )}
       </div>
-
-      {confirmed && (
-        <p className="mt-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-          {poll.booking_mode ? t('mypolls.booked_on', { when: confirmed }) : t('mypolls.confirmed_on', { when: confirmed })}
-        </p>
-      )}
-
-      {confirming && (
-        <ConfirmStrip
-          question={deletePrompt(poll)}
-          confirmLabel={t('common.delete')}
-          busy={busy}
-          onConfirm={onDelete}
-          onCancel={onCancelDelete}
-        />
-      )}
     </li>
   )
 }

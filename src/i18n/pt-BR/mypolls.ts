@@ -30,6 +30,7 @@ const mypolls: Draft['mypolls'] = {
   'hide_expired_one': 'Ocultar {count} expirada',
   'hide_expired_other': 'Ocultar {count} expiradas',
   'deleting': 'Excluindo…',
+  'select_poll': 'Selecionar {title}',
   'delete_failed_one': 'Não foi possível excluir essa enquete. Tente de novo.',
   'delete_failed_some': 'Não foi possível excluir {failed} de {total} enquetes. Tente de novo.',
 }

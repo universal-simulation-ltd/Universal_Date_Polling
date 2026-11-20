@@ -122,7 +122,14 @@ Three things are worth knowing about it:
   back the ids that actually went is what stops the panel striking off a row
   that is still there. Rows are deleted through the client that returned them
   (see the previous point), the confirm is a two-step strip in the page rather
-  than `window.confirm`, and the expired section has a "delete all". `onDeleted`
+  than `window.confirm`, and the expired section has a "delete all". Several
+  at once go through the SDK's select-several bar (`useSelection`,
+  `SelectCheckbox`, `SelectionBar`, `@unisim/sdk` 0.227): a tick box on every
+  row on screen (expired rows only while shown; folding the list drops its rows
+  out of the selection), and Delete selected runs the same `remove()` with its
+  own question, `deleteSelectedPrompt` — the poll goes for everyone, so it says
+  so, counts the responses, and repeats the taken-booking warning. It replaced
+  the old "Delete all N" for the live polls; `e2e/selection.e2e.mjs` drives it. `onDeleted`
   tells the create page to re-read the free-token gate, or its "1 token per
   poll" banner keeps claiming the token you just got back is in use.
 - **It renders nothing when there's nothing to say.** No polls, or still
