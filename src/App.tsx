@@ -88,7 +88,12 @@ export default function App() {
       <UniversalAppsNavBar
         // Signed in, the bar says whose it is: "Bradley’s Polls" ("James’ Polls",
         // "My Polls" with no name), and Tune this app gets the account area (James, 2026-11-10 rollout).
-        personalTitle={(name) => (name ? `${/s$/i.test(name.trim()) ? `${name}’` : `${name}’s`} Polls` : 'My Polls')}
+        // In the app's language; only English says “’s”, and a name ending in s takes the apostrophe alone.
+        personalTitle={(name) => {
+          if (!name) return t('app.personal_title_mine')
+          const title = t('app.personal_title', { name })
+          return /s$/i.test(name.trim()) ? title.replace(`${name}’s`, `${name}’`) : title
+        }}
         product="polling"
         theme={theme}
         productLogo={<ProductLogo />}

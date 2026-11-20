@@ -15,6 +15,9 @@ const app: Draft['app'] = {
   'slot_view_label': 'Verfügbarkeit startet mit',
   'meta_title': 'Universal Date Polling — finde einen Termin, der allen passt',
   'meta_description': 'Universal Date Polling — ein kostenloser Gruppenplaner. Erstelle eine Umfrage, wähle Tage und Uhrzeiten, teile einen Link und sieh, wann alle frei sind. Abstimmen ohne Anmeldung, 100 % kostenlos, Open Source.',
+
+  'personal_title': 'Umfragen von {name}',
+  'personal_title_mine': 'Meine Umfragen',
 }
 
 export default app

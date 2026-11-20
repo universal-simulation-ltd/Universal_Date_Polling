@@ -15,6 +15,9 @@ const app: Draft['app'] = {
   'slot_view_label': 'A disponibilidade abre em',
   'meta_title': 'Universal Date Polling — encontre uma hora que dê jeito a todos',
   'meta_description': 'Universal Date Polling — um agendador de grupo gratuito. Crie uma sondagem, escolha datas e horas, partilhe uma ligação e veja quando todos estão disponíveis. Sem registo para votar, 100% gratuito, código aberto.',
+
+  'personal_title': 'Sondagens de {name}',
+  'personal_title_mine': 'As minhas sondagens',
 }
 
 export default app

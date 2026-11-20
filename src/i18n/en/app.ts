@@ -18,4 +18,8 @@ export default {
   // The browser tab and the search snippet (index.html's <title> and meta description, set at run time)
   'meta_title': 'Universal Date Polling — find a time that works for everyone', // the browser tab title; keep the product name untranslated
   'meta_description': 'Universal Date Polling — a free group scheduler. Create a poll, pick some dates and times, share a link, and see when everyone is free. No sign-up to vote, 100% free, open source.', // the page's meta description, about 160 characters
+
+  // Signed in, the bar's name for the app (and Tune this app ▸ App name's default)
+  'personal_title': '{name}’s Polls', // the bar's name for the app once signed in; {name} is the person's first name
+  'personal_title_mine': 'My Polls', // signed in, no name known
 }

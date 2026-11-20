@@ -15,6 +15,9 @@ const app: Draft['app'] = {
   'slot_view_label': 'Uygunluk şu görünümde açılır',
   'meta_title': 'Universal Date Polling — herkese uyan bir zaman bulun',
   'meta_description': 'Universal Date Polling — ücretsiz bir grup planlayıcısı. Bir anket oluşturun, tarih ve saatler seçin, bir bağlantı paylaşın ve herkesin ne zaman uygun olduğunu görün. Oy vermek için kayıt gerekmez, %100 ücretsiz, açık kaynak.',
+
+  'personal_title': '{name} · Anketler',
+  'personal_title_mine': 'Anketlerim',
 }
 
 export default app
