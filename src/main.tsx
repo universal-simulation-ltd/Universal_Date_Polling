@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { UniversalProvider, installButtonStyles, installTabStyles } from '@unisim/sdk'
+import { UniversalProvider, installBoxStyles, installButtonStyles, installTabStyles } from '@unisim/sdk'
 import { Capacitor } from '@capacitor/core'
 import type { ProductCode } from '@unisim/sdk'
 import App from './App'
@@ -67,6 +67,10 @@ function GuestSessionSync() {
 // poll's own accent.
 installButtonStyles()
 installTabStyles()
+// The suite's box marks (BRANDING.md → Boxes), also as class strings
+// (u-box u-box--orbit / --key / --frame): the sheet goes in once; index.css
+// gives the orbit arc and the leading bracket a poll's own accent.
+installBoxStyles()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

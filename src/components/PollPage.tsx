@@ -1183,16 +1183,22 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
         {foldable && <FoldButton onClick={() => onOpenChange(false)} />}
       </div>
       {total === 0 ? (
-        <p className="mt-2 px-1 text-sm text-slate-500 dark:text-slate-400">
+        // Nobody has answered yet: an empty state, so the suite's Viewfinder
+        // box with nothing in frame (BRANDING.md → Boxes, D), corners muted.
+        <p className="u-box u-box--frame u-box--empty mt-3 text-sm text-slate-500 dark:text-slate-400">
           {isHost ? t('poll.no_responses_host') : t('poll.no_responses_guest')}
         </p>
       ) : (
-        <div className="mt-3 space-y-4">
+        <div className="mt-6 space-y-7">
           {groupByDay(slots).map(([day, list]) => (
-            <div key={day} className="rounded-2xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
-              <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            // One day's tally: a record carrying values, so the suite's Key box
+            // (BRANDING.md → Boxes, C), its neutral tab naming the day. No
+            // overflow-hidden (it would clip the tab), so a confirmed row's tint
+            // rounds its own last corners.
+            <div key={day} className="u-box u-box--key bg-white dark:bg-slate-900 shadow-sm p-0 pt-3">
+              <span className="u-box__key">
                 {dayMode ? formatCalendarDay(day) : formatDateHeading(slotInstant(list[0].start, poll.timezone), activeTz)}
-              </div>
+              </span>
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {list.map((s) => {
                   const row = tally.find((x) => x.slot.id === s.id)!
@@ -1201,7 +1207,7 @@ function Results({ poll, slots, responses, viewerTz, activeTz, pollUrl, isHost, 
                   const best = row.yes.length > 0 && row.yes.length === maxYes
                   const isFinal = finalSlotId === s.id
                   return (
-                    <div key={s.id} className={`px-4 py-3 ${isFinal ? 'bg-emerald-50/60 dark:bg-emerald-950/30' : ''}`}>
+                    <div key={s.id} className={`px-4 py-3 last:rounded-b-[10px] ${isFinal ? 'bg-emerald-50/60 dark:bg-emerald-950/30' : ''}`}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{dayMode ? t('poll.all_day') : formatRange(inst, s.durationMins, activeTz)}</span>
@@ -1347,13 +1353,16 @@ function ConfirmedBanner({ poll, slot, pollUrl, viewerTz, activeTz, dayMode, isH
   const upgradable = connected.filter((p) => !calStatus?.[p].writable && calStatus?.[p].ceiling.writable)
   const staleOnly = upgradable.length > 0 && writable.length === 0
   return (
-    <div className="mt-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 ring-1 ring-emerald-200 dark:ring-emerald-800 px-5 py-4">
+    // The settled time: a record carrying a value, so the suite's Key box
+    // (BRANDING.md → Boxes, C). The tab names it ("✓ Confirmed time", "✓ Booked
+    // by …") and stays neutral; the green stays on the card.
+    <div className="u-box u-box--key mt-8 border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-5 pb-4 pt-6">
+      <span className="u-box__key">
+        {isBooking ? (bookedBy ? t('poll.booked_by', { name: bookedBy }) : t('poll.booked')) : t('poll.confirmed_time')}
+      </span>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-            {isBooking ? (bookedBy ? t('poll.booked_by', { name: bookedBy }) : t('poll.booked')) : t('poll.confirmed_time')}
-          </div>
-          <div className="mt-0.5 text-lg font-bold text-slate-900 dark:text-slate-100 break-words">{when}</div>
+          <div className="text-lg font-bold text-slate-900 dark:text-slate-100 break-words">{when}</div>
           {tzNote && <div className="text-xs text-slate-500 dark:text-slate-400">{viewerTimeNote(formatRange(inst, slot.durationMins, viewerTz), inst, activeTz, viewerTz)}</div>}
           {poll.location && <PollLocation location={poll.location} className="mt-1.5" />}
         </div>
@@ -1586,7 +1595,9 @@ function FoldedSection({ title, summary, onOpen }: { title: string; summary: str
       type="button"
       onClick={onOpen}
       aria-expanded={false}
-      className="mt-7 flex w-full items-center justify-between gap-3 rounded-2xl bg-white dark:bg-slate-900 px-5 py-4 text-left shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 transition hover:ring-[var(--accent)] sm:px-6"
+      // A card you tap to open its section: the suite's Orbit corner
+      // (BRANDING.md → Boxes, A); hover sweeps the arc further round.
+      className="u-box u-box--orbit mt-7 flex w-full items-center justify-between gap-3 bg-white dark:bg-slate-900 px-5 py-4 text-left shadow-sm sm:px-6"
     >
       <span className="min-w-0">
         <span className="block text-base font-bold text-slate-900 dark:text-slate-100">{title}</span>

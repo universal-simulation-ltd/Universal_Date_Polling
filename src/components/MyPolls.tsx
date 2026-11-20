@@ -237,7 +237,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
       />
 
       {expanded && (
-        <ul id={listId} className="mt-1">
+        <ul id={listId} className="mt-3 space-y-2">
           {active.map((p) => <PollRow key={p.id} {...rowProps(p)} />)}
         </ul>
       )}
@@ -278,7 +278,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
           )}
 
           {showExpired && (
-            <ul id={expiredId} className="mt-1">
+            <ul id={expiredId} className="mt-3 space-y-2">
               {expired.map((p) => <PollRow key={p.id} {...rowProps(p)} />)}
             </ul>
           )}
@@ -368,7 +368,10 @@ function PollRow({ poll, pollBase, selected, onToggleSelect, copied, confirming,
   // answer any more.
   const dead = isExpired(poll)
   return (
-    <li className="flex items-start gap-3 border-t border-slate-100 dark:border-slate-800 py-3 first:border-t-0 last:pb-0">
+    // A poll is a row you open: the suite's Orbit corner (BRANDING.md → Boxes,
+    // A). It stays a plain list item rather than one big link, because its tick
+    // box, Copy link and Delete are controls of their own.
+    <li className="u-box u-box--orbit u-box--row flex items-start gap-3 bg-white dark:bg-slate-900 px-3 py-3">
       <SelectCheckbox
         checked={selected}
         onChange={onToggleSelect}

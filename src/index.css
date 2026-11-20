@@ -97,8 +97,10 @@ body {
 /* The suite's key buttons and tray tabs (SDK 0.216) take a poll's own accent,
    as the hand-rolled buttons did: the outline, key and tab arc are --accent
    (4.5:1 on white, above), and on a dark ground the lighter --accent-text.
-   The orange theme keeps the SDK's brand oranges. */
+   The orange theme keeps the SDK's brand oranges. The box marks (BRANDING.md
+   → Boxes: the orbit arc, a viewfinder's leading bracket) follow suit. */
 [data-theme]:not([data-theme="orange"]) {
+  --u-box-accent: var(--accent); --u-box-accent-dark: var(--accent-text);
   --u-btn-accent: var(--accent); --u-btn-key: var(--accent);
   --u-btn-accent-dark: var(--accent-text); --u-btn-key-dark: var(--accent-text);
   --u-tab-accent: var(--accent); --u-tab-accent-text: var(--accent-text);

@@ -401,7 +401,9 @@ function FormPicker({ slots, onChange, timezone }: { slots: Slot[]; onChange: (s
       )}
 
       {slots.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+        // No times yet: an empty state, so the suite's Viewfinder box with
+        // nothing in frame (BRANDING.md → Boxes, D), all four corners muted.
+        <p className="u-box u-box--frame u-box--empty mt-4 px-4 py-5 text-sm text-slate-500 dark:text-slate-400">
           {t.rich('slots.no_times_yet', { button: <span className="font-medium">{t('slots.add_time')}</span> })}
         </p>
       ) : (
