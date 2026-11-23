@@ -143,6 +143,17 @@ Three things are worth knowing about it:
   row is one tick box (a tap ticks, never opens) and Clear, Android's back or a
   swipe in from the left edge leaves. The website is unchanged (tick boxes and
   the inline Delete). `e2e/swipe.e2e.mjs` drives it with real touches at 390px.
+- **The Universal ID session is left out until its two-step code is in**
+  (2026-11-23, `566ece4`, `@unisim/sdk` ^0.242.0). Since platform 0343 an
+  account with an authenticator app is refused its own polls at aal1:
+  `list_my_polls` answers `[]`, not an error. `CreatePoll` passes `MyPolls`
+  the suite client only once `useTwoStepDue(suiteClient, userId)` says
+  `'clear'`, so the owed session simply looks absent (the merge already copes
+  with either session missing) and is read without a reload when the code is
+  entered (the hook re-asks on `unisim:two-step-verified`). On a poll page the
+  host's respondent addresses and calendar status go through
+  `ownerReadClientFor` (`PollPage.tsx`), which refuses the suite client the
+  same way; both effects re-run on the hook's answer.
 - **It renders nothing when there's nothing to say.** No polls, or still
   loading, means no card at all — a permanent empty "you have no polls" box
   above the create form would be the first thing every new host saw. **From
