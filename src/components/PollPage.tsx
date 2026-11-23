@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { askConfirm } from '../native/parts'
 import { phoneApp } from '../native/shell'
 import { openConsentWindow } from '../native/calendarReturn'
-import { Chip, useRevealOnOpen, useUser, useUniversal, ValueChip } from '@unisim/sdk'
+import { Chip, useRevealOnOpen, useTwoStepDue, useUser, useUniversal, ValueChip } from '@unisim/sdk'
 import type { Availability, Poll, PollBranding, PollResponse, Slot } from '../lib/types'
 import { bookSlot, BookingError, cancelBooking, claimPoll, currentUser, deleteResponse, getPollResilient, getRespondentEmails, getResponses, notifyPollHost, notifyRespondents, redeemManageLink, requestManageLink, responseNameForToken, saveResponseEmail, setFinalSlot, signOut, startGuestSession, submitResponse } from '../lib/api'
 import { editTokenFromHash, forgetResponseToken, hashWithoutEditToken, nameStatus, rememberResponseToken, responseTokens } from '../lib/responseToken'
@@ -142,6 +142,10 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // their client is the one RLS will accept the "confirm slot" update on.
   const { user: suiteUser } = useUser()
   const { supabase: suiteClient } = useUniversal()
+  // A suite session that still owes its two-step code is refused the host's
+  // own reads (platform 0343): they come back empty, not as errors. The two
+  // host reads below wait for the code (ownerReadClientFor), then run again.
+  const suiteTwoStep = useTwoStepDue(suiteClient, suiteUser?.id ?? null)
   // Follows this app's client, so a sign-out anywhere — here, the navbar, or
   // another tab — is reflected without a reload.
   const otpUser = useOtpUser()
@@ -287,7 +291,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // leaves calStatus null and simply hides the control.
   useEffect(() => {
     if (!poll) return
-    const client = hostClientFor(poll)
+    const client = ownerReadClientFor(poll)
     if (!client) { setCalStatus(null); return }
     let live = true
     calendarStatus(client)
@@ -296,7 +300,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     return () => { live = false }
     // suiteUser/otpUser decide which client (if any) hostClientFor returns.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poll?.id, suiteUser?.id, otpUser?.id])
+  }, [poll?.id, suiteUser?.id, otpUser?.id, suiteTwoStep])
 
   // While the host is changing the times, check back quietly every 15 seconds,
   // so the page opens by itself once they save — no "Loading poll…" flash, and
@@ -318,7 +322,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
   // The host's respondent addresses, for a confirmed ordinary poll. Not on a
   // booking page: its one guest was invited when they booked.
   useEffect(() => {
-    const client = poll && poll.final_slot_id && !poll.booking_mode ? hostClientFor(poll) : null
+    const client = poll && poll.final_slot_id && !poll.booking_mode ? ownerReadClientFor(poll) : null
     if (!poll || !client) { setContacts(null); return }
     let live = true
     setContactsLoading(true)
@@ -329,7 +333,7 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     return () => { live = false }
     // suiteUser/otpUser decide which client (if any) hostClientFor returns.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poll?.id, poll?.final_slot_id, poll?.booking_mode, suiteUser?.id, otpUser?.id])
+  }, [poll?.id, poll?.final_slot_id, poll?.booking_mode, suiteUser?.id, otpUser?.id, suiteTwoStep])
 
   // Pre-fill the form if this browser has already responded under a known name.
   useEffect(() => {
@@ -457,6 +461,13 @@ export default function PollPage({ id, pollBase }: { id: string; pollBase: strin
     if (suiteUser?.id === p.host_user_id) return suiteClient
     if (otpUser && otpUser.id === p.host_user_id) return supabase
     return null
+  }
+
+  // hostClientFor, for a READ of the host's own data: not the suite session
+  // while it still owes its two-step code, whose answer would be empty.
+  function ownerReadClientFor(p: Poll) {
+    const client = hostClientFor(p)
+    return client === suiteClient && suiteTwoStep !== 'clear' ? null : client
   }
 
   async function confirmSlot(slotId: string | null) {

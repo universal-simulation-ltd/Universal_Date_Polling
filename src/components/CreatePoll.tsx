@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { phoneApp } from '../native/shell'
 import { openConsentWindow, type ConsentWindow } from '../native/calendarReturn'
 import { useT, getT } from '../i18n'
-import { Chip, SignInDialog, useFileDrop, useRevealOnOpen, useOrg, useOrgBranding, useSubscription, useUniversal, useUser } from '@unisim/sdk'
+import { Chip, SignInDialog, useFileDrop, useRevealOnOpen, useOrg, useOrgBranding, useSubscription, useTwoStepDue, useUniversal, useUser } from '@unisim/sdk'
 import type { NewPoll, PollBranding, PollMode, Slot, Theme } from '../lib/types'
 import { isHexTheme, THEMES } from '../lib/types'
 import { hexOfTheme, themeAttr, themeVars } from '../lib/theme'
@@ -163,6 +163,10 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
   const { org, orgs, loading: orgLoading } = useOrg()
   const orgBranding = useOrgBranding()
   const { supabase: suiteClient } = useUniversal()
+  // Owing the two-step code, the suite session is refused its own polls
+  // (platform 0343: list_my_polls answers []), so "Your polls" leaves it out
+  // until the code is entered, then reads it without a reload.
+  const suiteTwoStep = useTwoStepDue(suiteClient, suiteUser?.id ?? null)
   // "Sign in to import your branding" opens the SDK's in-app sign-in rather
   // than linking to the hub: the hub's /login sent a newcomer on to the Assess
   // portal afterwards and dropped the poll they were half-way through.
@@ -967,7 +971,7 @@ export default function CreatePoll({ pollBase }: { pollBase: string }) {
           the page for everybody making their first one. */}
       <MyPolls
         pollBase={pollBase}
-        suiteClient={suiteLoggedIn ? suiteClient : null}
+        suiteClient={suiteLoggedIn && suiteTwoStep === 'clear' ? suiteClient : null}
         // Any guest session on this device, with an email or without one —
         // an admin-link host's polls are listed here too.
         otpClient={guestUser ? supabase : null}
