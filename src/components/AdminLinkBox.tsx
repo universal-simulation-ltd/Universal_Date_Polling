@@ -15,6 +15,15 @@ export default function AdminLinkBox({ url, hasEmail }: { url: string; hasEmail:
       /* clipboard blocked — the field is selectable as a fallback */
     }
   }
+  // Phones and some desktops have a share sheet; elsewhere only Copy shows.
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+  async function share() {
+    try {
+      await navigator.share({ title: t('links.admin_title'), url })
+    } catch {
+      /* dismissed, or not allowed — Copy is still there */
+    }
+  }
   return (
     <div className="mt-6 rounded-xl bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-200 dark:ring-amber-900 p-4 text-left">
       <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">{t('links.admin_title')}</p>
@@ -36,6 +45,11 @@ export default function AdminLinkBox({ url, hasEmail }: { url: string; hasEmail:
         >
           {copied ? t('links.copied') : t('common.copy')}
         </button>
+        {canShare && (
+          <button type="button" onClick={share} className="u-btn">
+            {t('links.share')}
+          </button>
+        )}
       </div>
     </div>
   )

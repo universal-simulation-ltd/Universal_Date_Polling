@@ -107,6 +107,13 @@ export function storedAdminToken(pollId: string, storage: Storage | undefined = 
   return typeof t === 'string' && isAdminToken(t) ? t : null
 }
 
+/** Every poll whose admin link this device holds, newest remembered last. */
+export function storedAdminTokens(storage: Storage | undefined = defaultStorage()): { id: string; token: string }[] {
+  return Object.entries(readStore(storage))
+    .filter(([, t]) => typeof t === 'string' && isAdminToken(t))
+    .map(([id, token]) => ({ id, token }))
+}
+
 export function forgetAdminToken(pollId: string, storage: Storage | undefined = defaultStorage()): void {
   if (!storage) return
   const all = readStore(storage)

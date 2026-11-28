@@ -6,8 +6,9 @@ const links: Draft['links'] = {
   // The host's private admin link
   'admin_title': 'A sua ligação de administração privada',
   'admin_body_email': 'Guarde-a só para si. Abre a página de administração da sondagem em qualquer dispositivo em que tenha confirmado o mesmo endereço de e-mail, para aí confirmar um horário, alterar a sondagem ou eliminá-la.',
-  'admin_body_no_email': 'Guarde-a só para si — quem a tiver pode gerir a sondagem: confirmar um horário, alterá-la ou eliminá-la. Guarde-a num local seguro: é a única forma de gerir a sondagem a partir de outro dispositivo, ou aqui, se os dados deste navegador forem apagados.',
+  'admin_body_no_email': 'Guarde-a só para si — quem a tiver pode gerir a sondagem: confirmar um horário, alterá-la ou eliminá-la. Guarde-a num local seguro: é a única forma de gerir a sondagem a partir de outro dispositivo, ou aqui, se os dados deste navegador forem apagados. Se o perder, ninguém poderá alterar a sondagem.',
   'admin_field': 'Ligação de administração privada',
+  'share': 'Partilhar',
 
   // A respondent's own edit link
   'edit_title': 'A sua ligação de edição',

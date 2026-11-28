@@ -40,4 +40,10 @@ export default {
   'delete_poll': 'Delete {title}', // the swipe's Delete, for screen readers
   'deleted': 'Deleted “{title}”.', // the Undo toast after a swipe deletes a poll
   'undo': 'Undo', // the toast's button
+
+  // Polls kept on this device (their private admin link is stored here) that this session no longer hosts
+  'on_device_title': 'Kept on this device',
+  'on_device_note': 'Your session ended, so these open with their private admin link. Open one to manage it again.',
+  'copy_admin': 'Copy admin link',
+  'forget': 'Forget',
 }

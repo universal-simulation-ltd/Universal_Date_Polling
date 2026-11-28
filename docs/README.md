@@ -3,10 +3,11 @@
 ## What this repo is
 
 Universal Date Polling is a free, open-source group scheduler — the simple
-"find a time that works for everyone" tool. The host creates a poll of
-candidate dates/times (signing in, confirming an email address with a
-one-time code, or — once the server has `claim_poll` — keeping the poll's
-private admin link instead; see `src/lib/adminLink.ts`), shares a link, and
+"find a time that works for everyone" tool. The host creates a poll of candidate dates/times with **no account**: the poll is
+hosted by an anonymous session and managed through its private admin link
+(`src/lib/adminLink.ts`, migration 0281). An email is
+optional (response alerts, booking emails, a manage link to another device) and,
+if given, is confirmed with a one-time code as before. The host shares a link, and
 anyone can respond
 Free / If-need-be per slot with no account; a live tally badges the best slot.
 
@@ -163,6 +164,28 @@ Three things are worth knowing about it:
   Expired ones sit behind their own toggle rather than vanishing (a host looking
   for last week's poll should find it saying "Expired"), and they lose their
   Copy link, since nobody can answer them.
+
+## Hosting without an account
+
+- **Create:** no email means `startGuestSession()` (anonymous sign-in) + a random
+  32-character admin token whose SHA-256 is stored in `polls.admin_token_hash`.
+  The "Your poll is live" screen shows the admin link once, with Copy and (where
+  the browser has a share sheet) Share, and says that anyone with it can manage the
+  poll and that if it is lost nobody can change the poll.
+- **On this device:** `rememberAdminToken` keeps poll id + token in localStorage
+  (`unipoll-admin-links`, never sent anywhere). "Your polls" lists the guest session's
+  polls from the server; any poll whose admin link is held here but that the session
+  no longer lists (signed out of the suite clears the guest session too) appears under
+  **Kept on this device**, opening via its admin link (which re-claims it), with Copy
+  admin link and Forget. A poll that no longer exists is forgotten. Those rows have no
+  tick box or Delete: the host session is needed for that, and it returns on opening.
+- **Email:** the backend has no sender for the admin link itself (the server only
+  holds its hash). `poll-manage-link` emails a one-time *manage* link to a
+  confirmed-email host; that is the only email path, and nothing new was built.
+- **Existing signed-in hosts:** a Universal ID host still sees their polls (the suite
+  client in "Your polls"). `claim_poll` never moves a poll off a real account, so an
+  admin link cannot be minted for an account-owned poll; they reach it by signing in
+  (navbar / Tune this app) or the emailed manage link.
 
 ## The host's own calendar (Phase 3)
 

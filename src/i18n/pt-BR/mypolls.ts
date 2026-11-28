@@ -37,6 +37,11 @@ const mypolls: Draft['mypolls'] = {
   'delete_poll': 'Excluir {title}',
   'deleted': '“{title}” excluída.',
   'undo': 'Desfazer',
+
+  'on_device_title': 'Guardadas neste dispositivo',
+  'on_device_note': 'Sua sessão terminou, então estas abrem com o link de administração privado. Abra uma para gerenciá-la de novo.',
+  'copy_admin': 'Copiar link de administração',
+  'forget': 'Esquecer',
 }
 
 export default mypolls

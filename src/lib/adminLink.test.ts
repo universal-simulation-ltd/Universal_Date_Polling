@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   ADMIN_TOKEN_LENGTH, adminTokenFromHash, forgetAdminToken, hashAdminToken, hashWithoutAdminToken, isAdminToken,
-  newAdminToken, rememberAdminToken, storedAdminToken,
+  newAdminToken, rememberAdminToken, storedAdminToken, storedAdminTokens,
 } from './adminLink'
 import { probeAdminLinks } from './api'
 
@@ -83,5 +83,20 @@ describe('probeAdminLinks', () => {
     expect(await probeAdminLinks(clientAnswering({ error: { code: '500' } }))).toBe('unknown')
     const throwing = { rpc: async () => { throw new Error('offline') } } as unknown as SupabaseClient
     expect(await probeAdminLinks(throwing)).toBe('unknown')
+  })
+})
+
+describe('storedAdminTokens', () => {
+  it('lists every poll this device holds a link for, and skips anything malformed', () => {
+    const storage = memoryStorage()
+    const a = newAdminToken()
+    const b = newAdminToken()
+    rememberAdminToken('poll-a', a, storage)
+    rememberAdminToken('poll-b', b, storage)
+    storage.setItem('unipoll-admin-links', JSON.stringify({ 'poll-a': a, 'poll-b': b, bad: 'nope' }))
+    expect(storedAdminTokens(storage)).toEqual([{ id: 'poll-a', token: a }, { id: 'poll-b', token: b }])
+    forgetAdminToken('poll-a', storage)
+    expect(storedAdminTokens(storage)).toEqual([{ id: 'poll-b', token: b }])
+    expect(storedAdminTokens(memoryStorage())).toEqual([])
   })
 })

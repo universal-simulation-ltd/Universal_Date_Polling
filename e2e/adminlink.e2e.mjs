@@ -178,6 +178,26 @@ try {
     check('on the host\u2019s own session', sub === ANON_ID, d?.auth.slice(0, 40))
     await page.close()
   }
+
+  // 6. A poll whose admin link this device holds is listed without a session -----
+  {
+    const page = await browser.newPage()
+    await stubBackend(page, { adminLinks: true, holder: { current: poll() } })
+    await page.addInitScript((t) => {
+      if (!localStorage.getItem('unipoll-admin-links')) localStorage.setItem('unipoll-admin-links', JSON.stringify({ adm1234567: t }))
+    }, TOKEN)
+    await page.goto(base, { waitUntil: 'networkidle' })
+    await page.getByText('Kept on this device').waitFor({ timeout: 8000 }).catch(() => {})
+    const body = await text(page)
+    check('the remembered poll is listed with no session', body.includes('Kept on this device') && body.includes('Team dinner'), body.slice(0, 600))
+    const href = await page.getByRole('link', { name: 'Team dinner' }).getAttribute('href').catch(() => '')
+    check('and opens with its admin link', (href ?? '').endsWith(`/p/adm1234567#admin=${TOKEN}`), href)
+    await page.getByRole('button', { name: 'Forget' }).click()
+    await page.waitForTimeout(300)
+    check('Forget takes it off the list and the device', !(await text(page)).includes('Kept on this device')
+      && !(await page.evaluate(() => localStorage.getItem('unipoll-admin-links') ?? '').then((v) => v.includes('adm1234567'))))
+    await page.close()
+  }
 } finally {
   await browser.close()
   server.kill()

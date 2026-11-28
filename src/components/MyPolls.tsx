@@ -4,13 +4,14 @@ import {
   type ListSelection,
 } from '@unisim/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { deletePolls, listMyPolls } from '../lib/api'
-import { pollLink } from '../lib/appUrl'
+import { deletePolls, getPoll, listMyPolls } from '../lib/api'
+import { forgetAdminToken, storedAdminTokens } from '../lib/adminLink'
+import { adminLink, pollLink } from '../lib/appUrl'
 import {
   confirmedLabel, deleteAllPrompt, deletePrompt, deleteSelectedPrompt, expiryLabel, isExpired,
   mergeMyPolls, pollSummary, responsesLabel, splitMyPolls,
 } from '../lib/myPolls'
-import type { MyPoll } from '../lib/types'
+import type { MyPoll, Poll } from '../lib/types'
 import { phoneApp } from '../native/shell'
 import { useDeferredDelete } from '../native/deferredDelete'
 import { useT } from '../i18n'
@@ -81,6 +82,11 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
   // Bumped by Retry; the effect keys off it so a retry is one state change
   // rather than a second copy of the fetch.
   const [attempt, setAttempt] = useState(0)
+  // Polls whose private admin link this device still holds but that this
+  // session no longer hosts (signed out of the suite, which clears the guest
+  // session too). They open with the admin link, which hands the poll back.
+  const [device, setDevice] = useState<{ poll: Poll; token: string }[]>([])
+  const [copiedAdminId, setCopiedAdminId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const clients = [suiteClient, otpClient].filter((c): c is SupabaseClient => !!c)
@@ -110,6 +116,45 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
       .catch(() => { if (live) { setData({ polls: [], owners: new Map() }); setFailed(true) } })
     return () => { live = false }
   }, [load, attempt])
+
+  // Once the sessions' own list is known, whatever this device holds an admin
+  // link for and the list lacks is looked up by id (public) and shown below it.
+  // A poll that no longer exists is forgotten. Skipped while a session's list
+  // failed: "not listed" would then mean nothing.
+  useEffect(() => {
+    if (!data || failed) { if (!data) setDevice([]); return }
+    const listed = new Set(data.polls.map((p) => p.id))
+    const missing = storedAdminTokens().filter((s) => !listed.has(s.id)).slice(-20)
+    if (missing.length === 0) { setDevice([]); return }
+    let live = true
+    Promise.all(missing.map(async ({ id, token }) => {
+      try {
+        const poll = await getPoll(id)
+        if (!poll) { forgetAdminToken(id); return null }
+        return { poll, token }
+      } catch { return null }
+    })).then((rows) => {
+      if (!live) return
+      setDevice(rows.filter((r): r is { poll: Poll; token: string } => !!r)
+        .sort((a, b) => Date.parse(b.poll.created_at) - Date.parse(a.poll.created_at)))
+    })
+    return () => { live = false }
+  }, [data, failed])
+
+  async function copyAdmin(poll: Poll, token: string) {
+    try {
+      await navigator.clipboard.writeText(adminLink(pollBase, poll.id, token))
+      setCopiedAdminId(poll.id)
+      setTimeout(() => setCopiedAdminId((id) => (id === poll.id ? null : id)), 1800)
+    } catch {
+      /* clipboard blocked — Open still carries the link */
+    }
+  }
+
+  function forget(id: string) {
+    forgetAdminToken(id)
+    setDevice((d) => d.filter((r) => r.poll.id !== id))
+  }
 
   async function copy(poll: MyPoll) {
     try {
@@ -142,6 +187,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
     const gone = new Set(settled.flatMap((r) => (r.status === 'fulfilled' ? r.value : [])))
 
     if (gone.size > 0) {
+      for (const id of gone) forgetAdminToken(id)
       setData((d) => (d ? { polls: d.polls.filter((p) => !gone.has(p.id)), owners: d.owners } : d))
       onDeleted?.()
     }
@@ -182,7 +228,7 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
   // Nothing loaded yet, and nothing to report: stay out of the way entirely.
   if (!data) return null
 
-  if (data.polls.length === 0) {
+  if (data.polls.length === 0 && device.length === 0) {
     // A failure and a genuinely empty account look identical from here, so the
     // failure is the only one worth a card — otherwise a host whose polls did
     // not load is quietly told they have none.
@@ -314,6 +360,39 @@ export default function MyPolls({ pollBase, suiteClient, otpClient, onDeleted }:
               <SwipeGroup>{expired.map(row)}</SwipeGroup>
             </ul>
           )}
+        </div>
+      )}
+
+      {device.length > 0 && (
+        <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">{t('mypolls.on_device_title')}</h3>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{t('mypolls.on_device_note')}</p>
+          <ul className="mt-2 space-y-2">
+            {device.map(({ poll, token }) => (
+              <li key={poll.id} className="u-box u-box--orbit u-box--row bg-white dark:bg-slate-900 px-3 py-3">
+                <a
+                  href={adminLink(pollBase, poll.id, token)}
+                  className="font-semibold text-slate-900 dark:text-slate-100 hover:text-orange-700 dark:hover:text-orange-400 underline-offset-2 hover:underline"
+                >
+                  {poll.title}
+                </a>
+                <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{pollSummary({ ...poll, response_count: 0 })}</p>
+                  <div className="flex items-center gap-3 text-xs">
+                    <button type="button" onClick={() => copyAdmin(poll, token)} className="u-btn u-btn--sm">
+                      {copiedAdminId === poll.id ? t('mypolls.copied') : t('mypolls.copy_admin')}
+                    </button>
+                    <a href={adminLink(pollBase, poll.id, token)} className="font-medium text-orange-700 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:underline underline-offset-2">
+                      {t('mypolls.open')}
+                    </a>
+                    <button type="button" onClick={() => forget(poll.id)} className="font-medium text-slate-400 hover:text-red-700 dark:hover:text-red-400 underline-offset-2 hover:underline">
+                      {t('mypolls.forget')}
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

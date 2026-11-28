@@ -37,6 +37,11 @@ const mypolls: Draft['mypolls'] = {
   'delete_poll': 'Sil: {title}',
   'deleted': '“{title}” silindi.',
   'undo': 'Geri al',
+
+  'on_device_title': 'Bu cihazda saklananlar',
+  'on_device_note': 'Oturumunuz sona erdi; bu yüzden bunlar özel yönetici bağlantılarıyla açılır. Yeniden yönetmek için birini açın.',
+  'copy_admin': 'Yönetici bağlantısını kopyala',
+  'forget': 'Unut',
 }
 
 export default mypolls

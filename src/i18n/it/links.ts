@@ -6,8 +6,9 @@ const links: Draft['links'] = {
   // The host's private admin link
   'admin_title': 'Il tuo link di amministrazione privato',
   'admin_body_email': 'Tienilo per te. Apre la pagina di amministrazione del sondaggio su qualsiasi dispositivo in cui hai confermato lo stesso indirizzo email, così da lì puoi confermare un orario, modificare il sondaggio o eliminarlo.',
-  'admin_body_no_email': 'Tienilo per te: chiunque lo abbia può gestire il sondaggio, cioè confermare un orario, modificarlo o eliminarlo. Conservalo in un posto sicuro: è l’unico modo per gestire il sondaggio da un altro dispositivo, o da qui se i dati di questo browser vengono cancellati.',
+  'admin_body_no_email': 'Tienilo per te: chiunque lo abbia può gestire il sondaggio, cioè confermare un orario, modificarlo o eliminarlo. Conservalo in un posto sicuro: è l’unico modo per gestire il sondaggio da un altro dispositivo, o da qui se i dati di questo browser vengono cancellati. Se lo perdi, nessuno potrà più modificare il sondaggio.',
   'admin_field': 'Link di amministrazione privato',
+  'share': 'Condividi',
 
   // A respondent's own edit link
   'edit_title': 'Il tuo link di modifica',
